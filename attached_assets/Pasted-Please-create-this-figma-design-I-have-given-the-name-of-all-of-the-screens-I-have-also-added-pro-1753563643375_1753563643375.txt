@@ -1,0 +1,20 @@
+Please create this figma design , I have given the name of all of the screens, I have also added prototyping, The design should be much responsive and it should work on all screen sizes, let me give you the purpose of each screen, also please make sure all of the color should be configurable 
+
+1. Landing page , It has navbar on the top , on the left of navabar it has icon of restaurant and right cart and order button. then we have banner of restaurant, then we have a bar which contains table number,
+then recommended for you section, then dropdown and search bar and all of the item displayed in horizontal card, then we have a deals section , and the have a footer section which contains name of platform and all social media links
+
+2.Add TO Cart Modal, whenver Add to cart button is clicked it should display this popup.
+3. Proceed To Payment, when Add TO Cart Modal button will be clicked this screen that new popup will appear
+4. Order Confirmation, when palce order button is clicked on Proceed To Payment this dislog will appear.
+5. Order Page, when order button will be clicked on  Landing page then this page will be appear, it has Live order and History section, Live order section is displayed on Order Page 
+6. Order History, when History button will be clicked on Order page History then this section will appear
+7. Proceed to payment 
+8. Payment Screen, we have split bill check box
+9. Split Bill By equality, if split bill check box is clicked then this screen will appear
+10. Split Bill By Items,Split Bill By equality page has toggle button when Split bill by items will be clicked then this popup will appear
+11.Reviews Screen, after these split bill we have popup , alternative flow is when checkbox of split bill is not checked then it will directly go to this popup
+12.Request A Service, When floating button on landing page that popup will appear.
+13.Request water bottle, when in Request a service popup , request a bootle in clicked then this popup will appear
+14. Play a Song, when in Request a service popup, play a song button is clicked then this popup will appear.
+
+All colors in the website is configurable , and please make sure to develop all the component in figma design , and all of them should be responsive as website will not break on all mobile devices 
