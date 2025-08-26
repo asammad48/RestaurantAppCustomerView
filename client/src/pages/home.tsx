@@ -8,6 +8,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import FoodCard from "@/components/food-card";
 import FloatingButtons from "@/components/floating-buttons";
+import LocationPicker from "@/components/location-picker";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import CartModal from "@/components/modals/cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
@@ -88,6 +89,11 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Location Section */}
+        <section className="mb-12">
+          <LocationPicker />
+        </section>
+
         {/* Recommended Section */}
         {recommendedItems.length > 0 && (
           <section className="mb-12">
