@@ -1,9 +1,12 @@
 import { useState, useRef } from "react";
-import { MapPin, Loader2, AlertCircle } from "lucide-react";
+import { MapPin, Loader2, AlertCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { BranchService } from "@/services/branch-service";
+import { Branch } from "@/types/branch";
+import BranchResults from "./branch-results";
 
 // TypeScript declarations for Google Maps
 declare global {
@@ -49,6 +52,9 @@ export default function LocationPicker() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branchesError, setBranchesError] = useState<string | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -206,6 +212,9 @@ export default function LocationPicker() {
         setLocation(locationData);
         await initializeMap(lat, lng);
 
+        // Search for nearby branches
+        await searchBranches(lat, lng);
+
         toast({
           title: "Location Found",
           description: "Successfully retrieved your location using GPS.",
@@ -233,6 +242,9 @@ export default function LocationPicker() {
         setLocation(ipLocation);
         await initializeMap(ipLocation.latitude, ipLocation.longitude);
 
+        // Search for nearby branches
+        await searchBranches(ipLocation.latitude, ipLocation.longitude);
+
         toast({
           title: "Location Found (IP-based)",
           description: "Retrieved approximate location using your IP address.",
@@ -252,11 +264,57 @@ export default function LocationPicker() {
     }
   };
 
-  // Clear current location
+  // Search for nearby branches
+  const searchBranches = async (latitude: number, longitude: number) => {
+    setBranchesLoading(true);
+    setBranchesError(null);
+    
+    try {
+      const response = await BranchService.searchBranches({
+        latitude,
+        longitude,
+        address: "", // As requested, send empty string
+        branchName: "" // As requested, send empty string
+      });
+
+      setBranches(response.data);
+      
+      toast({
+        title: "Branches Found",
+        description: `Found ${response.data.length} nearby restaurants.`,
+      });
+    } catch (error: any) {
+      console.error('Branch search failed:', error);
+      setBranchesError(error.message || 'Failed to find nearby restaurants');
+      
+      toast({
+        variant: "destructive",
+        title: "Search Failed",
+        description: "Unable to find nearby restaurants. Please try again.",
+      });
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  // Handle branch selection
+  const handleBranchSelect = (branch: Branch) => {
+    toast({
+      title: "Restaurant Selected",
+      description: `You've selected ${branch.branchName}. Redirecting to menu...`,
+    });
+    
+    // You can add navigation logic here
+    console.log('Selected branch:', branch);
+  };
+
+  // Clear current location and results
   const clearLocation = () => {
     setLocation(null);
     setError(null);
     setPermissionDenied(false);
+    setBranches([]);
+    setBranchesError(null);
     
     if (markerRef.current) {
       markerRef.current.setMap(null);
@@ -377,6 +435,31 @@ export default function LocationPicker() {
           </Alert>
         )}
       </CardContent>
+
+      {/* Branch Search Results */}
+      {location && (
+        <CardContent className="pt-0">
+          <div className="border-t pt-4">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <Search className="h-5 w-5 mr-2" />
+              Nearby Restaurants
+            </h3>
+            
+            {branchesError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{branchesError}</AlertDescription>
+              </Alert>
+            )}
+            
+            <BranchResults
+              branches={branches}
+              loading={branchesLoading}
+              onSelectBranch={handleBranchSelect}
+            />
+          </div>
+        </CardContent>
+      )}
     </Card>
   );
 }
