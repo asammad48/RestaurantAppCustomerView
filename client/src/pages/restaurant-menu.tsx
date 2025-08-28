@@ -21,6 +21,7 @@ import SplitBillModal from "@/components/modals/split-bill-modal";
 import ReviewModal from "@/components/modals/review-modal";
 import OrderConfirmationModal from "@/components/modals/order-confirmation-modal";
 import ThemeSwitcher from "@/components/theme-switcher";
+import FoodCard from "@/components/food-card";
 
 export default function RestaurantMenuPage() {
   const { 
