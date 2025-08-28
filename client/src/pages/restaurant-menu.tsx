@@ -1,18 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
-import { MenuItem } from "@/lib/mock-data";
+import { ApiMenuItem, ApiDeal, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
-import FoodCard from "@/components/food-card";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import DeliveryDetailsModal from "@/components/modals/delivery-details-modal";
@@ -24,44 +23,51 @@ import OrderConfirmationModal from "@/components/modals/order-confirmation-modal
 import ThemeSwitcher from "@/components/theme-switcher";
 
 export default function RestaurantMenuPage() {
-  const { selectedRestaurant, serviceType, getCartCount } = useCartStore();
+  const { 
+    selectedRestaurant, 
+    selectedBranch, 
+    serviceType, 
+    getCartCount, 
+    setLastAddedItem, 
+    setAddToCartModalOpen 
+  } = useCartStore();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedVariations, setSelectedVariations] = useState<{[key: number]: number}>({});
   const itemsPerPage = 8;
 
-  const { data: menuItems, isLoading } = useQuery({
-    queryKey: ['/api/menu-items'],
+  // Get branch ID from selected restaurant/branch or default to 1 for QR
+  const branchId = selectedBranch?.branchId || 1;
+
+  const { data: menuData, isLoading } = useQuery({
+    queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!branchId,
   });
 
-  if (!selectedRestaurant) {
-    setLocation('/');
-    return null;
-  }
+  const apiMenuData = menuData as ApiMenuResponse;
 
-  const categoryList = (menuItems as MenuItem[])?.map((item: MenuItem) => item.category) || [];
+  // Handle case where no restaurant is selected for QR code access
+  useEffect(() => {
+    if (!selectedRestaurant && !selectedBranch && serviceType !== 'qr') {
+      setLocation('/');
+    }
+  }, [selectedRestaurant, selectedBranch, serviceType, setLocation]);
+
+  // Get unique categories from menu items
+  const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
   const uniqueCategories = categoryList.filter((value, index, self) => self.indexOf(value) === index);
   const categories = ["all", ...uniqueCategories];
   
   // Filter items by category and search
-  const filteredItems = (menuItems as MenuItem[])?.filter((item: MenuItem) => {
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+  const filteredItems = apiMenuData?.menuItems?.filter((item: ApiMenuItem) => {
+    const matchesCategory = selectedCategory === "all" || item.categoryName === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   }) || [];
-
-  // Get recommended items (items with high ratings)
-  const recommendedItems = (menuItems as MenuItem[])?.filter((item: MenuItem) => 
-    item.isRecommended
-  ) || [];
-
-  // Get deal items (items with discounts)
-  const dealItems = (menuItems as MenuItem[])?.filter((item: MenuItem) => 
-    item.discount && item.discount > 0
-  ) || [];
 
   // Pagination
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
@@ -78,6 +84,9 @@ export default function RestaurantMenuPage() {
       case 'takeaway':
         setLocation('/takeaway');
         break;
+      case 'qr':
+        setLocation('/');
+        break;
       default:
         setLocation('/');
     }
@@ -91,49 +100,306 @@ export default function RestaurantMenuPage() {
         return <Badge className="bg-blue-500 text-white">Take Away</Badge>;
       case 'dine-in':
         return <Badge className="bg-purple-500 text-white">Dine In</Badge>;
+      case 'qr':
+        return <Badge className="bg-green-500 text-white">QR Menu</Badge>;
       default:
         return null;
     }
   };
 
   const getServiceInfo = () => {
-    switch (serviceType) {
-      case 'delivery':
-        return (
-          <div className="space-y-2 text-sm text-gray-600">
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-2 configurable-primary-text" />
-              Delivery in {selectedRestaurant.deliveryTime}
-            </div>
-            <div className="flex items-center">
-              <DollarSign className="w-4 h-4 mr-2 configurable-primary-text" />
-              Delivery Fee: PKR {selectedRestaurant.deliveryFee}
-            </div>
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-2 configurable-primary-text" />
-              {selectedRestaurant.distance} away
+    if (selectedBranch) {
+      return (
+        <div className="space-y-2 text-sm text-gray-600">
+          <div className="flex items-center">
+            <Clock className="w-4 h-4 mr-2 configurable-primary-text" />
+            {selectedBranch.isBranchClosed ? 'Closed' : `Open: ${selectedBranch.branchOpenTime} - ${selectedBranch.branchCloseTime}`}
+          </div>
+          <div className="flex items-start">
+            <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 configurable-primary-text" />
+            <div>
+              <div className="font-medium text-gray-900">Address:</div>
+              <div className="text-gray-600">{selectedBranch.branchAddress}</div>
             </div>
           </div>
-        );
-      case 'takeaway':
-        return (
-          <div className="space-y-2 text-sm text-gray-600">
+          {serviceType === 'delivery' && (
             <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-2 configurable-primary-text" />
-              Ready for pickup in {selectedRestaurant.deliveryTime.replace('delivery', 'preparation')}
+              <DollarSign className="w-4 h-4 mr-2 configurable-primary-text" />
+              Delivery Fee: PKR {selectedBranch.deliveryFee}
             </div>
-            <div className="flex items-start">
-              <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 configurable-primary-text" />
-              <div>
-                <div className="font-medium text-gray-900">Pickup Address:</div>
-                <div className="text-gray-600">{selectedRestaurant.address}</div>
+          )}
+        </div>
+      );
+    }
+
+    if (selectedRestaurant) {
+      switch (serviceType) {
+        case 'delivery':
+          return (
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 mr-2 configurable-primary-text" />
+                Delivery in {selectedRestaurant.deliveryTime}
+              </div>
+              <div className="flex items-center">
+                <DollarSign className="w-4 h-4 mr-2 configurable-primary-text" />
+                Delivery Fee: PKR {selectedRestaurant.deliveryFee}
+              </div>
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 mr-2 configurable-primary-text" />
+                {selectedRestaurant.distance} away
+              </div>
+            </div>
+          );
+        case 'takeaway':
+          return (
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 mr-2 configurable-primary-text" />
+                Ready for pickup in {selectedRestaurant.deliveryTime.replace('delivery', 'preparation')}
+              </div>
+              <div className="flex items-start">
+                <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 configurable-primary-text" />
+                <div>
+                  <div className="font-medium text-gray-900">Pickup Address:</div>
+                  <div className="text-gray-600">{selectedRestaurant.address}</div>
+                </div>
+              </div>
+            </div>
+          );
+        default:
+          return null;
+      }
+    }
+    return null;
+  };
+
+  // Helper function to get selected variation price for an item
+  const getSelectedVariationPrice = (item: ApiMenuItem): number => {
+    const selectedVariationId = selectedVariations[item.menuItemId];
+    if (selectedVariationId && item.variations) {
+      const variation = item.variations.find(v => v.id === selectedVariationId);
+      return variation?.price || (item.variations[0]?.price || 0);
+    }
+    return item.variations?.[0]?.price || 0;
+  };
+
+  // Helper function to calculate discounted price
+  const getDiscountedPrice = (price: number, discount?: { value: number } | null): number => {
+    if (!discount) return price;
+    return price - (price * discount.value / 100);
+  };
+
+  // Helper function to format price to 2 decimal places
+  const formatPrice = (price: number): string => {
+    return price.toFixed(2);
+  };
+
+  // Handle add to cart for menu items
+  const handleAddToCart = (item: ApiMenuItem) => {
+    setLastAddedItem(item);
+    setAddToCartModalOpen(true);
+  };
+
+  // Handle add to cart for deals
+  const handleAddDealToCart = (deal: ApiDeal) => {
+    setLastAddedItem(deal);
+    setAddToCartModalOpen(true);
+  };
+
+  // Render menu item card
+  const renderMenuItem = (item: ApiMenuItem, isRecommended: boolean = false) => {
+    const selectedPrice = getSelectedVariationPrice(item);
+    const discountedPrice = getDiscountedPrice(selectedPrice, item.discount);
+    const hasDiscount = item.discount && item.discount.value > 0;
+
+    return (
+      <Card key={item.menuItemId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+        <CardContent className="p-0">
+          <div className="flex flex-col md:flex-row">
+            {/* Image */}
+            <div className="relative md:w-48 h-48 md:h-auto">
+              <img
+                src={item.picture || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200'}
+                alt={item.name}
+                className="w-full h-full object-cover"
+              />
+              {hasDiscount && (
+                <div className="absolute top-2 left-2">
+                  <Badge className="configurable-deal text-white">
+                    {item.discount!.value}% OFF
+                  </Badge>
+                </div>
+              )}
+              {isRecommended && (
+                <div className="absolute top-2 right-2">
+                  <Badge className="configurable-recommended text-white">
+                    <Star className="w-3 h-3 mr-1 fill-current" />
+                    Recommended
+                  </Badge>
+                </div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900 mb-1">{item.name}</h3>
+                  <Badge variant="outline" className="text-xs mb-2">
+                    {item.categoryName}
+                  </Badge>
+                </div>
+              </div>
+
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                {item.description}
+              </p>
+
+              {/* Variations */}
+              {item.variations && item.variations.length > 0 && (
+                <div className="mb-3">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Size/Variation:</label>
+                  <Select 
+                    value={selectedVariations[item.menuItemId]?.toString() || item.variations[0]?.id.toString()}
+                    onValueChange={(value) => setSelectedVariations(prev => ({
+                      ...prev,
+                      [item.menuItemId]: parseInt(value)
+                    }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {item.variations.map((variation) => (
+                        <SelectItem key={variation.id} value={variation.id.toString()}>
+                          {variation.name} - PKR {formatPrice(variation.price)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Discount Info */}
+              {hasDiscount && (
+                <div className="mb-3 p-2 bg-red-50 rounded-md border border-red-200">
+                  <div className="flex items-center text-sm text-red-800">
+                    <Tag className="w-3 h-3 mr-1" />
+                    <span className="font-medium">{item.discount!.name}</span>
+                  </div>
+                  <div className="flex items-center text-xs text-red-600">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    <span>Valid until: {new Date(item.discount!.endDate).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Price and Add to Cart */}
+              <div className="flex items-center justify-between">
+                <div>
+                  {hasDiscount ? (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-bold configurable-primary-text">
+                        PKR {formatPrice(discountedPrice)}
+                      </span>
+                      <span className="text-sm text-gray-500 line-through">
+                        PKR {formatPrice(selectedPrice)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-lg font-bold configurable-primary-text">
+                      PKR {formatPrice(selectedPrice)}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  onClick={() => handleAddToCart(item)}
+                  className="configurable-primary hover:configurable-primary-hover text-white"
+                  data-testid={`button-add-to-cart-${item.menuItemId}`}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add to Cart
+                </Button>
               </div>
             </div>
           </div>
-        );
-      default:
-        return null;
-    }
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Render deal card
+  const renderDeal = (deal: ApiDeal) => {
+    const discountedPrice = getDiscountedPrice(deal.price, deal.discount);
+    const hasDiscount = deal.discount && deal.discount.value > 0;
+
+    return (
+      <Card key={deal.dealId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+        <CardContent className="p-0">
+          <div className="relative">
+            <img
+              src={deal.picture || 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200'}
+              alt={deal.name}
+              className="w-full h-48 object-cover"
+            />
+            <div className="absolute top-2 left-2">
+              <Badge className="bg-orange-500 text-white">
+                DEAL
+              </Badge>
+            </div>
+            {hasDiscount && (
+              <div className="absolute top-2 right-2">
+                <Badge className="configurable-deal text-white">
+                  {deal.discount!.value}% OFF
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4">
+            <h3 className="font-semibold text-lg text-gray-900 mb-2">{deal.name}</h3>
+            <p className="text-gray-600 text-sm mb-3">{deal.description}</p>
+
+            {/* Deal End Date */}
+            <div className="mb-3 p-2 bg-orange-50 rounded-md border border-orange-200">
+              <div className="flex items-center text-sm text-orange-800">
+                <Calendar className="w-3 h-3 mr-1" />
+                <span>Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}</span>
+              </div>
+            </div>
+
+            {/* Price and Add to Cart */}
+            <div className="flex items-center justify-between">
+              <div>
+                {hasDiscount ? (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg font-bold configurable-primary-text">
+                      PKR {formatPrice(discountedPrice)}
+                    </span>
+                    <span className="text-sm text-gray-500 line-through">
+                      PKR {formatPrice(deal.price)}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-lg font-bold configurable-primary-text">
+                    PKR {formatPrice(deal.price)}
+                  </span>
+                )}
+              </div>
+              <Button
+                onClick={() => handleAddDealToCart(deal)}
+                className="configurable-primary hover:configurable-primary-hover text-white"
+                data-testid={`button-add-deal-to-cart-${deal.dealId}`}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add to Cart
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -160,19 +426,25 @@ export default function RestaurantMenuPage() {
             {serviceType === 'delivery' && (
               <>
                 <DollarSign className="mr-3" size={20} />
-                <span className="text-lg font-medium">Delivery Service - {selectedRestaurant.name}</span>
+                <span className="text-lg font-medium">Delivery Service - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
               </>
             )}
             {serviceType === 'takeaway' && (
               <>
                 <Clock className="mr-3" size={20} />
-                <span className="text-lg font-medium">Takeaway Order - {selectedRestaurant.name}</span>
+                <span className="text-lg font-medium">Takeaway Order - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
+              </>
+            )}
+            {serviceType === 'qr' && (
+              <>
+                <MapPin className="mr-3" size={20} />
+                <span className="text-lg font-medium">Menu - {selectedBranch?.branchName || 'Restaurant'}</span>
               </>
             )}
             {(serviceType === 'dine-in' || !serviceType) && (
               <>
                 <MapPin className="mr-3" size={20} />
-                <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant.name}</span>
+                <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
               </>
             )}
           </div>
@@ -181,25 +453,27 @@ export default function RestaurantMenuPage() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Back Button */}
-          <div className="mb-6">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="flex items-center"
-              data-testid="button-back-to-restaurants"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Restaurants
-            </Button>
-          </div>
+          {serviceType !== 'qr' && (
+            <div className="mb-6">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="flex items-center"
+                data-testid="button-back-to-restaurants"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to {serviceType === 'delivery' ? 'Delivery' : serviceType === 'takeaway' ? 'Takeaway' : 'Restaurants'}
+              </Button>
+            </div>
+          )}
 
-          {/* Restaurant Header */}
+          {/* Restaurant/Branch Header */}
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row gap-6">
                 <img
-                  src={selectedRestaurant.image}
-                  alt={selectedRestaurant.name}
+                  src={selectedBranch?.branchPicture || selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
+                  alt={selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant'}
                   className="w-full md:w-48 h-32 object-cover rounded-lg"
                 />
                 
@@ -207,14 +481,13 @@ export default function RestaurantMenuPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                        {selectedRestaurant.name}
+                        {selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant Menu'}
                       </h1>
                       <div className="flex items-center gap-3 mb-2">
                         <div className="flex items-center">
                           <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
-                          <span className="font-medium">{selectedRestaurant.rating}</span>
+                          <span className="font-medium">{selectedBranch?.rating || selectedRestaurant?.rating || '4.5'}</span>
                         </div>
-                        <Badge variant="outline">{(selectedRestaurant as any).cuisine || 'Restaurant'}</Badge>
                         {getServiceBadge()}
                       </div>
                     </div>
@@ -222,10 +495,10 @@ export default function RestaurantMenuPage() {
 
                   {getServiceInfo()}
 
-                  {serviceType === 'delivery' && (
+                  {serviceType === 'delivery' && selectedBranch && (
                     <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-800">
-                        <strong>Minimum Order:</strong> PKR {selectedRestaurant.minimumOrder}
+                        <strong>Maximum Delivery Distance:</strong> {selectedBranch.maxDistanceForDelivery} km
                       </p>
                     </div>
                   )}
@@ -235,13 +508,11 @@ export default function RestaurantMenuPage() {
           </Card>
 
         {/* Recommended Section */}
-        {recommendedItems.length > 0 && (
+        {apiMenuData?.recommendedForYou && apiMenuData.recommendedForYou.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-2xl font-bold configurable-text-primary mb-6">Recommended</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recommendedItems.slice(0, 4).map((item) => (
-                <FoodCard key={item.id} item={item} variant="grid" />
-              ))}
+            <h2 className="text-2xl font-bold configurable-text-primary mb-6">Recommended For You</h2>
+            <div className="space-y-4">
+              {apiMenuData.recommendedForYou.map((item) => renderMenuItem(item, true))}
             </div>
           </section>
         )}
@@ -269,10 +540,11 @@ export default function RestaurantMenuPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <Input
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search menu items..."
                   className="pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  data-testid="input-search-menu-items"
                 />
               </div>
             </div>
@@ -281,21 +553,25 @@ export default function RestaurantMenuPage() {
 
         {/* Menu Items */}
         <section className="mb-12">
+          <h2 className="text-2xl font-bold configurable-text-primary mb-6">Menu Items</h2>
           <div className="space-y-4">
             {isLoading ? (
               Array.from({ length: itemsPerPage }, (_, i) => (
                 <Card key={i} className="animate-pulse">
                   <CardContent className="p-4">
-                    <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                    <div className="flex">
+                      <div className="w-48 h-32 bg-gray-200 rounded-lg mr-4"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               ))
             ) : (
-              paginatedItems.map((item: MenuItem) => (
-                <FoodCard key={item.id} item={item} variant="list" />
-              ))
+              paginatedItems.map((item: ApiMenuItem) => renderMenuItem(item))
             )}
           </div>
           
@@ -339,13 +615,11 @@ export default function RestaurantMenuPage() {
         </section>
 
         {/* Deals Section */}
-        {dealItems.length > 0 && (
+        {apiMenuData?.deals && apiMenuData.deals.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-2xl font-bold configurable-text-primary mb-6">Deals</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dealItems.map((item) => (
-                <FoodCard key={item.id} item={item} variant="grid" />
-              ))}
+            <h2 className="text-2xl font-bold configurable-text-primary mb-6">Special Deals</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {apiMenuData.deals.map((deal) => renderDeal(deal))}
             </div>
           </section>
         )}
@@ -367,7 +641,7 @@ export default function RestaurantMenuPage() {
         <div className="fixed bottom-6 right-6 z-50">
           <Button
             onClick={() => useCartStore.getState().setCartOpen(true)}
-            className="rounded-full w-16 h-16 shadow-lg"
+            className="rounded-full w-16 h-16 shadow-lg configurable-primary hover:configurable-primary-hover text-white"
             data-testid="button-open-cart"
           >
             <div className="text-center">

@@ -5,132 +5,248 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useCartStore } from "@/lib/store";
+import { ApiMenuItem, ApiDeal } from "@/lib/mock-data";
 
 export default function AddToCartModal() {
   const { isAddToCartModalOpen, setAddToCartModalOpen, addItem, lastAddedItem } = useCartStore();
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState("");
-  const [selectedToppings, setSelectedToppings] = useState<{[key: string]: number}>({});
-  const [selectedFlavour, setSelectedFlavour] = useState("");
-  const [selectedSauce, setSelectedSauce] = useState("");
-  const [selectedCrust, setSelectedCrust] = useState("");
-  const [allergens, setAllergens] = useState("");
+  const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
+  const [selectedModifiers, setSelectedModifiers] = useState<{[key: number]: number}>({});
+  const [selectedCustomizations, setSelectedCustomizations] = useState<{[key: number]: number}>({});
   
   // Reset selections when modal opens or closes
   useEffect(() => {
     if (!isAddToCartModalOpen) {
       // Clear all selections when modal is closed
       setQuantity(1);
-      setSelectedToppings({});
-      setSelectedFlavour("");
-      setSelectedSauce("");
-      setSelectedCrust("");
+      setSelectedVariation(null);
+      setSelectedModifiers({});
+      setSelectedCustomizations({});
       setSpecialInstructions("");
-      setAllergens("");
+    } else if (lastAddedItem && 'variations' in lastAddedItem && lastAddedItem.variations && lastAddedItem.variations.length > 0) {
+      // Set default variation when modal opens
+      setSelectedVariation(lastAddedItem.variations[0].id);
     }
-  }, [isAddToCartModalOpen]);
+  }, [isAddToCartModalOpen, lastAddedItem]);
   
   // Collapsible states
-  const [toppingsOpen, setToppingsOpen] = useState(true);
-  const [flavourOpen, setFlavourOpen] = useState(false);
-  const [sauceOpen, setSauceOpen] = useState(false);
-  const [crustOpen, setCrustOpen] = useState(false);
+  const [modifiersOpen, setModifiersOpen] = useState(true);
+  const [customizationsOpen, setCustomizationsOpen] = useState(false);
 
-  const extraToppings = [
-    { name: "extraCheese", label: "Extra Cheese", price: 50 },
-    { name: "pepperoni", label: "Pepperoni", price: 75 },
-    { name: "mushrooms", label: "Mushrooms", price: 40 },
-  ];
-
-  const pizzaFlavours = ["Margherita", "Pepperoni", "Hawaiian", "Veggie Supreme"];
-  const sauceLevels = ["Light", "Normal", "Extra"];
-  const crustTypes = ["Thin", "Regular", "Thick"];
-
-  const updateToppingQuantity = (toppingName: string, change: number) => {
-    setSelectedToppings(prev => {
-      const currentQty = prev[toppingName] || 0;
+  const updateModifierQuantity = (modifierId: number, change: number) => {
+    setSelectedModifiers(prev => {
+      const currentQty = prev[modifierId] || 0;
       const newQty = Math.max(0, currentQty + change);
       if (newQty === 0) {
-        const { [toppingName]: removed, ...rest } = prev;
+        const { [modifierId]: removed, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [toppingName]: newQty };
+      return { ...prev, [modifierId]: newQty };
     });
+  };
+
+  const selectCustomizationOption = (customizationId: number, optionId: number) => {
+    setSelectedCustomizations(prev => ({
+      ...prev,
+      [customizationId]: optionId
+    }));
   };
 
   const getTotalPrice = () => {
     if (!lastAddedItem) return 0;
-    const basePrice = parseFloat(lastAddedItem.price);
-    const toppingsPrice = Object.entries(selectedToppings).reduce((total, [toppingName, qty]) => {
-      const topping = extraToppings.find(t => t.name === toppingName);
-      return total + (topping?.price || 0) * qty;
-    }, 0);
-    return (basePrice + toppingsPrice) * quantity;
+    
+    let basePrice = 0;
+    
+    if ('variations' in lastAddedItem) {
+      // For menu items
+      const menuItem = lastAddedItem as ApiMenuItem;
+      if (selectedVariation && menuItem.variations) {
+        const variation = menuItem.variations.find(v => v.id === selectedVariation);
+        basePrice = variation?.price || 0;
+      } else if (menuItem.variations && menuItem.variations.length > 0) {
+        basePrice = menuItem.variations[0].price;
+      }
+      
+      // Add modifiers price
+      const modifiersPrice = Object.entries(selectedModifiers).reduce((total, [modifierId, qty]) => {
+        const modifier = menuItem.modifiers?.find(m => m.id === parseInt(modifierId));
+        return total + (modifier?.price || 0) * qty;
+      }, 0);
+      
+      // Add customizations price
+      const customizationsPrice = Object.entries(selectedCustomizations).reduce((total, [customizationId, optionId]) => {
+        const customization = menuItem.customizations?.find(c => c.id === parseInt(customizationId));
+        const option = customization?.options.find(o => o.id === optionId);
+        return total + (option?.price || 0);
+      }, 0);
+      
+      basePrice += modifiersPrice + customizationsPrice;
+      
+      // Apply discount if available
+      if (menuItem.discount && menuItem.discount.value > 0) {
+        basePrice = basePrice - (basePrice * menuItem.discount.value / 100);
+      }
+    } else if ('dealId' in lastAddedItem) {
+      // For deals
+      const deal = lastAddedItem as ApiDeal;
+      basePrice = deal.price;
+      
+      // Apply discount if available
+      if (deal.discount && deal.discount.value > 0) {
+        basePrice = basePrice - (basePrice * deal.discount.value / 100);
+      }
+    }
+    
+    return basePrice * quantity;
   };
 
   const handleAddToCart = () => {
     if (!lastAddedItem) return;
     
-    const customization = {
-      toppings: selectedToppings,
-      flavour: selectedFlavour,
-      sauce: selectedSauce,
-      crust: selectedCrust,
+    let customization: any = {
       instructions: specialInstructions,
     };
+
+    if ('variations' in lastAddedItem) {
+      // For menu items
+      customization = {
+        ...customization,
+        selectedVariation,
+        selectedModifiers,
+        selectedCustomizations,
+      };
+    }
     
-    const finalPrice = getTotalPrice().toFixed(2);
+    const finalPrice = getTotalPrice();
     const itemWithCustomization = {
       ...lastAddedItem,
-      price: finalPrice,
+      price: finalPrice.toString(),
       customization,
-    };
+    } as any;
     
     // Add to cart with quantity
     for (let i = 0; i < quantity; i++) {
-      addItem(itemWithCustomization, "custom");
+      addItem(itemWithCustomization, selectedVariation?.toString());
     }
     
     setAddToCartModalOpen(false);
     // Reset form
     setQuantity(1);
-    setSelectedToppings({});
+    setSelectedVariation(null);
+    setSelectedModifiers({});
+    setSelectedCustomizations({});
     setSpecialInstructions("");
-    setAllergens("");
   };
 
-  return (
-    <Dialog open={isAddToCartModalOpen} onOpenChange={setAddToCartModalOpen}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogTitle className="text-center text-xl font-bold">Customization</DialogTitle>
-        
+  const isMenuItem = (item: any): item is ApiMenuItem => {
+    return item && 'menuItemId' in item;
+  };
 
+  const isDeal = (item: any): item is ApiDeal => {
+    return item && 'dealId' in item;
+  };
 
-        <div className="space-y-4">
-          {/* Extra Toppings Section */}
-          <Collapsible open={toppingsOpen} onOpenChange={setToppingsOpen}>
+  const renderDealContent = (deal: ApiDeal) => {
+    return (
+      <div className="space-y-4">
+        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+          <h3 className="font-semibold text-lg text-orange-900 mb-3">Deal Includes:</h3>
+          
+          {/* Menu Items */}
+          {deal.menuItems && deal.menuItems.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-medium text-orange-800 mb-2">Main Items:</h4>
+              <ul className="space-y-1">
+                {deal.menuItems.map((item) => (
+                  <li key={item.menuItemId} className="flex items-center text-sm text-orange-700">
+                    <span className="w-2 h-2 bg-orange-400 rounded-full mr-2"></span>
+                    {item.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Sub Menu Items */}
+          {deal.subMenuItems && deal.subMenuItems.length > 0 && (
+            <div>
+              <h4 className="font-medium text-orange-800 mb-2">Included Items:</h4>
+              <ul className="space-y-1">
+                {deal.subMenuItems.map((item) => (
+                  <li key={item.subMenuItemId} className="flex items-center text-sm text-orange-700">
+                    <span className="w-2 h-2 bg-orange-400 rounded-full mr-2"></span>
+                    {item.name} (Qty: {item.quantity})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Deal End Date */}
+          <div className="mt-3 pt-3 border-t border-orange-200">
+            <p className="text-xs text-orange-600">
+              Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMenuItemContent = (menuItem: ApiMenuItem) => {
+    return (
+      <div className="space-y-4">
+        {/* Variations */}
+        {menuItem.variations && menuItem.variations.length > 0 && (
+          <div>
+            <h3 className="font-bold text-lg mb-3">Size/Variation</h3>
+            <div className="space-y-2">
+              {menuItem.variations.map((variation) => (
+                <button
+                  key={variation.id}
+                  onClick={() => setSelectedVariation(variation.id)}
+                  className={`w-full text-left p-3 rounded-lg border ${
+                    selectedVariation === variation.id 
+                      ? 'configurable-secondary border-2 configurable-border configurable-primary-text' 
+                      : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{variation.name}</span>
+                    <span className="text-sm font-bold">PKR {variation.price.toFixed(2)}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Modifiers Section */}
+        {menuItem.modifiers && menuItem.modifiers.length > 0 && (
+          <Collapsible open={modifiersOpen} onOpenChange={setModifiersOpen}>
             <CollapsibleTrigger className="w-full bg-gray-200 p-3 rounded-lg flex items-center justify-between font-medium">
-              Extra Toppings
-              {toppingsOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
+              Modifiers
+              {modifiersOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2 space-y-2">
-              {extraToppings.map((topping) => (
-                <div key={topping.name} className="flex items-center justify-between py-2">
-                  <span className="text-sm">{topping.label}</span>
+              {menuItem.modifiers.map((modifier) => (
+                <div key={modifier.id} className="flex items-center justify-between py-2">
+                  <span className="text-sm">{modifier.name}</span>
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium">Rs. {topping.price}.00</span>
+                    <span className="text-sm font-medium">PKR {modifier.price.toFixed(2)}</span>
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => updateToppingQuantity(topping.name, -1)}
+                        onClick={() => updateModifierQuantity(modifier.id, -1)}
                         className="w-6 h-6 rounded configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover"
                       >
                         <Minus size={12} />
                       </button>
                       <span className="w-6 text-center text-xs font-medium">
-                        {selectedToppings[topping.name] || 0}
+                        {selectedModifiers[modifier.id] || 0}
                       </span>
                       <button
-                        onClick={() => updateToppingQuantity(topping.name, 1)}
+                        onClick={() => updateModifierQuantity(modifier.id, 1)}
                         className="w-6 h-6 rounded configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover"
                       >
                         <Plus size={12} />
@@ -141,95 +257,64 @@ export default function AddToCartModal() {
               ))}
             </CollapsibleContent>
           </Collapsible>
+        )}
 
-          {/* Pizza Flavour Section */}
-          <Collapsible open={flavourOpen} onOpenChange={setFlavourOpen}>
-            <CollapsibleTrigger className="w-full bg-gray-200 p-3 rounded-lg flex items-center justify-between font-medium">
-              Pizza Flavour
-              {flavourOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 space-y-2">
-              {pizzaFlavours.map((flavour) => (
-                <button
-                  key={flavour}
-                  onClick={() => setSelectedFlavour(flavour)}
-                  className={`w-full text-left p-2 rounded text-sm ${
-                    selectedFlavour === flavour 
-                      ? 'configurable-secondary border configurable-border' 
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
-                >
-                  {flavour}
-                </button>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
+        {/* Customizations Section */}
+        {menuItem.customizations && menuItem.customizations.length > 0 && (
+          <div className="space-y-4">
+            {menuItem.customizations.map((customization) => (
+              <Collapsible key={customization.id} open={customizationsOpen} onOpenChange={setCustomizationsOpen}>
+                <CollapsibleTrigger className="w-full bg-gray-200 p-3 rounded-lg flex items-center justify-between font-medium">
+                  {customization.name}
+                  {customizationsOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {customization.options.map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => selectCustomizationOption(customization.id, option.id)}
+                      className={`w-full text-left p-2 rounded text-sm ${
+                        selectedCustomizations[customization.id] === option.id 
+                          ? 'configurable-secondary border configurable-border' 
+                          : 'bg-gray-50 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span>{option.name}</span>
+                        {option.price > 0 && (
+                          <span className="text-xs font-medium">+PKR {option.price.toFixed(2)}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
-          {/* Sauce Level Section */}
-          <Collapsible open={sauceOpen} onOpenChange={setSauceOpen}>
-            <CollapsibleTrigger className="w-full bg-gray-200 p-3 rounded-lg flex items-center justify-between font-medium">
-              Sauce Level
-              {sauceOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 space-y-2">
-              {sauceLevels.map((sauce) => (
-                <button
-                  key={sauce}
-                  onClick={() => setSelectedSauce(sauce)}
-                  className={`w-full text-left p-2 rounded text-sm ${
-                    selectedSauce === sauce 
-                      ? 'configurable-secondary border configurable-border' 
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
-                >
-                  {sauce}
-                </button>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
+  return (
+    <Dialog open={isAddToCartModalOpen} onOpenChange={setAddToCartModalOpen}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogTitle className="text-center text-xl font-bold">
+          {lastAddedItem && isDeal(lastAddedItem) ? 'Deal Details' : 'Customization'}
+        </DialogTitle>
 
-          {/* Crust Type Section */}
-          <Collapsible open={crustOpen} onOpenChange={setCrustOpen}>
-            <CollapsibleTrigger className="w-full bg-gray-200 p-3 rounded-lg flex items-center justify-between font-medium">
-              Crust Type
-              {crustOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 space-y-2">
-              {crustTypes.map((crust) => (
-                <button
-                  key={crust}
-                  onClick={() => setSelectedCrust(crust)}
-                  className={`w-full text-left p-2 rounded text-sm ${
-                    selectedCrust === crust 
-                      ? 'configurable-secondary border configurable-border' 
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
-                >
-                  {crust}
-                </button>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
+        <div className="space-y-4">
+          {lastAddedItem && isDeal(lastAddedItem) && renderDealContent(lastAddedItem)}
+          {lastAddedItem && isMenuItem(lastAddedItem) && renderMenuItemContent(lastAddedItem)}
 
           {/* Special Instructions */}
           <div>
-            <h3 className="font-bold text-lg mb-3">Special Instruction</h3>
+            <h3 className="font-bold text-lg mb-3">Special Instructions</h3>
             <Textarea
               placeholder="Write your instruction"
               value={specialInstructions}
               onChange={(e) => setSpecialInstructions(e.target.value)}
               className="min-h-[100px] resize-none"
-            />
-          </div>
-
-          {/* Allergens Description */}
-          <div>
-            <h3 className="font-bold text-lg mb-3">Allergens Description</h3>
-            <Textarea
-              placeholder="Please list any allergies or dietary restrictions"
-              value={allergens}
-              onChange={(e) => setAllergens(e.target.value)}
-              className="min-h-[80px] resize-none"
             />
           </div>
 
@@ -254,7 +339,7 @@ export default function AddToCartModal() {
               onClick={handleAddToCart}
               className="configurable-primary hover:configurable-primary-hover text-white px-8 py-3 rounded-lg font-medium"
             >
-              Rs. {getTotalPrice().toFixed(2)} Add to cart
+              PKR {getTotalPrice().toFixed(2)} Add to cart
             </Button>
           </div>
         </div>

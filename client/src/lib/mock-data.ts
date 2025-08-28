@@ -13,6 +13,78 @@ export interface MenuItem {
   isDeal: boolean;
 }
 
+// New API Data Structures
+export interface ApiMenuItem {
+  menuItemId: number;
+  name: string;
+  description: string;
+  categoryName: string;
+  picture: string;
+  variations: {
+    id: number;
+    name: string;
+    price: number;
+  }[];
+  modifiers: {
+    id: number;
+    name: string;
+    price: number;
+  }[];
+  customizations: {
+    id: number;
+    name: string;
+    options: {
+      id: number;
+      name: string;
+      price: number;
+    }[];
+  }[];
+  discount?: {
+    id: number;
+    name: string;
+    value: number;
+    endDate: string;
+  } | null;
+}
+
+export interface ApiDeal {
+  dealId: number;
+  name: string;
+  description: string;
+  price: number;
+  picture: string;
+  dealEndDate: string;
+  discount?: {
+    id: number;
+    name: string;
+    value: number;
+    endDate: string;
+  } | null;
+  menuItems: {
+    menuItemId: number;
+    name: string;
+  }[];
+  subMenuItems: {
+    subMenuItemId: number;
+    name: string;
+    quantity: number;
+  }[];
+}
+
+export interface ApiSubMenuItem {
+  subMenuItemId: number;
+  name: string;
+  price: number;
+  picture: string;
+}
+
+export interface ApiMenuResponse {
+  menuItems: ApiMenuItem[];
+  deals: ApiDeal[];
+  subMenuItems: ApiSubMenuItem[];
+  recommendedForYou: ApiMenuItem[];
+}
+
 export interface Order {
   id: string;
   tableNumber: number;

@@ -69,14 +69,13 @@ export default function DeliveryPage() {
 
   // Handle branch selection for delivery
   const handleSelectBranch = (branch: Branch) => {
+    const { setSelectedBranch } = useCartStore.getState();
     setServiceType('delivery');
+    setSelectedBranch(branch);
     toast({
       title: "Restaurant Selected",
       description: `Selected ${branch.branchName} for delivery. Redirecting to menu...`,
     });
-    
-    // Store selected branch data in cart store if needed
-    console.log('Selected branch for delivery:', branch);
     
     // Navigate to menu page
     setLocation('/restaurant-menu');
