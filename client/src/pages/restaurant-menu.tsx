@@ -66,7 +66,7 @@ export default function RestaurantMenuPage() {
 
   const branchId = getBranchId();
 
-  const { data: menuData, isLoading, refetch } = useQuery({
+  const { data: menuData, isLoading } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
@@ -74,15 +74,6 @@ export default function RestaurantMenuPage() {
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
   });
-
-  // Refresh data when page is visited
-  useEffect(() => {
-    if (branchId) {
-      // Invalidate and refetch the query when branch changes or page loads
-      queryClient.invalidateQueries({ queryKey: [`/api/customer-search/branch/${branchId}`] });
-      refetch();
-    }
-  }, [branchId, queryClient, refetch]);
 
   const apiMenuData = menuData as ApiMenuResponse;
 
