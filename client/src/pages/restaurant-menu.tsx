@@ -4,6 +4,7 @@ import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,14 +41,48 @@ export default function RestaurantMenuPage() {
   const [selectedVariations, setSelectedVariations] = useState<{[key: number]: number}>({});
   const itemsPerPage = 8;
 
-  // Get branch ID from selected restaurant/branch or default to 1 for QR
-  const branchId = selectedBranch?.branchId || 1;
+  const queryClient = useQueryClient();
 
-  const { data: menuData, isLoading } = useQuery({
+  // Get branch ID dynamically - can come from:
+  // 1. Selected branch (from takeaway/delivery flow)
+  // 2. URL parameters (for direct access)
+  // 3. Default fallback (for QR code access)
+  const getBranchId = () => {
+    // Check if branch is selected from the service flow
+    if (selectedBranch?.branchId) {
+      return selectedBranch.branchId;
+    }
+    
+    // Check URL parameters for branch ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlBranchId = urlParams.get('branchId');
+    if (urlBranchId) {
+      return parseInt(urlBranchId, 10);
+    }
+    
+    // Default fallback
+    return 1;
+  };
+
+  const branchId = getBranchId();
+
+  const { data: menuData, isLoading, refetch } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
+    staleTime: 0, // Always consider data stale
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
+
+  // Refresh data when page is visited
+  useEffect(() => {
+    if (branchId) {
+      // Invalidate and refetch the query when branch changes or page loads
+      queryClient.invalidateQueries({ queryKey: [`/api/customer-search/branch/${branchId}`] });
+      refetch();
+    }
+  }, [branchId, queryClient, refetch]);
 
   const apiMenuData = menuData as ApiMenuResponse;
 
