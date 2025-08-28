@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { mockStorage } from "./mock-data";
+import { API_CONFIG } from "./config";
 
 // Mock API simulation for frontend-only operation
 export async function apiRequest(
@@ -90,7 +91,7 @@ export const getQueryFn: <T>(options: {
       // Handle external API calls (customer-search)
       if (url.includes('/api/customer-search/branch/')) {
         const branchId = url.split('/').pop();
-        const externalUrl = `https://5dtrtpzg-7261.inc1.devtunnels.ms/api/customer-search/branch/${branchId}`;
+        const externalUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CUSTOMER_SEARCH}/${branchId}`;
         
         res = await fetch(externalUrl, {
           method: 'GET',

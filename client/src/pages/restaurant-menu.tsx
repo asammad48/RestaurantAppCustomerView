@@ -22,6 +22,7 @@ import ReviewModal from "@/components/modals/review-modal";
 import OrderConfirmationModal from "@/components/modals/order-confirmation-modal";
 import ThemeSwitcher from "@/components/theme-switcher";
 import FoodCard from "@/components/food-card";
+import { getImageUrl } from "@/lib/config";
 
 export default function RestaurantMenuPage() {
   const { 
@@ -218,7 +219,7 @@ export default function RestaurantMenuPage() {
         <CardContent className="p-0">
           <div className="relative">
             <img
-              src={deal.picture || 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200'}
+              src={getImageUrl(deal.picture)}
               alt={deal.name}
               className="w-full h-48 object-cover"
             />

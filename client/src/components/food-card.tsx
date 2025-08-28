@@ -3,6 +3,7 @@ import { MenuItem, ApiMenuItem } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store";
+import { getImageUrl } from "@/lib/config";
 
 interface FoodCardProps {
   item: MenuItem | ApiMenuItem;
@@ -29,7 +30,7 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
 
   const getImage = () => {
     if (isApiMenuItem(item)) {
-      return item.picture || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200';
+      return getImageUrl(item.picture);
     }
     return (item as MenuItem).image;
   };
