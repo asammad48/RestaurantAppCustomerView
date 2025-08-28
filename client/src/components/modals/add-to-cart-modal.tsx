@@ -150,17 +150,17 @@ export default function AddToCartModal() {
   const renderDealContent = (deal: ApiDeal) => {
     return (
       <div className="space-y-4">
-        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <h3 className="font-semibold text-lg text-orange-900 mb-3">Deal Includes:</h3>
+        <div className="configurable-secondary p-4 rounded-lg border configurable-border">
+          <h3 className="font-semibold text-lg configurable-text-primary mb-3">Deal Includes:</h3>
           
           {/* Menu Items */}
           {deal.menuItems && deal.menuItems.length > 0 && (
             <div className="mb-4">
-              <h4 className="font-medium text-orange-800 mb-2">Main Items:</h4>
+              <h4 className="font-medium configurable-text-primary mb-2">Main Items:</h4>
               <ul className="space-y-1">
                 {deal.menuItems.map((item) => (
-                  <li key={item.menuItemId} className="flex items-center text-sm text-orange-700">
-                    <span className="w-2 h-2 bg-orange-400 rounded-full mr-2"></span>
+                  <li key={item.menuItemId} className="flex items-center text-sm configurable-text-secondary">
+                    <span className="w-2 h-2 configurable-primary rounded-full mr-2"></span>
                     {item.name}
                   </li>
                 ))}
@@ -171,11 +171,11 @@ export default function AddToCartModal() {
           {/* Sub Menu Items */}
           {deal.subMenuItems && deal.subMenuItems.length > 0 && (
             <div>
-              <h4 className="font-medium text-orange-800 mb-2">Included Items:</h4>
+              <h4 className="font-medium configurable-text-primary mb-2">Included Items:</h4>
               <ul className="space-y-1">
                 {deal.subMenuItems.map((item) => (
-                  <li key={item.subMenuItemId} className="flex items-center text-sm text-orange-700">
-                    <span className="w-2 h-2 bg-orange-400 rounded-full mr-2"></span>
+                  <li key={item.subMenuItemId} className="flex items-center text-sm configurable-text-secondary">
+                    <span className="w-2 h-2 configurable-primary rounded-full mr-2"></span>
                     {item.name} (Qty: {item.quantity})
                   </li>
                 ))}
@@ -183,11 +183,13 @@ export default function AddToCartModal() {
             </div>
           )}
           
-          {/* Deal End Date */}
-          <div className="mt-3 pt-3 border-t border-orange-200">
-            <p className="text-xs text-orange-600">
-              Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}
-            </p>
+          {/* Deal End Date with shading */}
+          <div className="mt-3 pt-3 border-t configurable-border">
+            <div className="bg-gray-100 p-2 rounded">
+              <p className="text-xs configurable-text-primary font-medium">
+                Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}
+              </p>
+            </div>
           </div>
         </div>
       </div>

@@ -33,11 +33,21 @@ export default function Home() {
   });
   
 
+  // Extract unique categories from menu items
+  const uniqueCategories = Array.from(new Set(
+    menuItems.map(item => {
+      // Handle both old and new API data structures
+      const category = 'categoryName' in item ? (item as any).categoryName : (item as any).category;
+      return category as string;
+    }).filter(Boolean)
+  )).sort() as string[];
+
   const filteredItems = menuItems.filter((item) => {
+    const itemCategory = 'categoryName' in item ? (item as any).categoryName : (item as any).category;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || 
-                           item.category.toLowerCase() === selectedCategory.toLowerCase();
+                           (itemCategory as string).toLowerCase() === selectedCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -98,9 +108,9 @@ export default function Home() {
         {recommendedItems.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold configurable-text-primary mb-6">Recommended For You</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="space-y-4">
               {recommendedItems.slice(0, 4).map((item) => (
-                <FoodCard key={item.id} item={item} variant="grid" />
+                <FoodCard key={item.id} item={item} variant="list" />
               ))}
             </div>
           </section>
@@ -116,11 +126,11 @@ export default function Home() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="pizza">Pizza</SelectItem>
-                  <SelectItem value="pasta">Pasta</SelectItem>
-                  <SelectItem value="burgers">Burgers</SelectItem>
-                  <SelectItem value="salads">Salads</SelectItem>
-                  <SelectItem value="deals">Deals</SelectItem>
+                  {uniqueCategories.map((category) => (
+                    <SelectItem key={category} value={category.toLowerCase()}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

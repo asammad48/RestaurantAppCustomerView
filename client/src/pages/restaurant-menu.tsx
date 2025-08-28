@@ -24,6 +24,7 @@ import OrderConfirmationModal from "@/components/modals/order-confirmation-modal
 import ThemeSwitcher from "@/components/theme-switcher";
 import FoodCard from "@/components/food-card";
 import { getImageUrl } from "@/lib/config";
+import { applyBranchPrimaryColor } from "@/lib/colors";
 
 export default function RestaurantMenuPage() {
   const { 
@@ -83,6 +84,13 @@ export default function RestaurantMenuPage() {
       setLocation('/');
     }
   }, [selectedRestaurant, selectedBranch, serviceType, setLocation]);
+
+  // Apply branch primary color when branch is selected
+  useEffect(() => {
+    if (selectedBranch?.primaryColor) {
+      applyBranchPrimaryColor(selectedBranch.primaryColor);
+    }
+  }, [selectedBranch?.primaryColor]);
 
   // Get unique categories from menu items
   const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
@@ -145,10 +153,7 @@ export default function RestaurantMenuPage() {
           </div>
           <div className="flex items-start">
             <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 configurable-primary-text" />
-            <div>
-              <div className="font-medium text-gray-900">Address:</div>
-              <div className="text-gray-600">{selectedBranch.branchAddress}</div>
-            </div>
+            <div className="text-gray-600">{selectedBranch.branchAddress}</div>
           </div>
           {serviceType === 'delivery' && (
             <div className="flex items-center">
@@ -188,10 +193,7 @@ export default function RestaurantMenuPage() {
               </div>
               <div className="flex items-start">
                 <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 configurable-primary-text" />
-                <div>
-                  <div className="font-medium text-gray-900">Pickup Address:</div>
-                  <div className="text-gray-600">{selectedRestaurant.address}</div>
-                </div>
+                <div className="text-gray-600">{selectedRestaurant.address}</div>
               </div>
             </div>
           );
@@ -326,35 +328,31 @@ export default function RestaurantMenuPage() {
           <div className="absolute inset-0 configurable-primary/70"></div>
         </div>
         
-        {/* Service Type Indicator */}
-        <div className="absolute bottom-0 left-0 right-0 configurable-primary text-white py-3">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-            {serviceType === 'delivery' && (
-              <>
-                <DollarSign className="mr-3" size={20} />
-                <span className="text-lg font-medium">Delivery Service - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
-              </>
-            )}
-            {serviceType === 'takeaway' && (
-              <>
-                <Clock className="mr-3" size={20} />
-                <span className="text-lg font-medium">Takeaway Order - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
-              </>
-            )}
-            {serviceType === 'qr' && (
-              <>
-                <MapPin className="mr-3" size={20} />
-                <span className="text-lg font-medium">Menu - {selectedBranch?.branchName || 'Restaurant'}</span>
-              </>
-            )}
-            {(serviceType === 'dine-in' || !serviceType) && (
-              <>
-                <MapPin className="mr-3" size={20} />
-                <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
-              </>
-            )}
+        {/* Service Type Indicator - Hidden for delivery */}
+        {serviceType !== 'delivery' && (
+          <div className="absolute bottom-0 left-0 right-0 configurable-primary text-white py-3">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+              {serviceType === 'takeaway' && (
+                <>
+                  <Clock className="mr-3" size={20} />
+                  <span className="text-lg font-medium">Takeaway Order - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
+                </>
+              )}
+              {serviceType === 'qr' && (
+                <>
+                  <MapPin className="mr-3" size={20} />
+                  <span className="text-lg font-medium">Menu - {selectedBranch?.branchName || 'Restaurant'}</span>
+                </>
+              )}
+              {(serviceType === 'dine-in' || !serviceType) && (
+                <>
+                  <MapPin className="mr-3" size={20} />
+                  <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -378,9 +376,9 @@ export default function RestaurantMenuPage() {
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row gap-6">
                 <img
-                  src={selectedBranch?.branchPicture || selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
+                  src={selectedBranch?.branchPicture ? getImageUrl(selectedBranch.branchPicture) : selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
                   alt={selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant'}
-                  className="w-full md:w-48 h-32 object-cover rounded-lg"
+                  className="w-full md:w-48 h-32 object-cover rounded-lg flex-shrink-0"
                 />
                 
                 <div className="flex-1">

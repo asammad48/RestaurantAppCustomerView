@@ -113,3 +113,42 @@ export const changeTheme = async (theme: string) => {
   const colors = await getColors(theme);
   applyColors(colors);
 };
+
+// Function to apply branch specific primary color
+export const applyBranchPrimaryColor = (primaryColor?: string) => {
+  if (!primaryColor) return;
+  
+  const root = document.documentElement;
+  
+  // Generate hover color (slightly darker)
+  const primaryHover = adjustColorBrightness(primaryColor, -10);
+  
+  // Apply branch primary color
+  root.style.setProperty('--color-primary', primaryColor);
+  root.style.setProperty('--color-primary-hover', primaryHover);
+  root.style.setProperty('--ring', primaryColor);
+};
+
+// Helper function to adjust color brightness
+function adjustColorBrightness(hex: string, percent: number): string {
+  // Remove # if present
+  hex = hex.replace('#', '');
+  
+  // Parse r, g, b values
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Calculate new values
+  const newR = Math.min(255, Math.max(0, r + (r * percent / 100)));
+  const newG = Math.min(255, Math.max(0, g + (g * percent / 100)));
+  const newB = Math.min(255, Math.max(0, b + (b * percent / 100)));
+  
+  // Convert back to hex
+  const toHex = (n: number) => {
+    const hex = Math.round(n).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  
+  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
+}

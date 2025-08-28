@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store";
 import { Link, useLocation } from "wouter";
+import { getImageUrl } from "@/lib/config";
 
 export default function Navbar() {
-  const { setCartOpen, items } = useCartStore();
+  const { setCartOpen, items, selectedBranch } = useCartStore();
   const cartCount = items.reduce((count, item) => count + item.quantity, 0);
   const [location] = useLocation();
 
@@ -15,10 +16,20 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <Link href="/">
             <div className="flex items-center space-x-3 cursor-pointer">
-              <div className="w-10 h-10 configurable-primary rounded-lg flex items-center justify-center">
-                <Utensils className="text-white" size={20} />
-              </div>
-              <span className="text-xl font-bold configurable-text-primary">LA PIZZA POPOLARE</span>
+              {selectedBranch?.branchLogo ? (
+                <img 
+                  src={getImageUrl(selectedBranch.branchLogo)} 
+                  alt="Branch Logo" 
+                  className="w-10 h-10 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 configurable-primary rounded-lg flex items-center justify-center">
+                  <Utensils className="text-white" size={20} />
+                </div>
+              )}
+              <span className="text-xl font-bold configurable-text-primary">
+                {selectedBranch?.branchName || "LA PIZZA POPOLARE"}
+              </span>
             </div>
           </Link>
           
