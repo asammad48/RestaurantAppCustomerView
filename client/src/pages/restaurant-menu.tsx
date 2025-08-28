@@ -250,7 +250,7 @@ export default function RestaurantMenuPage() {
               className="w-full h-48 object-cover"
             />
             <div className="absolute top-2 left-2">
-              <Badge className="bg-orange-500 text-white">
+              <Badge className="configurable-primary text-white">
                 DEAL
               </Badge>
             </div>
@@ -268,8 +268,8 @@ export default function RestaurantMenuPage() {
             <p className="text-gray-600 text-sm mb-3">{deal.description}</p>
 
             {/* Deal End Date */}
-            <div className="mb-3 p-2 bg-orange-50 rounded-md border border-orange-200">
-              <div className="flex items-center text-sm text-orange-800">
+            <div className="mb-3 p-2 configurable-surface rounded-md border configurable-border">
+              <div className="flex items-center text-sm configurable-text-primary">
                 <Calendar className="w-3 h-3 mr-1" />
                 <span>Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}</span>
               </div>
@@ -280,7 +280,7 @@ export default function RestaurantMenuPage() {
               <div>
                 {hasDiscount ? (
                   <div className="flex items-center space-x-2">
-                    <span className="text-lg font-bold configurable-primary-text">
+                    <span className="text-lg font-bold configurable-text-primary">
                       PKR {formatPrice(discountedPrice)}
                     </span>
                     <span className="text-sm text-gray-500 line-through">
@@ -288,7 +288,7 @@ export default function RestaurantMenuPage() {
                     </span>
                   </div>
                 ) : (
-                  <span className="text-lg font-bold configurable-primary-text">
+                  <span className="text-lg font-bold configurable-text-primary">
                     PKR {formatPrice(deal.price)}
                   </span>
                 )}
