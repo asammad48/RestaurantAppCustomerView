@@ -85,7 +85,25 @@ export const getQueryFn: <T>(options: {
     const url = queryKey.join("/") as string;
     
     try {
-      const res = await apiRequest('GET', url);
+      let res: Response;
+      
+      // Handle external API calls (customer-search)
+      if (url.includes('/api/customer-search/branch/')) {
+        const branchId = url.split('/').pop();
+        const externalUrl = `https://5dtrtpzg-7261.inc1.devtunnels.ms/api/customer-search/branch/${branchId}`;
+        
+        res = await fetch(externalUrl, {
+          method: 'GET',
+          headers: {
+            'accept': 'text/plain',
+            'Content-Type': 'application/json'
+          }
+        });
+      } else {
+        // Use mock API for other endpoints
+        res = await apiRequest('GET', url);
+      }
+      
       const data = await res.json();
       
       if (!res.ok) {
