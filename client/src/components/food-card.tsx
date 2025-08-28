@@ -1,26 +1,71 @@
 import { useState } from "react";
-import { MenuItem } from "@/lib/mock-data";
+import { MenuItem, ApiMenuItem } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store";
 
 interface FoodCardProps {
-  item: MenuItem;
+  item: MenuItem | ApiMenuItem;
   variant?: "grid" | "list";
+  isRecommended?: boolean;
 }
 
-export default function FoodCard({ item, variant = "grid" }: FoodCardProps) {
+export default function FoodCard({ item, variant = "grid", isRecommended = false }: FoodCardProps) {
   const { addItem, setAddToCartModalOpen, setLastAddedItem } = useCartStore();
   const [selectedSize, setSelectedSize] = useState<"small" | "medium" | "large">("medium");
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
 
-  const sizes = [
-    { name: "small", label: "Small", price: parseFloat(item.price) * 0.8 },
-    { name: "medium", label: "Medium", price: parseFloat(item.price) },
-    { name: "large", label: "Large", price: parseFloat(item.price) * 1.3 },
-    { name: "half", label: "Half", price: parseFloat(item.price) * 0.6 },
-    { name: "full", label: "Full", price: parseFloat(item.price) * 1.2 },
-  ];
+  // Helper functions to work with both old and new API data
+  const isApiMenuItem = (item: any): item is ApiMenuItem => {
+    return 'menuItemId' in item;
+  };
+
+  const getPrice = () => {
+    if (isApiMenuItem(item)) {
+      return item.variations && item.variations.length > 0 ? item.variations[0].price : 0;
+    }
+    return parseFloat(item.price as string);
+  };
+
+  const getImage = () => {
+    if (isApiMenuItem(item)) {
+      return item.picture || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200';
+    }
+    return (item as MenuItem).image;
+  };
+
+  const getCategory = () => {
+    if (isApiMenuItem(item)) {
+      return item.categoryName;
+    }
+    return (item as MenuItem).category;
+  };
+
+  const getDiscount = () => {
+    if (isApiMenuItem(item)) {
+      return item.discount?.value || 0;
+    }
+    return (item as MenuItem).discount || 0;
+  };
+
+  const getVariations = () => {
+    if (isApiMenuItem(item) && item.variations) {
+      return item.variations.map(v => ({
+        name: v.id.toString(),
+        label: v.name,
+        price: v.price
+      }));
+    }
+    // Default variations for old items
+    const basePrice = getPrice();
+    return [
+      { name: "small", label: "Small", price: basePrice * 0.8 },
+      { name: "medium", label: "Medium", price: basePrice },
+      { name: "large", label: "Large", price: basePrice * 1.3 },
+    ];
+  };
+
+  const sizes = getVariations();
 
   const toppings = [
     { name: "cheese", label: "Extra Cheese", price: 50 },
@@ -28,9 +73,9 @@ export default function FoodCard({ item, variant = "grid" }: FoodCardProps) {
     { name: "mushrooms", label: "Mushrooms", price: 40 },
   ];
 
-  const currentPrice = sizes.find(size => size.name === selectedSize)?.price || parseFloat(item.price);
+  const currentPrice = sizes.find(size => size.name === selectedSize)?.price || getPrice();
   const totalPrice = currentPrice;
-  const discountPercentage = item.discount || 0;
+  const discountPercentage = getDiscount();
   const discountedPrice = discountPercentage > 0 ? totalPrice * (1 - discountPercentage / 100) : totalPrice;
   const originalPrice = totalPrice;
 
@@ -59,10 +104,15 @@ export default function FoodCard({ item, variant = "grid" }: FoodCardProps) {
     return (
       <div className="food-card bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row gap-4">
         <div className="relative w-full sm:w-32 h-32 flex-shrink-0">
-          <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+          <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+          {isRecommended && (
+            <Badge className="absolute top-2 right-2 configurable-recommended text-white text-xs">
+              Recommended
+            </Badge>
+          )}
           {discountPercentage > 0 && (
             <Badge className="absolute top-2 left-2 configurable-deal text-white">
-              {discountPercentage}% off
+              {discountPercentage}% OFF
             </Badge>
           )}
         </div>
@@ -114,10 +164,15 @@ export default function FoodCard({ item, variant = "grid" }: FoodCardProps) {
   return (
     <div className="food-card bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="relative">
-        <img src={item.image} alt={item.name} className="w-full h-48 object-cover" />
+        <img src={getImage()} alt={item.name} className="w-full h-48 object-cover" />
+        {isRecommended && (
+          <Badge className="absolute top-3 right-3 configurable-recommended text-white text-xs">
+            Recommended
+          </Badge>
+        )}
         {discountPercentage > 0 && (
           <Badge className="absolute top-3 left-3 configurable-deal text-white">
-            {discountPercentage}% off
+            {discountPercentage}% OFF
           </Badge>
         )}
       </div>

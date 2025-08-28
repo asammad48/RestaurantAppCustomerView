@@ -207,128 +207,6 @@ export default function RestaurantMenuPage() {
     setAddToCartModalOpen(true);
   };
 
-  // Render menu item card
-  const renderMenuItem = (item: ApiMenuItem, isRecommended: boolean = false) => {
-    const selectedPrice = getSelectedVariationPrice(item);
-    const discountedPrice = getDiscountedPrice(selectedPrice, item.discount);
-    const hasDiscount = item.discount && item.discount.value > 0;
-
-    return (
-      <Card key={item.menuItemId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-        <CardContent className="p-0">
-          <div className="flex flex-col md:flex-row">
-            {/* Image */}
-            <div className="relative md:w-48 h-48 md:h-auto">
-              <img
-                src={item.picture || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200'}
-                alt={item.name}
-                className="w-full h-full object-cover"
-              />
-              {hasDiscount && (
-                <div className="absolute top-2 left-2">
-                  <Badge className="configurable-deal text-white">
-                    {item.discount!.value}% OFF
-                  </Badge>
-                </div>
-              )}
-              {isRecommended && (
-                <div className="absolute top-2 right-2">
-                  <Badge className="configurable-recommended text-white">
-                    <Star className="w-3 h-3 mr-1 fill-current" />
-                    Recommended
-                  </Badge>
-                </div>
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900 mb-1">{item.name}</h3>
-                  <Badge variant="outline" className="text-xs mb-2">
-                    {item.categoryName}
-                  </Badge>
-                </div>
-              </div>
-
-              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                {item.description}
-              </p>
-
-              {/* Variations */}
-              {item.variations && item.variations.length > 0 && (
-                <div className="mb-3">
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">Size/Variation:</label>
-                  <Select 
-                    value={selectedVariations[item.menuItemId]?.toString() || item.variations[0]?.id.toString()}
-                    onValueChange={(value) => setSelectedVariations(prev => ({
-                      ...prev,
-                      [item.menuItemId]: parseInt(value)
-                    }))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {item.variations.map((variation) => (
-                        <SelectItem key={variation.id} value={variation.id.toString()}>
-                          {variation.name} - PKR {formatPrice(variation.price)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Discount Info */}
-              {hasDiscount && (
-                <div className="mb-3 p-2 bg-red-50 rounded-md border border-red-200">
-                  <div className="flex items-center text-sm text-red-800">
-                    <Tag className="w-3 h-3 mr-1" />
-                    <span className="font-medium">{item.discount!.name}</span>
-                  </div>
-                  <div className="flex items-center text-xs text-red-600">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    <span>Valid until: {new Date(item.discount!.endDate).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Price and Add to Cart */}
-              <div className="flex items-center justify-between">
-                <div>
-                  {hasDiscount ? (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg font-bold configurable-primary-text">
-                        PKR {formatPrice(discountedPrice)}
-                      </span>
-                      <span className="text-sm text-gray-500 line-through">
-                        PKR {formatPrice(selectedPrice)}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-lg font-bold configurable-primary-text">
-                      PKR {formatPrice(selectedPrice)}
-                    </span>
-                  )}
-                </div>
-                <Button
-                  onClick={() => handleAddToCart(item)}
-                  className="configurable-primary hover:configurable-primary-hover text-white"
-                  data-testid={`button-add-to-cart-${item.menuItemId}`}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add to Cart
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
   // Render deal card
   const renderDeal = (deal: ApiDeal) => {
     const discountedPrice = getDiscountedPrice(deal.price, deal.discount);
@@ -512,7 +390,14 @@ export default function RestaurantMenuPage() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold configurable-text-primary mb-6">Recommended For You</h2>
             <div className="space-y-4">
-              {apiMenuData.recommendedForYou.map((item) => renderMenuItem(item, true))}
+              {apiMenuData.recommendedForYou.map((item) => (
+                <FoodCard 
+                  key={item.menuItemId} 
+                  item={item} 
+                  variant="list" 
+                  isRecommended={true}
+                />
+              ))}
             </div>
           </section>
         )}
@@ -571,7 +456,13 @@ export default function RestaurantMenuPage() {
                 </Card>
               ))
             ) : (
-              paginatedItems.map((item: ApiMenuItem) => renderMenuItem(item))
+              paginatedItems.map((item: ApiMenuItem) => (
+                <FoodCard 
+                  key={item.menuItemId} 
+                  item={item} 
+                  variant="list"
+                />
+              ))
             )}
           </div>
           
