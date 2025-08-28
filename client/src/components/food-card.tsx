@@ -13,13 +13,36 @@ interface FoodCardProps {
 
 export default function FoodCard({ item, variant = "grid", isRecommended = false }: FoodCardProps) {
   const { addItem, setAddToCartModalOpen, setLastAddedItem } = useCartStore();
-  const [selectedSize, setSelectedSize] = useState<"small" | "medium" | "large">("medium");
-  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
-
+  
   // Helper functions to work with both old and new API data
   const isApiMenuItem = (item: any): item is ApiMenuItem => {
     return 'menuItemId' in item;
   };
+
+  const getVariations = () => {
+    if (isApiMenuItem(item) && item.variations) {
+      return item.variations.map(v => ({
+        name: v.id.toString(),
+        label: v.name,
+        price: v.price
+      }));
+    }
+    // Default variations for old items
+    const basePrice = isApiMenuItem(item) 
+      ? (item.variations && item.variations.length > 0 ? item.variations[0].price : 0)
+      : parseFloat(item.price as string);
+    return [
+      { name: "small", label: "Small", price: basePrice * 0.8 },
+      { name: "medium", label: "Medium", price: basePrice },
+      { name: "large", label: "Large", price: basePrice * 1.3 },
+    ];
+  };
+
+  const sizes = getVariations();
+  const defaultSize = sizes.length > 0 ? sizes[0].name : "medium";
+  
+  const [selectedSize, setSelectedSize] = useState<string>(defaultSize);
+  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
 
   const getPrice = () => {
     if (isApiMenuItem(item)) {
@@ -48,25 +71,6 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
     }
     return (item as MenuItem).discount || 0;
   };
-
-  const getVariations = () => {
-    if (isApiMenuItem(item) && item.variations) {
-      return item.variations.map(v => ({
-        name: v.id.toString(),
-        label: v.name,
-        price: v.price
-      }));
-    }
-    // Default variations for old items
-    const basePrice = getPrice();
-    return [
-      { name: "small", label: "Small", price: basePrice * 0.8 },
-      { name: "medium", label: "Medium", price: basePrice },
-      { name: "large", label: "Large", price: basePrice * 1.3 },
-    ];
-  };
-
-  const sizes = getVariations();
 
   const toppings = [
     { name: "cheese", label: "Extra Cheese", price: 50 },
@@ -128,7 +132,7 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
               {sizes.map((size) => (
                 <button
                   key={size.name}
-                  onClick={() => setSelectedSize(size.name as "small" | "medium" | "large")}
+                  onClick={() => setSelectedSize(size.name)}
                   className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
                     selectedSize === size.name
                       ? 'configurable-primary text-white configurable-border'
@@ -188,7 +192,7 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
             {sizes.map((size) => (
               <button
                 key={size.name}
-                onClick={() => setSelectedSize(size.name as "small" | "medium" | "large")}
+                onClick={() => setSelectedSize(size.name)}
                 className={`px-2 py-1 rounded-full text-xs font-medium border transition-colors ${
                   selectedSize === size.name
                     ? 'configurable-primary text-white configurable-border'
