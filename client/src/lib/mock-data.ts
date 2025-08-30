@@ -63,6 +63,11 @@ export interface ApiDeal {
   menuItems: {
     menuItemId: number;
     name: string;
+    variantsDetails: {
+      menuItemVariantId: number;
+      name: string;
+      quantity: number;
+    }[];
   }[];
   subMenuItems: {
     subMenuItemId: number;
