@@ -172,6 +172,12 @@
   .configurable-primary-hover {
     background-color: var(--color-primary-hover);
   }
+
+  /* Transparent primary background */
+  .configurable-primary-bg-alpha-10 {
+    background-color: rgba(22, 163, 74, 0.1);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+  }
   
   .modal-overlay {
     background-color: rgba(0, 0, 0, 0.5);

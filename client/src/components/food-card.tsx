@@ -150,11 +150,11 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
             <div className="flex flex-col">
               {discountPercentage > 0 ? (
                 <>
-                  <span className="text-xl font-bold configurable-recommended-text">Rs. {discountedPrice.toFixed(2)}</span>
+                  <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {discountedPrice.toFixed(2)}</span>
                   <span className="text-sm text-gray-400 line-through">Rs. {originalPrice.toFixed(2)}</span>
                 </>
               ) : (
-                <span className="text-xl font-bold configurable-text-primary">Rs. {totalPrice.toFixed(2)}</span>
+                <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {totalPrice.toFixed(2)}</span>
               )}
             </div>
             <Button onClick={handleAddToCart} className="configurable-primary text-white hover:configurable-primary-hover">
@@ -210,11 +210,11 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
           <div className="flex flex-col">
             {discountPercentage > 0 ? (
               <>
-                <span className="text-lg font-bold configurable-recommended-text">Rs. {discountedPrice.toFixed(2)}</span>
+                <span className="text-lg font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {discountedPrice.toFixed(2)}</span>
                 <span className="text-xs text-gray-400 line-through">Rs. {originalPrice.toFixed(2)}</span>
               </>
             ) : (
-              <span className="text-lg font-bold configurable-text-primary">Rs. {totalPrice.toFixed(2)}</span>
+              <span className="text-lg font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {totalPrice.toFixed(2)}</span>
             )}
           </div>
           <Button 

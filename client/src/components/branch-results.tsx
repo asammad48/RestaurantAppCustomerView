@@ -116,7 +116,7 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
                   size="sm" 
                   className="w-full text-white hover:opacity-90"
                   disabled={branch.isBranchClosed}
-                  style={{ backgroundColor: branch.primaryColor }}
+                  style={{ backgroundColor: '#15803d' }}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectBranch?.(branch);
