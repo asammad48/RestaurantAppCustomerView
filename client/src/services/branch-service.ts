@@ -2,7 +2,12 @@ import { apiClient, ApiResponse } from '@/lib/api-client';
 import { BranchSearchRequest, BranchSearchResponse } from '@/types/branch';
 
 export class BranchService {
-  // Search branches based on location
+  // Search takeaway branches based on location
+  static async searchTakeawayBranches(params: BranchSearchRequest): Promise<ApiResponse<BranchSearchResponse>> {
+    return apiClient.post<BranchSearchResponse>('/api/customer-search/search-takeaway-branches', params);
+  }
+
+  // Search branches based on location (general search)
   static async searchBranches(params: BranchSearchRequest): Promise<ApiResponse<BranchSearchResponse>> {
     return apiClient.post<BranchSearchResponse>('/api/customer-search/search-branches', params);
   }

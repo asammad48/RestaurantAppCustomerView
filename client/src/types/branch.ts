@@ -4,14 +4,12 @@ export interface BranchSearchRequest {
   longitude: number;
   address: string;
   branchName: string;
+  maxDistance: number;
 }
 
 export interface Branch {
   branchName: string;
   rating: number;
-  deliveryTime: number;
-  deliveryFee: number;
-  maxDistanceForDelivery: number;
   branchPicture: string;
   branchAddress: string;
   branchId: number;
@@ -21,6 +19,7 @@ export interface Branch {
   primaryColor: string;
   branchLogo: string;
   banner: string;
+  distanceFromMyLocation: number;
 }
 
 export type BranchSearchResponse = Branch[];

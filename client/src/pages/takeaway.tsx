@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { BranchService } from "@/services/branch-service";
+import { Branch } from "@/types/branch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Star, Clock, MapPin, Search, Navigation, Filter, Map } from "lucide-react";
 import { useCartStore } from "@/lib/store";
-import { Restaurant } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -22,27 +22,68 @@ export default function TakeawayPage() {
   const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branchesError, setBranchesError] = useState<string | null>(null);
+  const [maxDistance, setMaxDistance] = useState(30);
   const { setSelectedRestaurant, setServiceType } = useCartStore();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  const { data: restaurants, isLoading } = useQuery({
-    queryKey: ['/api/restaurants'],
-    queryFn: getQueryFn({ on401: "throw" }),
+  // Search for takeaway branches
+  const searchTakeawayBranches = async (latitude: number, longitude: number) => {
+    setBranchesLoading(true);
+    setBranchesError(null);
+    
+    try {
+      const response = await BranchService.searchTakeawayBranches({
+        latitude,
+        longitude,
+        address: userLocation || "",
+        branchName: searchQuery || "",
+        maxDistance
+      });
+
+      setBranches(response.data);
+      
+      toast({
+        title: "Takeaway Branches Found",
+        description: `Found ${response.data.length} branches available for takeaway.`,
+      });
+    } catch (error: any) {
+      console.error('Takeaway branch search failed:', error);
+      setBranchesError(error.message || 'Failed to find takeaway branches');
+      
+      toast({
+        variant: "destructive",
+        title: "Search Failed",
+        description: "Unable to find takeaway branches. Please try again.",
+      });
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  // Get unique categories from branches
+  const categories = ["All"];
+
+  const filteredBranches = branches.filter((branch: Branch) => {
+    const matchesSearch = branch.branchName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
-  // Get unique categories from restaurants
-  const cuisineTypes = (restaurants as Restaurant[])?.map(r => r.cuisine) || [];
-  const uniqueCuisines = cuisineTypes.filter((value, index, self) => self.indexOf(value) === index);
-  const categories = ["All", ...uniqueCuisines];
-
-  const filteredRestaurants = (restaurants as Restaurant[])?.filter((restaurant: Restaurant) => {
-    const matchesSearch = restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         restaurant.cuisine.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || restaurant.cuisine === selectedCategory;
-    return matchesSearch && matchesCategory;
-  }) || [];
-
-  const handleSelectRestaurant = (restaurant: Restaurant) => {
+  const handleSelectBranch = (branch: Branch) => {
+    // Convert branch to restaurant format for compatibility
+    const restaurant = {
+      id: branch.branchId,
+      name: branch.branchName,
+      image: BranchService.getBranchImageUrl(branch.branchPicture),
+      rating: branch.rating,
+      cuisine: 'Restaurant',
+      deliveryTime: '30-45 mins',
+      deliveryFee: 0,
+      isOpen: !branch.isBranchClosed
+    };
     setSelectedRestaurant(restaurant);
     setServiceType('takeaway');
     setLocation('/restaurant-menu');
@@ -70,9 +111,13 @@ export default function TakeawayPage() {
               setUserLocation(address);
             }
             setUserCoords({ lat, lng });
+            // Auto-search when location is set
+            searchTakeawayBranches(lat, lng);
           } catch (error) {
             console.error('Error getting address:', error);
             setUserCoords({ lat, lng });
+            // Auto-search when location is set
+            searchTakeawayBranches(lat, lng);
           }
           
           setIsLoadingLocation(false);
@@ -100,6 +145,21 @@ export default function TakeawayPage() {
     setUserLocation(address);
     setUserCoords({ lat, lng });
     setShowMap(false);
+    // Auto-search when location is set
+    searchTakeawayBranches(lat, lng);
+  };
+
+  // Handle manual search
+  const handleManualSearch = () => {
+    if (userCoords) {
+      searchTakeawayBranches(userCoords.lat, userCoords.lng);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Location Required",
+        description: "Please set your location first to search for takeaway branches.",
+      });
+    }
   };
 
   return (
@@ -176,11 +236,34 @@ export default function TakeawayPage() {
                   <Search className="w-4 h-4 mr-1 configurable-primary-text" />
                   Search Restaurants
                 </label>
+                <div className="flex gap-2">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by restaurant name"
+                    data-testid="input-search-takeaway-restaurants"
+                  />
+                  <Button 
+                    onClick={handleManualSearch}
+                    disabled={!userCoords || branchesLoading}
+                    className="shrink-0"
+                  >
+                    {branchesLoading ? 'Searching...' : 'Search'}
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  Max Distance (km)
+                </label>
                 <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name or cuisine"
-                  data-testid="input-search-takeaway-restaurants"
+                  type="number"
+                  value={maxDistance}
+                  onChange={(e) => setMaxDistance(Number(e.target.value))}
+                  placeholder="30"
+                  min="1"
+                  max="100"
+                  data-testid="input-max-distance"
                 />
               </div>
             </div>
@@ -209,13 +292,15 @@ export default function TakeawayPage() {
             
             {/* Results count */}
             <div className="mt-4 text-sm text-gray-600">
-              {filteredRestaurants.length} restaurants found
-              {selectedCategory !== "All" && ` in ${selectedCategory}`}
+              {filteredBranches.length} takeaway branches found
+              {branchesError && (
+                <div className="text-red-600 mt-1">{branchesError}</div>
+              )}
             </div>
           </div>
 
-          {/* Restaurant List */}
-          {isLoading ? (
+          {/* Branch List */}
+          {branchesLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[1, 2, 3, 4].map((i) => (
                 <Card key={i} className="animate-pulse">
@@ -231,23 +316,23 @@ export default function TakeawayPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredRestaurants.map((restaurant: Restaurant) => (
+              {filteredBranches.map((branch: Branch) => (
                 <Card 
-                  key={restaurant.id} 
+                  key={branch.branchId} 
                   className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                    !restaurant.isOpen ? 'opacity-60' : ''
+                    branch.isBranchClosed ? 'opacity-60' : ''
                   }`}
-                  onClick={() => restaurant.isOpen && handleSelectRestaurant(restaurant)}
-                  data-testid={`takeaway-restaurant-card-${restaurant.id}`}
+                  onClick={() => !branch.isBranchClosed && handleSelectBranch(branch)}
+                  data-testid={`takeaway-branch-card-${branch.branchId}`}
                 >
                   <CardContent className="p-0">
                     <div className="relative">
                       <img
-                        src={restaurant.image}
-                        alt={restaurant.name}
+                        src={BranchService.getBranchImageUrl(branch.branchPicture)}
+                        alt={branch.branchName}
                         className="w-full h-48 object-cover rounded-t-lg"
                       />
-                      {!restaurant.isOpen && (
+                      {branch.isBranchClosed && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 rounded-t-lg flex items-center justify-center">
                           <Badge variant="destructive">Closed</Badge>
                         </div>
@@ -255,7 +340,7 @@ export default function TakeawayPage() {
                       <div className="absolute top-3 right-3">
                         <Badge className="bg-white text-black shadow-sm">
                           <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-                          {restaurant.rating}
+                          {branch.rating}
                         </Badge>
                       </div>
                       <div className="absolute top-3 left-3">
@@ -268,21 +353,21 @@ export default function TakeawayPage() {
                     <div className="p-4">
                       <div className="mb-2">
                         <h3 className="font-semibold text-gray-900 mb-1">
-                          {restaurant.name}
+                          {branch.branchName}
                         </h3>
                         <Badge variant="outline" className="text-xs">
-                          {restaurant.cuisine}
+                          {branch.distanceFromMyLocation.toFixed(1)} km away
                         </Badge>
                       </div>
 
                       <div className="space-y-1 text-xs text-gray-600 mb-3">
                         <div className="flex items-center">
                           <Clock className="w-3 h-3 mr-1 configurable-primary-text" />
-                          {restaurant.deliveryTime.replace('delivery', 'preparation')}
+                          {branch.branchOpenTime} - {branch.branchCloseTime}
                         </div>
                         <div className="flex items-center">
                           <MapPin className="w-3 h-3 mr-1 configurable-primary-text" />
-                          Pickup available
+                          {branch.branchAddress.substring(0, 30)}...
                         </div>
                       </div>
 
@@ -290,10 +375,10 @@ export default function TakeawayPage() {
                         <Button 
                           size="sm" 
                           className="w-full configurable-primary text-white hover:configurable-primary-hover"
-                          disabled={!restaurant.isOpen}
-                          data-testid={`button-takeaway-order-${restaurant.id}`}
+                          disabled={branch.isBranchClosed}
+                          data-testid={`button-takeaway-order-${branch.branchId}`}
                         >
-                          {restaurant.isOpen ? 'Order Now' : 'Closed'}
+                          {!branch.isBranchClosed ? 'Order Now' : 'Closed'}
                         </Button>
                       </div>
                     </div>
@@ -303,10 +388,13 @@ export default function TakeawayPage() {
             </div>
           )}
 
-          {filteredRestaurants.length === 0 && !isLoading && (
+          {filteredBranches.length === 0 && !branchesLoading && (
             <div className="text-center py-12">
               <p className="text-gray-500 text-lg">
-                No restaurants found matching your search.
+                {branches.length === 0 ? 
+                  "Set your location to find takeaway branches near you." :
+                  "No takeaway branches found matching your search."
+                }
               </p>
             </div>
           )}
