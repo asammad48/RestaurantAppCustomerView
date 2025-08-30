@@ -14,6 +14,7 @@ import { Table } from "@/lib/mock-data";
 import { TableService, TableLocation } from "@/services/table-service";
 import { BranchService } from "@/services/branch-service";
 import { applyBranchPrimaryColor } from "@/lib/colors";
+import { useCartStore } from "@/lib/store";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -37,6 +38,7 @@ export default function ReservationDetailPage() {
   const [branchPrimaryColor, setBranchPrimaryColor] = useState<string | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { selectedBranch } = useCartStore();
 
   // Parse URL parameters and fetch branch details
   useEffect(() => {
@@ -57,10 +59,12 @@ export default function ReservationDetailPage() {
 
   // Apply branch-specific theming when color is available
   useEffect(() => {
-    if (branchPrimaryColor) {
-      applyBranchPrimaryColor(branchPrimaryColor);
+    // First try selectedBranch from store, then fallback to fetched branch color
+    const primaryColor = selectedBranch?.branchPrimaryColor || branchPrimaryColor;
+    if (primaryColor) {
+      applyBranchPrimaryColor(primaryColor);
     }
-  }, [branchPrimaryColor]);
+  }, [selectedBranch, branchPrimaryColor]);
 
   // Fetch branch details for theming
   const fetchBranchDetails = async (branchId: number) => {

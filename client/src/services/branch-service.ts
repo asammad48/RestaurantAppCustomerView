@@ -31,4 +31,9 @@ export class BranchService {
   static getBannerUrl(bannerPath: string): string {
     return apiClient.getAssetUrl(bannerPath);
   }
+
+  // Get branch details by ID
+  static async getBranchDetails(branchId: number): Promise<ApiResponse<any>> {
+    return apiClient.get<any>(`/api/customer-search/branch/${branchId}`);
+  }
 }

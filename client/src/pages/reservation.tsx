@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
 import { Branch } from "@/types/branch";
 import { applyGreenTheme } from "@/lib/colors";
+import { useCartStore } from "@/lib/store";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -26,6 +27,7 @@ export default function ReservationPage() {
   const [maxDistance, setMaxDistance] = useState(3);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { setSelectedBranch } = useCartStore();
 
   // Apply green theme on page load
   useEffect(() => {
@@ -67,6 +69,9 @@ export default function ReservationPage() {
   };
 
   const handleBranchSelect = (branch: Branch) => {
+    // Store the selected branch in cart store for theming
+    setSelectedBranch(branch);
+    
     // Navigate to reservation detail page with selected branch
     setLocation(`/reservation-detail?branchId=${branch.branchId}&branchName=${encodeURIComponent(branch.branchName)}`);
   };
