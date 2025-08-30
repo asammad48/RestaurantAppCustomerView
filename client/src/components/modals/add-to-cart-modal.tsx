@@ -192,6 +192,24 @@ export default function AddToCartModal() {
             </div>
           </div>
         </div>
+
+        {/* Deal Variants/Customizations */}
+        <div>
+          <h3 className="font-bold text-lg mb-3">Deal Options</h3>
+          <div className="configurable-secondary p-3 rounded-lg border configurable-border">
+            <div className="flex justify-between items-center">
+              <span className="font-medium configurable-text-primary">Standard Deal</span>
+              <span className="text-sm font-bold">PKR {deal.price.toFixed(2)}</span>
+            </div>
+            {deal.discount && deal.discount.value > 0 && (
+              <div className="mt-2 p-2 bg-green-50 rounded">
+                <p className="text-xs text-green-700 font-medium">
+                  You save {deal.discount.value}% on this deal!
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   };

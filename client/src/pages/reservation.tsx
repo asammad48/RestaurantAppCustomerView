@@ -11,6 +11,7 @@ import { Calendar, Clock, Users, MapPin, Check, Search, Filter, Star, Navigation
 import { useToast } from "@/hooks/use-toast";
 import { Table } from "@/lib/mock-data";
 import { BranchService } from "@/services/branch-service";
+import { TableService, TableLocation } from "@/services/table-service";
 import { Branch } from "@/types/branch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/navbar";
@@ -36,6 +37,9 @@ export default function ReservationPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
+  const [tables, setTables] = useState<TableLocation[]>([]);
+  const [tablesLoading, setTablesLoading] = useState(false);
+  const [tablesError, setTablesError] = useState<string | null>(null);
   const [maxDistance, setMaxDistance] = useState(3);
   const [step, setStep] = useState<'restaurant' | 'table' | 'details' | 'confirmation'>('restaurant');
   const [reservationId, setReservationId] = useState<string | null>(null);
@@ -75,14 +79,32 @@ export default function ReservationPage() {
     }
   };
 
-  // Mock tables data - in real app this would come from API based on selected branch
-  const tables = [
-    { id: '1', number: 1, seats: 2, type: 'window', isAvailable: true },
-    { id: '2', number: 2, seats: 4, type: 'standard', isAvailable: true },
-    { id: '3', number: 3, seats: 6, type: 'private', isAvailable: false },
-    { id: '4', number: 4, seats: 8, type: 'outdoor', isAvailable: true },
-  ] as Table[];
-  const isLoadingTables = false;
+  // Fetch tables for selected branch
+  const fetchTablesForBranch = async (branchId: number) => {
+    setTablesLoading(true);
+    setTablesError(null);
+    
+    try {
+      const response = await TableService.getTableLocations(branchId);
+      setTables(response.data);
+      
+      toast({
+        title: "Tables Loaded",
+        description: `Found ${response.data.length} tables available for reservation.`,
+      });
+    } catch (error: any) {
+      console.error('Failed to fetch tables:', error);
+      setTablesError(error.message || 'Failed to load tables');
+      
+      toast({
+        variant: "destructive",
+        title: "Error Loading Tables",
+        description: "Unable to load available tables. Please try again.",
+      });
+    } finally {
+      setTablesLoading(false);
+    }
+  };
 
   const reservationMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -110,10 +132,21 @@ export default function ReservationPage() {
   const handleBranchSelect = (branch: Branch) => {
     setSelectedBranch(branch);
     setStep('table');
+    // Fetch tables for the selected branch
+    fetchTablesForBranch(branch.branchId);
   };
 
-  const handleTableSelect = (table: Table) => {
-    setSelectedTable(table);
+  const handleTableSelect = (table: TableLocation) => {
+    // Convert TableLocation to Table format for compatibility
+    const compatibleTable: Table = {
+      id: table.id.toString(),
+      number: parseInt(table.name.replace(/\D/g, '')) || table.id,
+      seats: table.capacity,
+      isAvailable: true, // Assume available from API
+      type: 'standard',
+      location: TableService.getTableTypeName(table.locationType)
+    };
+    setSelectedTable(compatibleTable);
     setStep('details');
   };
 
@@ -524,7 +557,7 @@ export default function ReservationPage() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingTables ? (
+                  {tablesLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="animate-pulse">
@@ -534,42 +567,62 @@ export default function ReservationPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {(tables as Table[])?.filter((table: Table) => table.seats >= guests && table.isAvailable).map((table: Table) => (
-                        <Card 
-                          key={table.id}
-                          className="cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105"
-                          onClick={() => handleTableSelect(table)}
-                          data-testid={`table-card-${table.id}`}
-                        >
-                          <CardContent className="p-3">
-                            <div className="text-center">
-                              <div className="text-xl mb-1">
-                                {getTableTypeIcon(table.type)}
-                              </div>
-                              <h3 className="font-semibold text-sm mb-1">
-                                Table {table.number}
-                              </h3>
-                              <Badge className={`mb-2 text-xs ${getTableTypeColor(table.type)}`}>
-                                {table.type}
-                              </Badge>
-                              <div className="text-xs text-gray-600 space-y-1">
-                                <div className="flex items-center justify-center">
-                                  <Users className="w-3 h-3 mr-1" />
-                                  {table.seats} seats
+                      {tables?.filter((table: TableLocation) => table.capacity >= guests).map((table: TableLocation) => {
+                        const tableTypeName = TableService.getTableTypeName(table.locationType);
+                        const capacityDisplay = TableService.getCapacityDisplay(table.capacity);
+                        
+                        return (
+                          <Card 
+                            key={table.id}
+                            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-2 hover:border-blue-300"
+                            onClick={() => handleTableSelect(table)}
+                            data-testid={`table-card-${table.id}`}
+                          >
+                            <CardContent className="p-4">
+                              <div className="text-center space-y-3">
+                                {/* Table Icon */}
+                                <div className="w-12 h-12 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-lg font-bold">
+                                  {table.name}
                                 </div>
-                                <div className="flex items-center justify-center">
-                                  <MapPin className="w-3 h-3 mr-1" />
-                                  {table.location}
+                                
+                                {/* Table Info */}
+                                <div>
+                                  <h3 className="font-bold text-lg text-gray-900 mb-1">
+                                    Table {table.name}
+                                  </h3>
+                                  <Badge className="mb-2 bg-blue-100 text-blue-800 border-blue-200">
+                                    {tableTypeName}
+                                  </Badge>
                                 </div>
+                                
+                                {/* Capacity and Details */}
+                                <div className="space-y-2 text-sm text-gray-600">
+                                  <div className="flex items-center justify-center bg-gray-50 rounded-lg p-2">
+                                    <Users className="w-4 h-4 mr-2 text-blue-500" />
+                                    <span className="font-medium">{table.capacity} seats</span>
+                                  </div>
+                                  <div className="flex items-center justify-center bg-gray-50 rounded-lg p-2">
+                                    <MapPin className="w-4 h-4 mr-2 text-green-500" />
+                                    <span className="font-medium">{capacityDisplay}</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Book Button */}
+                                <Button 
+                                  size="sm" 
+                                  className="w-full mt-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                                >
+                                  Select Table
+                                </Button>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
                   )}
 
-                  {(tables as Table[])?.filter((table: Table) => table.seats >= guests && table.isAvailable).length === 0 && !isLoadingTables && (
+                  {tables?.filter((table: TableLocation) => table.capacity >= guests).length === 0 && !tablesLoading && (
                     <div className="text-center py-8">
                       <p className="text-gray-500">
                         No tables available for {guests} guests. Try reducing the number of guests.
@@ -581,15 +634,71 @@ export default function ReservationPage() {
             </>
           )}
 
-          {step === 'details' && selectedTable && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Reservation Details</CardTitle>
-                <p className="text-sm text-gray-600">
-                  Selected: Table {selectedTable.number} ({selectedTable.type}) - {selectedTable.seats} seats
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
+          {step === 'details' && selectedTable && selectedBranch && (
+            <>
+              {/* Branch Information Card */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <MapPin className="w-5 h-5 mr-2" />
+                    Restaurant Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">{selectedBranch.branchName}</h3>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <Clock className="w-4 h-4 mr-2 text-blue-500" />
+                          <span><strong>Hours:</strong> {selectedBranch.branchOpenTime} - {selectedBranch.branchCloseTime}</span>
+                        </div>
+                        <div className="flex items-start">
+                          <MapPin className="w-4 h-4 mr-2 mt-0.5 text-green-500" />
+                          <span><strong>Address:</strong> {selectedBranch.branchAddress}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Star className="w-4 h-4 mr-2 text-yellow-500" />
+                          <span><strong>Rating:</strong> {selectedBranch.rating}/5</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Reservation Guidelines</h4>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        {selectedBranch.minNoticeMinute && (
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-2 text-orange-500" />
+                            <span><strong>Minimum Notice:</strong> {selectedBranch.minNoticeMinute} minutes</span>
+                          </div>
+                        )}
+                        {selectedBranch.maxGuestsPerReservation && (
+                          <div className="flex items-center">
+                            <Users className="w-4 h-4 mr-2 text-purple-500" />
+                            <span><strong>Max Guests:</strong> {selectedBranch.maxGuestsPerReservation} people</span>
+                          </div>
+                        )}
+                        {selectedBranch.holdTimeMinutes && (
+                          <div className="flex items-center">
+                            <Clock className="w-4 h-4 mr-2 text-red-500" />
+                            <span><strong>Table Hold Time:</strong> {selectedBranch.holdTimeMinutes} minutes</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Reservation Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reservation Details</CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Selected: Table {selectedTable.number} ({selectedTable.type}) - {selectedTable.seats} seats
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-6">
                     <div>
@@ -679,6 +788,7 @@ export default function ReservationPage() {
                 </div>
               </CardContent>
             </Card>
+            </>
           )}
       </div>
 

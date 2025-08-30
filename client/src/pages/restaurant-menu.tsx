@@ -300,7 +300,6 @@ export default function RestaurantMenuPage() {
                 className="configurable-primary hover:configurable-primary-hover text-white"
                 data-testid={`button-add-deal-to-cart-${deal.dealId}`}
               >
-                <Plus className="w-4 h-4 mr-1" />
                 Add to Cart
               </Button>
             </div>
