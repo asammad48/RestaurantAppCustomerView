@@ -13,6 +13,8 @@ import RestaurantMenu from "@/pages/restaurant-menu";
 import NotFound from "@/pages/not-found";
 import InitialServiceModal from "@/components/modals/initial-service-modal";
 import ServiceSelectionModal from "@/components/modals/service-selection-modal";
+import { LoginModal } from "@/components/modals/login-modal";
+import { SignupModal } from "@/components/modals/signup-modal";
 
 function Router() {
   return (
@@ -37,6 +39,8 @@ function App() {
         <Router />
         <InitialServiceModal />
         <ServiceSelectionModal />
+        <LoginModal />
+        <SignupModal />
       </TooltipProvider>
     </QueryClientProvider>
   );

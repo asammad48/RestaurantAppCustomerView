@@ -1,14 +1,33 @@
-import { ShoppingCart, Receipt, Utensils, Home } from "lucide-react";
+import { ShoppingCart, Receipt, Utensils, Home, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { useCartStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/auth-store";
 import { Link, useLocation } from "wouter";
 import { getImageUrl } from "@/lib/config";
 
 export default function Navbar() {
   const { setCartOpen, items, selectedBranch } = useCartStore();
+  const { 
+    isAuthenticated, 
+    user, 
+    setLoginModalOpen, 
+    setPreviousPath,
+    logout 
+  } = useAuthStore();
   const cartCount = items.reduce((count, item) => count + item.quantity, 0);
   const [location] = useLocation();
+
+  const handleLoginClick = () => {
+    setPreviousPath(location);
+    setLoginModalOpen(true);
+  };
 
   // Determine if this is a branch-specific page
   const isBranchSpecificPage = location === '/reservation-detail' || location === '/restaurant-menu' || location === '/orders';
@@ -67,6 +86,48 @@ export default function Navbar() {
                 </span>
               )}
             </Button>
+            
+            {/* Authentication Section */}
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      {user?.profilePicture ? (
+                        <img 
+                          src={user.profilePicture} 
+                          alt="Profile" 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User size={16} className="text-white" />
+                      )}
+                    </div>
+                    <span className="hidden sm:inline text-sm font-medium">
+                      {user?.name || user?.fullName}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem 
+                    onClick={logout}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button 
+                onClick={handleLoginClick}
+                variant="outline" 
+                className="flex items-center space-x-2"
+              >
+                <User size={16} />
+                <span className="hidden sm:inline">Login</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>
