@@ -219,7 +219,7 @@ export default function AddToCartModal() {
               <span className="text-sm font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
             </div>
             {deal.discount && deal.discount.value > 0 && (
-              <div className="mt-2 p-2 rounded" style={{backgroundColor: 'var(--configurable-primary)', opacity: '0.1'}}>
+              <div className="mt-2 p-2 bg-gray-50 rounded">
                 <p className="text-xs font-medium" style={{color: 'var(--configurable-primary)'}}>
                   You save {deal.discount.value}% on this deal!
                 </p>
