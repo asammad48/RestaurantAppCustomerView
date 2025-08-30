@@ -220,7 +220,7 @@ export default function AddToCartModal() {
             </div>
             {deal.discount && deal.discount.value > 0 && (
               <div className="mt-2 p-2 rounded" style={{backgroundColor: 'var(--configurable-primary)', opacity: '0.1'}}>
-                <p className="text-xs configurable-text-primary font-medium">
+                <p className="text-xs font-medium" style={{color: 'var(--configurable-primary)'}}>
                   You save {deal.discount.value}% on this deal!
                 </p>
               </div>
