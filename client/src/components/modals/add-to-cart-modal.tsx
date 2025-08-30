@@ -216,11 +216,11 @@ export default function AddToCartModal() {
           <div className="configurable-secondary p-3 rounded-lg border configurable-border">
             <div className="flex justify-between items-center">
               <span className="font-medium configurable-text-primary">Standard Deal</span>
-              <span className="text-sm font-bold">PKR {deal.price.toFixed(2)}</span>
+              <span className="text-sm font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
             </div>
             {deal.discount && deal.discount.value > 0 && (
-              <div className="mt-2 p-2 bg-green-50 rounded">
-                <p className="text-xs text-green-700 font-medium">
+              <div className="mt-2 p-2 configurable-success rounded">
+                <p className="text-xs configurable-text-primary font-medium">
                   You save {deal.discount.value}% on this deal!
                 </p>
               </div>
