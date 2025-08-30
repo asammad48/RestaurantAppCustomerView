@@ -518,9 +518,9 @@ export default function ReservationPage() {
               {/* Available Tables */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Available Tables at {selectedRestaurant.name}</CardTitle>
+                  <CardTitle>Available Tables at {selectedBranch.branchName}</CardTitle>
                   <p className="text-sm text-gray-600">
-                    {selectedRestaurant.cuisine} • {selectedRestaurant.rating} ⭐
+                    {selectedBranch.branchAddress}
                   </p>
                 </CardHeader>
                 <CardContent>
