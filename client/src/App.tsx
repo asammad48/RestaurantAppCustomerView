@@ -8,6 +8,7 @@ import Orders from "@/pages/orders";
 import Delivery from "@/pages/delivery";
 import Takeaway from "@/pages/takeaway";
 import Reservation from "@/pages/reservation";
+import ReservationDetail from "@/pages/reservation-detail";
 import RestaurantMenu from "@/pages/restaurant-menu";
 import NotFound from "@/pages/not-found";
 import InitialServiceModal from "@/components/modals/initial-service-modal";
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/delivery" component={Delivery} />
       <Route path="/takeaway" component={Takeaway} />
       <Route path="/reservation" component={Reservation} />
+      <Route path="/reservation-detail" component={ReservationDetail} />
       <Route path="/restaurant-menu" component={RestaurantMenu} />
       <Route component={NotFound} />
     </Switch>
