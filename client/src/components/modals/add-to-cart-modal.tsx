@@ -213,14 +213,14 @@ export default function AddToCartModal() {
         {/* Deal Variants/Customizations */}
         <div>
           <h3 className="font-bold text-lg mb-3">Deal Options</h3>
-          <div className="configurable-primary p-3 rounded-lg">
+          <div className="configurable-secondary p-3 rounded-lg border-2 configurable-primary" style={{borderColor: 'var(--configurable-primary)'}}>
             <div className="flex justify-between items-center">
-              <span className="font-medium text-white">Standard Deal</span>
-              <span className="text-sm font-bold text-white">PKR {deal.price.toFixed(2)}</span>
+              <span className="font-medium configurable-text-primary">Standard Deal</span>
+              <span className="text-sm font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
             </div>
             {deal.discount && deal.discount.value > 0 && (
-              <div className="mt-2 p-2 bg-white bg-opacity-20 rounded">
-                <p className="text-xs text-white font-medium">
+              <div className="mt-2 p-2 rounded" style={{backgroundColor: 'var(--configurable-primary)', opacity: '0.1'}}>
+                <p className="text-xs configurable-text-primary font-medium">
                   You save {deal.discount.value}% on this deal!
                 </p>
               </div>
