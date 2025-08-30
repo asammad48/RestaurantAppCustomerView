@@ -10,13 +10,19 @@ export default function Navbar() {
   const cartCount = items.reduce((count, item) => count + item.quantity, 0);
   const [location] = useLocation();
 
+  // Determine if this is a branch-specific page
+  const isBranchSpecificPage = location === '/reservation-detail' || location === '/restaurant-menu' || location === '/orders';
+  
+  // Show branch details only on branch-specific pages
+  const showBranchDetails = isBranchSpecificPage && selectedBranch;
+
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/">
             <div className="flex items-center space-x-3 cursor-pointer">
-              {selectedBranch?.branchLogo ? (
+              {showBranchDetails && selectedBranch?.branchLogo ? (
                 <img 
                   src={getImageUrl(selectedBranch.branchLogo)} 
                   alt="Branch Logo" 
@@ -28,7 +34,7 @@ export default function Navbar() {
                 </div>
               )}
               <span className="text-xl font-bold configurable-text-primary">
-                {selectedBranch?.branchName || "LA PIZZA POPOLARE"}
+                {showBranchDetails ? selectedBranch?.branchName : "LA PIZZA POPOLARE"}
               </span>
             </div>
           </Link>

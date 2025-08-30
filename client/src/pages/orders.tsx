@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, Utensils, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import FloatingButtons from "@/components/floating-buttons";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { Order, MenuItem } from "@shared/schema";
 import { useCartStore } from "@/lib/store";
+import { applyBranchPrimaryColor } from "@/lib/colors";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import CartModal from "@/components/modals/cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
@@ -21,7 +22,14 @@ import { Link } from "wouter";
 
 export default function Orders() {
   const [activeTab, setActiveTab] = useState<'live' | 'history'>('live');
-  const { setCartOpen, setPaymentModalOpen } = useCartStore();
+  const { setCartOpen, setPaymentModalOpen, selectedBranch } = useCartStore();
+
+  // Apply branch-specific theming
+  useEffect(() => {
+    if (selectedBranch?.branchPrimaryColor) {
+      applyBranchPrimaryColor(selectedBranch.branchPrimaryColor);
+    }
+  }, [selectedBranch]);
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],

@@ -67,6 +67,13 @@ export default function RestaurantMenuPage() {
 
   const branchId = getBranchId();
 
+  // Apply branch-specific theming
+  useEffect(() => {
+    if (selectedBranch?.branchPrimaryColor) {
+      applyBranchPrimaryColor(selectedBranch.branchPrimaryColor);
+    }
+  }, [selectedBranch]);
+
   const { data: menuData, isLoading } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),

@@ -12,6 +12,8 @@ import { Calendar, Clock, Users, Check, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table } from "@/lib/mock-data";
 import { TableService, TableLocation } from "@/services/table-service";
+import { BranchService } from "@/services/branch-service";
+import { applyBranchPrimaryColor } from "@/lib/colors";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -32,10 +34,11 @@ export default function ReservationDetailPage() {
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [branchId, setBranchId] = useState<number | null>(null);
   const [branchName, setBranchName] = useState<string>("");
+  const [branchPrimaryColor, setBranchPrimaryColor] = useState<string | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // Parse URL parameters
+  // Parse URL parameters and fetch branch details
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const branchIdParam = urlParams.get('branchId');
@@ -44,12 +47,32 @@ export default function ReservationDetailPage() {
     if (branchIdParam) {
       setBranchId(parseInt(branchIdParam));
       fetchTablesForBranch(parseInt(branchIdParam));
+      fetchBranchDetails(parseInt(branchIdParam));
     }
     
     if (branchNameParam) {
       setBranchName(decodeURIComponent(branchNameParam));
     }
   }, []);
+
+  // Apply branch-specific theming when color is available
+  useEffect(() => {
+    if (branchPrimaryColor) {
+      applyBranchPrimaryColor(branchPrimaryColor);
+    }
+  }, [branchPrimaryColor]);
+
+  // Fetch branch details for theming
+  const fetchBranchDetails = async (branchId: number) => {
+    try {
+      const response = await BranchService.getBranchDetails(branchId);
+      if (response.data?.branchPrimaryColor) {
+        setBranchPrimaryColor(response.data.branchPrimaryColor);
+      }
+    } catch (error) {
+      console.error('Failed to fetch branch details:', error);
+    }
+  };
 
   // Fetch tables for selected branch
   const fetchTablesForBranch = async (branchId: number) => {

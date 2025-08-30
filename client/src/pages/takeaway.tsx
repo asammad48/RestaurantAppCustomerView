@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
 import { Branch } from "@/types/branch";
@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Star, Clock, MapPin, Search, Navigation, Filter, Map } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useLocation } from "wouter";
+import { applyGreenTheme } from "@/lib/colors";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -29,6 +30,11 @@ export default function TakeawayPage() {
   const { setSelectedRestaurant, setServiceType } = useCartStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Apply green theme on page load
+  useEffect(() => {
+    applyGreenTheme();
+  }, []);
 
   // Search for takeaway branches
   const searchTakeawayBranches = async (latitude: number, longitude: number) => {

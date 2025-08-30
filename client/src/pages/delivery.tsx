@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Search, Navigation, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
 import { Branch } from "@/types/branch";
 import { useCartStore } from "@/lib/store";
+import { applyGreenTheme } from "@/lib/colors";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -26,6 +27,11 @@ export default function DeliveryPage() {
   const { setServiceType } = useCartStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Apply green theme on page load
+  useEffect(() => {
+    applyGreenTheme();
+  }, []);
 
   // Filter branches based on search query
   const filteredBranches = branches.filter((branch: Branch) => {

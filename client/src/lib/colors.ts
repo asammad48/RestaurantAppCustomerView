@@ -114,6 +114,18 @@ export const changeTheme = async (theme: string) => {
   applyColors(colors);
 };
 
+// Function to apply green theme for delivery, takeaway, and reservation pages
+export const applyGreenTheme = () => {
+  const root = document.documentElement;
+  const greenPrimary = '#15803d'; // green-700
+  const greenHover = '#166534'; // green-800
+  
+  // Apply green theme
+  root.style.setProperty('--color-primary', greenPrimary);
+  root.style.setProperty('--color-primary-hover', greenHover);
+  root.style.setProperty('--ring', greenPrimary);
+};
+
 // Function to apply branch specific primary color
 export const applyBranchPrimaryColor = (primaryColor?: string) => {
   if (!primaryColor) return;

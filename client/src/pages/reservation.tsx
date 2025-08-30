@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Clock, MapPin, Search, Star, Navigation, Map, Users } from "lucide-reac
 import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
 import { Branch } from "@/types/branch";
+import { applyGreenTheme } from "@/lib/colors";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -25,6 +26,11 @@ export default function ReservationPage() {
   const [maxDistance, setMaxDistance] = useState(3);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  // Apply green theme on page load
+  useEffect(() => {
+    applyGreenTheme();
+  }, []);
 
   // Search for reservation branches
   const searchReservationBranches = async (latitude: number, longitude: number) => {
