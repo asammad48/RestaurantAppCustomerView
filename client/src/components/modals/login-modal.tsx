@@ -100,7 +100,7 @@ export function LoginModal() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 disabled={isLoading}
-                className="w-full"
+                className="w-full focus:border-[#15803d] focus:ring-[#15803d]"
                 required
               />
             </div>
@@ -114,7 +114,7 @@ export function LoginModal() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 disabled={isLoading}
-                className="w-full"
+                className="w-full focus:border-[#15803d] focus:ring-[#15803d]"
                 required
               />
             </div>
@@ -123,7 +123,7 @@ export function LoginModal() {
             <div className="text-left">
               <button
                 type="button"
-                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-sm text-[#15803d] hover:text-[#15803d]/80 transition-colors"
                 disabled={isLoading}
               >
                 Forget Password?
@@ -134,7 +134,7 @@ export function LoginModal() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-green-500 hover:bg-green-600 text-white py-3"
+              className="w-full bg-[#15803d] hover:bg-[#15803d]/90 text-white py-3"
             >
               {isLoading ? (
                 <>
@@ -184,7 +184,7 @@ export function LoginModal() {
             <button
               type="button"
               onClick={switchToSignup}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              className="text-sm text-[#15803d] hover:text-[#15803d]/80 font-medium transition-colors"
               disabled={isLoading}
             >
               Sign up

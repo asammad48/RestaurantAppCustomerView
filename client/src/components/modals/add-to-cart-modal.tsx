@@ -150,7 +150,7 @@ export default function AddToCartModal() {
   const renderDealContent = (deal: ApiDeal) => {
     return (
       <div className="space-y-4">
-        <div className="configurable-secondary p-4 rounded-lg border configurable-border">
+        <div className="p-4 rounded-lg border configurable-border" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.1' }}>
           <h3 className="font-semibold text-lg configurable-text-primary mb-3">Deal Includes:</h3>
           
           {/* Menu Items */}
@@ -159,7 +159,7 @@ export default function AddToCartModal() {
               <h4 className="font-medium configurable-text-primary mb-2">Main Items:</h4>
               <ul className="space-y-2">
                 {deal.menuItems.map((item) => (
-                  <li key={item.menuItemId} className="configurable-surface p-3 rounded-lg border configurable-border">
+                  <li key={item.menuItemId} className="p-3 rounded-lg border configurable-border" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.05' }}>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center mb-2">
@@ -202,7 +202,7 @@ export default function AddToCartModal() {
           
           {/* Deal End Date with shading */}
           <div className="mt-3 pt-3 border-t configurable-border">
-            <div className="bg-gray-100 p-2 rounded">
+            <div className="p-2 rounded" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.1' }}>
               <p className="text-xs configurable-text-primary font-medium">
                 Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}
               </p>
@@ -219,7 +219,7 @@ export default function AddToCartModal() {
               <span className="text-sm font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
             </div>
             {deal.discount && deal.discount.value > 0 && (
-              <div className="mt-2 p-2 bg-gray-50 rounded">
+              <div className="mt-2 p-2 rounded" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.1' }}>
                 <p className="text-xs font-medium" style={{color: 'var(--configurable-primary)'}}>
                   You save {deal.discount.value}% on this deal!
                 </p>
@@ -245,9 +245,10 @@ export default function AddToCartModal() {
                   onClick={() => setSelectedVariation(variation.id)}
                   className={`w-full text-left p-3 rounded-lg border ${
                     selectedVariation === variation.id 
-                      ? 'configurable-secondary border-2 configurable-border configurable-primary-text' 
+                      ? 'border-2 configurable-border configurable-primary-text' 
                       : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
                   }`}
+                  style={selectedVariation === variation.id ? { backgroundColor: 'var(--color-primary)', opacity: '0.1' } : {}}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{variation.name}</span>
@@ -312,9 +313,10 @@ export default function AddToCartModal() {
                       onClick={() => selectCustomizationOption(customization.id, option.id)}
                       className={`w-full text-left p-2 rounded text-sm ${
                         selectedCustomizations[customization.id] === option.id 
-                          ? 'configurable-secondary border configurable-border' 
+                          ? 'border configurable-border' 
                           : 'bg-gray-50 hover:bg-gray-100'
                       }`}
+                      style={selectedCustomizations[customization.id] === option.id ? { backgroundColor: 'var(--color-primary)', opacity: '0.1' } : {}}
                     >
                       <div className="flex justify-between items-center">
                         <span>{option.name}</span>

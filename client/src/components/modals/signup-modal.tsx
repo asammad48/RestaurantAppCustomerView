@@ -153,7 +153,7 @@ export function SignupModal() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 disabled={isLoading}
-                className={`w-full ${validationErrors.email ? 'border-red-500' : ''}`}
+                className={`w-full focus:border-[#15803d] focus:ring-[#15803d] ${validationErrors.email ? 'border-red-500' : ''}`}
                 required
               />
               {validationErrors.email && (
@@ -170,7 +170,7 @@ export function SignupModal() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 disabled={isLoading}
-                className={`w-full ${validationErrors.name ? 'border-red-500' : ''}`}
+                className={`w-full focus:border-[#15803d] focus:ring-[#15803d] ${validationErrors.name ? 'border-red-500' : ''}`}
                 required
               />
               {validationErrors.name && (
@@ -187,7 +187,7 @@ export function SignupModal() {
                 value={formData.mobileNumber}
                 onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
                 disabled={isLoading}
-                className={`w-full ${validationErrors.mobileNumber ? 'border-red-500' : ''}`}
+                className={`w-full focus:border-[#15803d] focus:ring-[#15803d] ${validationErrors.mobileNumber ? 'border-red-500' : ''}`}
                 required
               />
               {validationErrors.mobileNumber && (
@@ -204,7 +204,7 @@ export function SignupModal() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 disabled={isLoading}
-                className={`w-full ${validationErrors.password ? 'border-red-500' : ''}`}
+                className={`w-full focus:border-[#15803d] focus:ring-[#15803d] ${validationErrors.password ? 'border-red-500' : ''}`}
                 required
               />
               {validationErrors.password && (
@@ -221,7 +221,7 @@ export function SignupModal() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 disabled={isLoading}
-                className={`w-full ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
+                className={`w-full focus:border-[#15803d] focus:ring-[#15803d] ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
                 required
               />
               {validationErrors.confirmPassword && (
@@ -233,7 +233,7 @@ export function SignupModal() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-green-500 hover:bg-green-600 text-white py-3"
+              className="w-full bg-[#15803d] hover:bg-[#15803d]/90 text-white py-3"
             >
               {isLoading ? (
                 <>
@@ -283,7 +283,7 @@ export function SignupModal() {
             <button
               type="button"
               onClick={switchToLogin}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              className="text-sm text-[#15803d] hover:text-[#15803d]/80 font-medium transition-colors"
               disabled={isLoading}
             >
               Log in

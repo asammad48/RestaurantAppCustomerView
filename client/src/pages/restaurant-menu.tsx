@@ -272,7 +272,7 @@ export default function RestaurantMenuPage() {
             <p className="text-gray-600 text-sm mb-3">{deal.description}</p>
 
             {/* Deal End Date */}
-            <div className="mb-3 p-2 configurable-primary-bg-alpha-10 rounded-md">
+            <div className="mb-3 p-2 rounded-md" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.1' }}>
               <div className="flex items-center text-sm" style={{ color: 'var(--color-primary)' }}>
                 <Calendar className="w-3 h-3 mr-1" />
                 <span>Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}</span>
