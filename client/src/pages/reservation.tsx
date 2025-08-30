@@ -1,22 +1,25 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { getQueryFn, queryClient, apiRequest } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, MapPin, Check, Search, Filter, Star } from "lucide-react";
+import { Calendar, Clock, Users, MapPin, Check, Search, Filter, Star, Navigation, Map } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Table, Restaurant } from "@/lib/mock-data";
+import { Table } from "@/lib/mock-data";
+import { BranchService } from "@/services/branch-service";
+import { Branch } from "@/types/branch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
+import MapPickerModal from "@/components/modals/map-picker-modal";
 
 export default function ReservationPage() {
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [guests, setGuests] = useState(2);
   const [customerName, setCustomerName] = useState("");
@@ -26,21 +29,60 @@ export default function ReservationPage() {
   const [time, setTime] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [userLocation, setUserLocation] = useState("Downtown");
+  const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branchesError, setBranchesError] = useState<string | null>(null);
+  const [maxDistance, setMaxDistance] = useState(3);
   const [step, setStep] = useState<'restaurant' | 'table' | 'details' | 'confirmation'>('restaurant');
   const [reservationId, setReservationId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const { data: restaurants, isLoading: isLoadingRestaurants } = useQuery({
-    queryKey: ['/api/restaurants'],
-    queryFn: getQueryFn({ on401: "throw" }),
-  });
+  // Search for reservation branches
+  const searchReservationBranches = async (latitude: number, longitude: number) => {
+    setBranchesLoading(true);
+    setBranchesError(null);
+    
+    try {
+      const response = await BranchService.searchReservationBranches({
+        latitude,
+        longitude,
+        address: userLocation || "",
+        branchName: searchQuery || "",
+        maxDistance
+      });
 
-  const { data: tables, isLoading: isLoadingTables } = useQuery({
-    queryKey: ['/api/tables', guests.toString()],
-    queryFn: getQueryFn({ on401: "throw" }),
-    enabled: !!selectedRestaurant,
-  });
+      setBranches(response.data);
+      
+      toast({
+        title: "Reservation Branches Found",
+        description: `Found ${response.data.length} restaurants available for reservations.`,
+      });
+    } catch (error: any) {
+      console.error('Reservation branch search failed:', error);
+      setBranchesError(error.message || 'Failed to find reservation branches');
+      
+      toast({
+        variant: "destructive",
+        title: "Search Failed",
+        description: "Unable to find restaurants for reservations. Please try again.",
+      });
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  // Mock tables data - in real app this would come from API based on selected branch
+  const tables = [
+    { id: '1', number: 1, seats: 2, type: 'window', isAvailable: true },
+    { id: '2', number: 2, seats: 4, type: 'standard', isAvailable: true },
+    { id: '3', number: 3, seats: 6, type: 'private', isAvailable: false },
+    { id: '4', number: 4, seats: 8, type: 'outdoor', isAvailable: true },
+  ] as Table[];
+  const isLoadingTables = false;
 
   const reservationMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -65,8 +107,8 @@ export default function ReservationPage() {
     },
   });
 
-  const handleRestaurantSelect = (restaurant: Restaurant) => {
-    setSelectedRestaurant(restaurant);
+  const handleBranchSelect = (branch: Branch) => {
+    setSelectedBranch(branch);
     setStep('table');
   };
 
@@ -75,21 +117,14 @@ export default function ReservationPage() {
     setStep('details');
   };
 
-  // Filter restaurants
-  const filteredRestaurants = (restaurants as Restaurant[])?.filter((restaurant: Restaurant) => {
-    const matchesSearch = restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         restaurant.cuisine.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || restaurant.cuisine === selectedCategory;
-    return matchesSearch && matchesCategory;
-  }) || [];
-
-  // Get unique categories from restaurants
-  const cuisineTypes = (restaurants as Restaurant[])?.map(r => r.cuisine) || [];
-  const uniqueCuisines = cuisineTypes.filter((value, index, self) => self.indexOf(value) === index);
-  const categories = ["All", ...uniqueCuisines];
+  // Filter branches
+  const filteredBranches = branches.filter((branch: Branch) => {
+    const matchesSearch = branch.branchName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
   const handleSubmitReservation = () => {
-    if (!selectedTable || !customerName || !customerPhone || !date || !time) {
+    if (!selectedTable || !customerName || !customerPhone || !date || !time || !selectedBranch) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -105,8 +140,8 @@ export default function ReservationPage() {
       date,
       time,
       guests,
-      restaurantId: selectedRestaurant.id,
-      restaurantName: selectedRestaurant.name,
+      branchId: selectedBranch.branchId,
+      branchName: selectedBranch.branchName,
       tableId: selectedTable.id,
       specialRequests,
       status: 'confirmed',

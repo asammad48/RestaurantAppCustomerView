@@ -20,6 +20,10 @@ export interface Branch {
   branchLogo: string;
   banner: string;
   distanceFromMyLocation: number;
+  // Reservation-specific fields (optional)
+  minNoticeMinute?: number;
+  maxGuestsPerReservation?: number;
+  holdTimeMinutes?: number;
 }
 
 export type BranchSearchResponse = Branch[];

@@ -7,6 +7,11 @@ export class BranchService {
     return apiClient.post<BranchSearchResponse>('/api/customer-search/search-takeaway-branches', params);
   }
 
+  // Search reservation branches based on location
+  static async searchReservationBranches(params: BranchSearchRequest): Promise<ApiResponse<BranchSearchResponse>> {
+    return apiClient.post<BranchSearchResponse>('/api/customer-search/search-reservation-branches', params);
+  }
+
   // Search branches based on location (general search)
   static async searchBranches(params: BranchSearchRequest): Promise<ApiResponse<BranchSearchResponse>> {
     return apiClient.post<BranchSearchResponse>('/api/customer-search/search-branches', params);

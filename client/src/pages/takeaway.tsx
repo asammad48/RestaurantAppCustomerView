@@ -75,13 +75,16 @@ export default function TakeawayPage() {
   const handleSelectBranch = (branch: Branch) => {
     // Convert branch to restaurant format for compatibility
     const restaurant = {
-      id: branch.branchId,
+      id: branch.branchId.toString(),
       name: branch.branchName,
       image: BranchService.getBranchImageUrl(branch.branchPicture),
       rating: branch.rating,
       cuisine: 'Restaurant',
       deliveryTime: '30-45 mins',
       deliveryFee: 0,
+      minimumOrder: 0,
+      address: branch.branchAddress,
+      distance: branch.distanceFromMyLocation,
       isOpen: !branch.isBranchClosed
     };
     setSelectedRestaurant(restaurant);
