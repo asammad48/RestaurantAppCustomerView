@@ -213,7 +213,7 @@ export default function AddToCartModal() {
         {/* Deal Variants/Customizations */}
         <div>
           <h3 className="font-bold text-lg mb-3">Deal Options</h3>
-          <div className="p-3 rounded-lg border-2" style={{borderColor: 'var(--configurable-primary)'}}>
+          <div className="p-3 rounded-lg border configurable-border">
             <div className="flex justify-between items-center">
               <span className="font-medium configurable-text-primary">Standard Deal</span>
               <span className="text-sm font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
