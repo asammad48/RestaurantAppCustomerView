@@ -574,35 +574,35 @@ export default function ReservationPage() {
                         return (
                           <Card 
                             key={table.id}
-                            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-2 hover:border-blue-300"
+                            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-2 hover:configurable-border configurable-surface"
                             onClick={() => handleTableSelect(table)}
                             data-testid={`table-card-${table.id}`}
                           >
                             <CardContent className="p-4">
                               <div className="text-center space-y-3">
                                 {/* Table Icon */}
-                                <div className="w-12 h-12 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-lg font-bold">
+                                <div className="w-12 h-12 mx-auto configurable-primary rounded-full flex items-center justify-center text-white text-lg font-bold">
                                   {table.name}
                                 </div>
                                 
                                 {/* Table Info */}
                                 <div>
-                                  <h3 className="font-bold text-lg text-gray-900 mb-1">
+                                  <h3 className="font-bold text-lg configurable-text-primary mb-1">
                                     Table {table.name}
                                   </h3>
-                                  <Badge className="mb-2 bg-blue-100 text-blue-800 border-blue-200">
+                                  <Badge className="mb-2 configurable-secondary configurable-text-primary configurable-border">
                                     {tableTypeName}
                                   </Badge>
                                 </div>
                                 
                                 {/* Capacity and Details */}
-                                <div className="space-y-2 text-sm text-gray-600">
-                                  <div className="flex items-center justify-center bg-gray-50 rounded-lg p-2">
-                                    <Users className="w-4 h-4 mr-2 text-blue-500" />
+                                <div className="space-y-2 text-sm configurable-text-secondary">
+                                  <div className="flex items-center justify-center configurable-surface rounded-lg p-2 border configurable-border">
+                                    <Users className="w-4 h-4 mr-2 configurable-primary-text" />
                                     <span className="font-medium">{table.capacity} seats</span>
                                   </div>
-                                  <div className="flex items-center justify-center bg-gray-50 rounded-lg p-2">
-                                    <MapPin className="w-4 h-4 mr-2 text-green-500" />
+                                  <div className="flex items-center justify-center configurable-surface rounded-lg p-2 border configurable-border">
+                                    <MapPin className="w-4 h-4 mr-2 configurable-primary-text" />
                                     <span className="font-medium">{capacityDisplay}</span>
                                   </div>
                                 </div>
@@ -610,7 +610,7 @@ export default function ReservationPage() {
                                 {/* Book Button */}
                                 <Button 
                                   size="sm" 
-                                  className="w-full mt-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                                  className="w-full mt-3 configurable-primary hover:configurable-primary-hover text-white"
                                 >
                                   Select Table
                                 </Button>
