@@ -60,9 +60,11 @@ export default function ReservationDetailPage() {
   // Apply branch-specific theming when color is available
   useEffect(() => {
     // First try selectedBranch from store, then fallback to fetched branch color
-    const primaryColor = selectedBranch?.branchPrimaryColor || branchPrimaryColor;
+    const primaryColor = selectedBranch?.primaryColor || branchPrimaryColor;
     if (primaryColor) {
       applyBranchPrimaryColor(primaryColor);
+    } else {
+      console.log('No primary color found:', { selectedBranch, branchPrimaryColor });
     }
   }, [selectedBranch, branchPrimaryColor]);
 
@@ -70,9 +72,12 @@ export default function ReservationDetailPage() {
   const fetchBranchDetails = async (branchId: number) => {
     try {
       const response = await BranchService.getBranchDetails(branchId);
-      if (response.data?.branchPrimaryColor) {
+      if (response.data?.primaryColor) {
+        setBranchPrimaryColor(response.data.primaryColor);
+      } else if (response.data?.branchPrimaryColor) {
         setBranchPrimaryColor(response.data.branchPrimaryColor);
       }
+      console.log('Branch details response:', response.data);
     } catch (error) {
       console.error('Failed to fetch branch details:', error);
     }
