@@ -27,7 +27,7 @@ export default function TakeawayPage() {
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
   const [maxDistance, setMaxDistance] = useState(30);
-  const { setSelectedRestaurant, setServiceType } = useCartStore();
+  const { setSelectedRestaurant, setServiceType, setSelectedBranch } = useCartStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -79,6 +79,9 @@ export default function TakeawayPage() {
   });
 
   const handleSelectBranch = (branch: Branch) => {
+    // Store the selected branch for theming
+    setSelectedBranch(branch);
+    
     // Convert branch to restaurant format for compatibility
     const restaurant = {
       id: branch.branchId.toString(),

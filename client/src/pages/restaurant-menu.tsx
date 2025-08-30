@@ -67,13 +67,6 @@ export default function RestaurantMenuPage() {
 
   const branchId = getBranchId();
 
-  // Apply branch-specific theming
-  useEffect(() => {
-    if (selectedBranch?.branchPrimaryColor) {
-      applyBranchPrimaryColor(selectedBranch.branchPrimaryColor);
-    }
-  }, [selectedBranch]);
-
   const { data: menuData, isLoading } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
@@ -96,8 +89,10 @@ export default function RestaurantMenuPage() {
   useEffect(() => {
     if (selectedBranch?.primaryColor) {
       applyBranchPrimaryColor(selectedBranch.primaryColor);
+    } else if (apiMenuData?.branchPrimaryColor) {
+      applyBranchPrimaryColor(apiMenuData.branchPrimaryColor);
     }
-  }, [selectedBranch?.primaryColor]);
+  }, [selectedBranch?.primaryColor, apiMenuData?.branchPrimaryColor]);
 
   // Get unique categories from menu items
   const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
