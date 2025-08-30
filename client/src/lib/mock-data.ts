@@ -513,6 +513,120 @@ export const mockColors = {
   },
 };
 
+// Mock API Deals Data
+export const mockApiDeals: ApiDeal[] = [
+  {
+    dealId: 1,
+    name: "Family Feast Deal",
+    description: "2 Large Pizzas + Sides + Drinks. Perfect for families and groups.",
+    price: 1250,
+    picture: "https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
+    dealEndDate: "2025-12-31T23:59:59Z",
+    discount: {
+      id: 1,
+      name: "Family Special",
+      value: 15,
+      endDate: "2025-12-31T23:59:59Z"
+    },
+    menuItems: [
+      {
+        menuItemId: 1,
+        name: "Margherita Pizza",
+        variantsDetails: [
+          {
+            menuItemVariantId: 1,
+            name: "Large",
+            quantity: 1
+          },
+          {
+            menuItemVariantId: 2,
+            name: "Medium",
+            quantity: 1
+          }
+        ]
+      },
+      {
+        menuItemId: 2,
+        name: "Pepperoni Pizza",
+        variantsDetails: [
+          {
+            menuItemVariantId: 3,
+            name: "Large",
+            quantity: 1
+          }
+        ]
+      }
+    ],
+    subMenuItems: [
+      {
+        subMenuItemId: 1,
+        name: "Garlic Bread",
+        quantity: 2
+      },
+      {
+        subMenuItemId: 2,
+        name: "Soft Drinks",
+        quantity: 4
+      }
+    ]
+  },
+  {
+    dealId: 2,
+    name: "Lunch Combo Deal",
+    description: "Burger + Fries + Drink combo at special price.",
+    price: 350,
+    picture: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
+    dealEndDate: "2025-12-31T23:59:59Z",
+    discount: {
+      id: 2,
+      name: "Lunch Special",
+      value: 10,
+      endDate: "2025-12-31T23:59:59Z"
+    },
+    menuItems: [
+      {
+        menuItemId: 3,
+        name: "Pasta Periperi",
+        variantsDetails: [
+          {
+            menuItemVariantId: 7,
+            name: "Standard",
+            quantity: 3
+          }
+        ]
+      },
+      {
+        menuItemId: 4,
+        name: "Beef Burger",
+        variantsDetails: [
+          {
+            menuItemVariantId: 8,
+            name: "Regular",
+            quantity: 1
+          },
+          {
+            menuItemVariantId: 9,
+            name: "Large",
+            quantity: 1
+          }
+        ]
+      }
+    ],
+    subMenuItems: [
+      {
+        subMenuItemId: 3,
+        name: "French Fries",
+        quantity: 1
+      },
+      {
+        subMenuItemId: 4,
+        name: "Coca Cola",
+        quantity: 1
+      }
+    ]
+  }
+];
+
 // In-memory storage simulation
 class MockStorage {
   private menuItems = [...mockMenuItems];
@@ -522,6 +636,7 @@ class MockStorage {
   private restaurants = [...mockRestaurants];
   private tables = [...mockTables];
   private reservations = [...mockReservations];
+  private deals = [...mockApiDeals];
 
   // Menu Items
   async getMenuItems(): Promise<MenuItem[]> {
@@ -530,6 +645,44 @@ class MockStorage {
 
   async getMenuItem(id: string): Promise<MenuItem | undefined> {
     return Promise.resolve(this.menuItems.find(item => item.id === id));
+  }
+
+  // API Menu Data
+  async getMenuData(): Promise<ApiMenuResponse> {
+    // Convert menu items to API format
+    const apiMenuItems: ApiMenuItem[] = this.menuItems
+      .filter(item => !item.isDeal)
+      .map(item => ({
+        menuItemId: parseInt(item.id.substring(0, 8), 16) % 1000,
+        name: item.name,
+        description: item.description,
+        categoryName: item.category,
+        picture: item.image,
+        variations: [
+          {
+            id: 1,
+            name: "Regular",
+            price: parseFloat(item.price)
+          }
+        ],
+        modifiers: [],
+        customizations: [],
+        discount: item.discount > 0 ? {
+          id: 1,
+          name: "Special Discount",
+          value: item.discount,
+          endDate: "2025-12-31T23:59:59Z"
+        } : null
+      }));
+
+    const recommendedItems = apiMenuItems.filter((_, index) => index < 3);
+
+    return Promise.resolve({
+      menuItems: apiMenuItems,
+      deals: [...this.deals],
+      subMenuItems: [],
+      recommendedForYou: recommendedItems
+    });
   }
 
   // Orders
@@ -659,6 +812,11 @@ class MockStorage {
 
   async getThemes() {
     return Promise.resolve(mockThemes);
+  }
+
+  // API Deals
+  async getDeals(): Promise<ApiDeal[]> {
+    return Promise.resolve([...this.deals]);
   }
 }
 

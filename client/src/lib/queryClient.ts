@@ -21,6 +21,10 @@ export async function apiRequest(
       } else {
         result = await mockStorage.getMenuItems();
       }
+    } else if (url.includes('/menu-data') && method === 'GET') {
+      result = await mockStorage.getMenuData();
+    } else if (url.includes('/deals') && method === 'GET') {
+      result = await mockStorage.getDeals();
     } else if (url.includes('/orders') && method === 'GET') {
       const urlParams = new URLSearchParams(url.split('?')[1]);
       const tableNumber = urlParams.get('tableNumber');

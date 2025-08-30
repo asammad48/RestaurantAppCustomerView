@@ -157,11 +157,28 @@ export default function AddToCartModal() {
           {deal.menuItems && deal.menuItems.length > 0 && (
             <div className="mb-4">
               <h4 className="font-medium configurable-text-primary mb-2">Main Items:</h4>
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {deal.menuItems.map((item) => (
-                  <li key={item.menuItemId} className="flex items-center text-sm configurable-text-secondary">
-                    <span className="w-2 h-2 configurable-primary rounded-full mr-2"></span>
-                    {item.name}
+                  <li key={item.menuItemId} className="configurable-surface p-3 rounded-lg border configurable-border">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center mb-2">
+                          <span className="w-2 h-2 configurable-primary rounded-full mr-2"></span>
+                          <span className="font-medium configurable-text-primary">{item.name}</span>
+                        </div>
+                        {item.variantsDetails && item.variantsDetails.length > 0 && (
+                          <div className="ml-4 space-y-1">
+                            <h5 className="text-xs font-medium configurable-text-secondary mb-1">Variants:</h5>
+                            {item.variantsDetails.map((variant) => (
+                              <div key={variant.menuItemVariantId} className="text-xs configurable-text-secondary flex items-center justify-between">
+                                <span>• {variant.name}</span>
+                                <span className="font-medium">Qty: {variant.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
