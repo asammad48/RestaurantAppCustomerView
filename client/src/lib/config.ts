@@ -1,4 +1,4 @@
-// API Configuration - External API for customer search and branch services
+// API Configuration - All APIs now use the generic API client
 export const API_CONFIG = {
   BASE_URL: 'https://5dtrtpzg-7261.inc1.devtunnels.ms',
   ENDPOINTS: {

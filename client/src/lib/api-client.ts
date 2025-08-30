@@ -1,6 +1,5 @@
 // Generic API client with status code handling
-// Using relative URLs for Replit compatibility - enables proper client/server separation
-const BASE_URL = '';
+const BASE_URL = 'https://5dtrtpzg-7261.inc1.devtunnels.ms';
 
 export interface ApiResponse<T = any> {
   data: T;

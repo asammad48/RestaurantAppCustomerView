@@ -1,6 +1,5 @@
 import { User } from '@/lib/auth-store';
-
-const AUTH_BASE_URL = 'https://5dtrtpzg-7261.inc1.devtunnels.ms';
+import { apiClient } from '@/lib/api-client';
 
 export interface LoginRequest {
   email: string;
@@ -39,22 +38,8 @@ export interface SignupResponse {
 class AuthService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
-      const response = await fetch(`${AUTH_BASE_URL}/api/User/login`, {
-        method: 'POST',
-        headers: {
-          'accept': '*/*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Login failed' }));
-        throw new Error(errorData.message || `Login failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post<LoginResponse>('/api/User/login', credentials);
+      return response.data;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Login error: ${error.message}`);
@@ -65,22 +50,8 @@ class AuthService {
 
   async signup(userData: SignupRequest): Promise<SignupResponse> {
     try {
-      const response = await fetch(`${AUTH_BASE_URL}/api/User/customer`, {
-        method: 'POST',
-        headers: {
-          'accept': '*/*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Signup failed' }));
-        throw new Error(errorData.message || `Signup failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post<SignupResponse>('/api/User/customer', userData);
+      return response.data;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Signup error: ${error.message}`);
