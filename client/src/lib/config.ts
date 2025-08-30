@@ -1,6 +1,6 @@
-// API Configuration
+// API Configuration - Using relative URLs for Replit compatibility
 export const API_CONFIG = {
-  BASE_URL: 'https://5dtrtpzg-7261.inc1.devtunnels.ms',
+  BASE_URL: '',
   ENDPOINTS: {
     CUSTOMER_SEARCH: '/api/customer-search/branch',
   }
