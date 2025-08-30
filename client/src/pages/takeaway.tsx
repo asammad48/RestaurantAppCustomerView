@@ -81,7 +81,7 @@ export default function TakeawayPage() {
       rating: branch.rating,
       cuisine: 'Restaurant',
       deliveryTime: '30-45 mins',
-      deliveryFee: 0,
+      deliveryFee: '0',
       minimumOrder: 0,
       address: branch.branchAddress,
       distance: branch.distanceFromMyLocation,
