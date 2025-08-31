@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar } from "lucide-react";
+import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import CartModal from "@/components/modals/cart-modal";
@@ -21,6 +21,7 @@ import PaymentModal from "@/components/modals/payment-modal";
 import SplitBillModal from "@/components/modals/split-bill-modal";
 import ReviewModal from "@/components/modals/review-modal";
 import OrderConfirmationModal from "@/components/modals/order-confirmation-modal";
+import AiEstimatorModal from "@/components/modals/ai-estimator-modal";
 import ThemeSwitcher from "@/components/theme-switcher";
 import FoodCard from "@/components/food-card";
 import { getImageUrl } from "@/lib/config";
@@ -33,7 +34,8 @@ export default function RestaurantMenuPage() {
     serviceType, 
     getCartCount, 
     setLastAddedItem, 
-    setAddToCartModalOpen 
+    setAddToCartModalOpen,
+    setAiEstimatorModalOpen
   } = useCartStore();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -544,9 +546,22 @@ export default function RestaurantMenuPage() {
       <Footer />
       <ThemeSwitcher />
 
-      {/* Cart indicator */}
-      {getCartCount() > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating Buttons */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+        {/* AI Budget Estimator Button */}
+        <Button
+          onClick={() => setAiEstimatorModalOpen(true)}
+          className="rounded-full w-16 h-16 shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white flex items-center justify-center"
+          data-testid="button-ai-estimator"
+        >
+          <div className="flex flex-col items-center">
+            <Bot className="w-4 h-4" />
+            <span className="text-xs font-bold">AI</span>
+          </div>
+        </Button>
+        
+        {/* Cart indicator */}
+        {getCartCount() > 0 && (
           <Button
             onClick={() => useCartStore.getState().setCartOpen(true)}
             className="rounded-full w-16 h-16 shadow-lg configurable-primary hover:configurable-primary-hover text-white"
@@ -557,8 +572,8 @@ export default function RestaurantMenuPage() {
               <div className="text-lg font-bold">{getCartCount()}</div>
             </div>
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Modals */}
       <CartModal />
@@ -569,6 +584,7 @@ export default function RestaurantMenuPage() {
       <SplitBillModal />
       <ReviewModal />
       <OrderConfirmationModal />
+      <AiEstimatorModal />
     </div>
   );
 }

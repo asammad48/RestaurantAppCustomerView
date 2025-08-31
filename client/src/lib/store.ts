@@ -93,6 +93,7 @@ interface CartStore {
   isSplitBillModalOpen: boolean;
   isReviewModalOpen: boolean;
   isOrderConfirmationOpen: boolean;
+  isAiEstimatorModalOpen: boolean;
   splitBillMode: 'equality' | 'items';
   addItem: (item: MenuItem | ApiMenuItem | ApiDeal, variation?: string) => void;
   removeItem: (itemId: string) => void;
@@ -113,6 +114,7 @@ interface CartStore {
   setSplitBillModalOpen: (open: boolean) => void;
   setReviewModalOpen: (open: boolean) => void;
   setOrderConfirmationOpen: (open: boolean) => void;
+  setAiEstimatorModalOpen: (open: boolean) => void;
   setSplitBillMode: (mode: 'equality' | 'items') => void;
   setLastAddedItem: (item: MenuItem | ApiMenuItem | ApiDeal | null) => void;
   setServiceType: (type: ServiceType) => void;
@@ -141,6 +143,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   isSplitBillModalOpen: false,
   isReviewModalOpen: false,
   isOrderConfirmationOpen: false,
+  isAiEstimatorModalOpen: false,
   splitBillMode: 'equality',
   
   addItem: (item: MenuItem | ApiMenuItem | ApiDeal, variation?: string) => {
@@ -217,6 +220,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   setSplitBillModalOpen: (open: boolean) => set({ isSplitBillModalOpen: open }),
   setReviewModalOpen: (open: boolean) => set({ isReviewModalOpen: open }),
   setOrderConfirmationOpen: (open: boolean) => set({ isOrderConfirmationOpen: open }),
+  setAiEstimatorModalOpen: (open: boolean) => set({ isAiEstimatorModalOpen: open }),
   setSplitBillMode: (mode: 'equality' | 'items') => set({ splitBillMode: mode }),
   setLastAddedItem: (item: MenuItem | ApiMenuItem | ApiDeal | null) => set({ lastAddedItem: item }),
   setServiceType: (type: ServiceType) => set({ serviceType: type }),
