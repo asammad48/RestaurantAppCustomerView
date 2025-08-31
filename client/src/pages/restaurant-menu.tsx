@@ -281,16 +281,16 @@ export default function RestaurantMenuPage() {
 
             {/* Price and Add to Cart */}
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex flex-col">
                 {hasDiscount ? (
-                  <div className="flex items-center space-x-2">
+                  <>
                     <span className="text-lg font-bold configurable-text-primary">
                       PKR {formatPrice(discountedPrice)}
                     </span>
                     <span className="text-sm text-gray-500 line-through">
                       PKR {formatPrice(deal.price)}
                     </span>
-                  </div>
+                  </>
                 ) : (
                   <span className="text-lg font-bold configurable-text-primary">
                     PKR {formatPrice(deal.price)}
