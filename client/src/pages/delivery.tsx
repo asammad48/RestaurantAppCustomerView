@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { MapPin, Search, Navigation, Map } from "lucide-react";
+import { MapPin, Search, Navigation, Map, Bike, ShoppingBag, Calendar, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
@@ -24,6 +25,7 @@ export default function DeliveryPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('delivery');
   const { setServiceType } = useCartStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -73,14 +75,34 @@ export default function DeliveryPage() {
     }
   };
 
-  // Handle branch selection for delivery
+  // Handle service type selection
+  const handleServiceSelect = (service: 'delivery' | 'takeaway' | 'dine-in' | 'reservation') => {
+    setSelectedService(service);
+    setServiceType(service);
+    
+    // Navigate to specific pages for non-delivery services
+    switch (service) {
+      case 'takeaway':
+        setLocation('/takeaway');
+        break;
+      case 'reservation':
+        setLocation('/reservation');
+        break;
+      case 'dine-in':
+      case 'delivery':
+        // Stay on this page
+        break;
+    }
+  };
+
+  // Handle branch selection
   const handleSelectBranch = (branch: Branch) => {
     const { setSelectedBranch } = useCartStore.getState();
-    setServiceType('delivery');
+    setServiceType(selectedService);
     setSelectedBranch(branch);
     toast({
       title: "Restaurant Selected",
-      description: `Selected ${branch.branchName} for delivery. Redirecting to menu...`,
+      description: `Selected ${branch.branchName} for ${selectedService}. Redirecting to menu...`,
     });
     
     // Navigate to menu page
@@ -183,14 +205,66 @@ export default function DeliveryPage() {
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {/* Service Selection */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Food Delivery
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">
+            Choose Your Service
           </h1>
-          <p className="text-gray-600">
-            Order from restaurants in your area
-          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {[
+              {
+                id: 'delivery',
+                title: 'Delivery',
+                description: 'Get food delivered to your doorstep',
+                icon: Bike,
+                color: selectedService === 'delivery' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+              },
+              {
+                id: 'takeaway',
+                title: 'Take Away',
+                description: 'Pick up your order from the restaurant',
+                icon: ShoppingBag,
+                color: selectedService === 'takeaway' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+              },
+              {
+                id: 'dine-in',
+                title: 'Dine In',
+                description: 'Eat at the restaurant',
+                icon: UtensilsCrossed,
+                color: selectedService === 'dine-in' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+              },
+              {
+                id: 'reservation',
+                title: 'Reservation',
+                description: 'Book a table for dining in',
+                icon: Calendar,
+                color: selectedService === 'reservation' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+              },
+            ].map((service) => {
+              const Icon = service.icon;
+              return (
+                <Card 
+                  key={service.id} 
+                  className={`cursor-pointer transition-all duration-200 border ${service.color}`}
+                  onClick={() => handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
+                  data-testid={`service-option-${service.id}`}
+                >
+                  <CardContent className="flex flex-col items-center p-6 text-center">
+                    <div className={`p-3 rounded-full ${selectedService === service.id ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
+                      <Icon size={24} className={selectedService === service.id ? 'text-white' : 'configurable-primary-text'} />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">
+                      {service.title}
+                    </h3>
+                    <p className={`text-sm ${selectedService === service.id ? 'text-white/80' : 'text-gray-600'}`}>
+                      {service.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
 
         {/* Location and Search */}
@@ -199,7 +273,10 @@ export default function DeliveryPage() {
             <div>
               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
-                Delivery Location
+                {selectedService === 'delivery' ? 'Delivery Location' : 
+                 selectedService === 'takeaway' ? 'Pickup Location' :
+                 selectedService === 'dine-in' ? 'Restaurant Location' :
+                 'Reservation Location'}
               </label>
               
               {/* Location Options */}

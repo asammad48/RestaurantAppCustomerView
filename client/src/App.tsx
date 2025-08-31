@@ -12,14 +12,14 @@ import ReservationDetail from "@/pages/reservation-detail";
 import RestaurantMenu from "@/pages/restaurant-menu";
 import NotFound from "@/pages/not-found";
 import InitialServiceModal from "@/components/modals/initial-service-modal";
-import ServiceSelectionModal from "@/components/modals/service-selection-modal";
 import { LoginModal } from "@/components/modals/login-modal";
 import { SignupModal } from "@/components/modals/signup-modal";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={Delivery} />
+      <Route path="/home" component={Home} />
       <Route path="/orders" component={Orders} />
       <Route path="/delivery" component={Delivery} />
       <Route path="/takeaway" component={Takeaway} />
@@ -38,7 +38,6 @@ function App() {
         <Toaster />
         <Router />
         <InitialServiceModal />
-        <ServiceSelectionModal />
         <LoginModal />
         <SignupModal />
       </TooltipProvider>
