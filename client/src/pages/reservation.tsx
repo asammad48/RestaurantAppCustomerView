@@ -24,7 +24,7 @@ export default function ReservationPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
-  const [maxDistance, setMaxDistance] = useState(3);
+  const [maxDistance, setMaxDistance] = useState(20);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { setSelectedBranch } = useCartStore();
@@ -189,7 +189,7 @@ export default function ReservationPage() {
                 type="number"
                 value={maxDistance}
                 onChange={(e) => setMaxDistance(Number(e.target.value))}
-                placeholder="3"
+                placeholder="20"
                 min="1"
                 max="50"
                 data-testid="input-max-distance-reservation"
@@ -325,7 +325,6 @@ export default function ReservationPage() {
           isOpen={showMap}
           onClose={() => setShowMap(false)}
           onLocationSelect={handleLocationFromMap}
-          currentLocation={userLocation}
         />
       )}
 
