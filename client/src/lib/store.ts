@@ -135,7 +135,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   isCartOpen: false,
   isServiceModalOpen: false,
   isServiceSelectionOpen: false,
-  initialServiceOpen: true,
+  initialServiceOpen: false,
   isAddToCartModalOpen: false,
   isDeliveryDetailsModalOpen: false,
   isTakeawayDetailsModalOpen: false,
