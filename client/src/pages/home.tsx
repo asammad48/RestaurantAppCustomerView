@@ -292,11 +292,11 @@ export default function Home() {
 
             {/* Location and Search */}
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                     <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
-                    Your Location
+                    Restaurant Location
                   </label>
                   
                   <div className="grid grid-cols-2 gap-2 mb-2">
@@ -327,19 +327,14 @@ export default function Home() {
                   <Input
                     value={userLocation}
                     onChange={(e) => setUserLocation(e.target.value)}
-                    placeholder="Enter your location"
+                    placeholder="Enter area or restaurant name"
                   />
-                </div>
-                <div>
-                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                    <Search className="w-4 h-4 mr-1 configurable-primary-text" />
-                    Search Restaurants
-                  </label>
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by restaurant name"
-                  />
+                  
+                  {userCoords && (
+                    <div className="text-xs text-gray-600 mt-2">
+                      Location set: {userCoords.lat.toFixed(4)}, {userCoords.lng.toFixed(4)}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
