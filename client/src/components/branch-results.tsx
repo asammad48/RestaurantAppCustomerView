@@ -86,17 +86,17 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
                 </Badge>
               </div>
 
-              <div className="space-y-1 text-xs text-green-800 mb-3 p-2 rounded-md bg-green-100 bg-opacity-50">
+              <div className="space-y-1 text-xs mb-3 p-2 rounded-md" style={{ backgroundColor: 'var(--configurable-primary-alpha-10)', color: 'var(--color-primary)' }}>
                 <div className="flex items-center">
-                  <Clock className="w-3 h-3 mr-1 text-green-700" />
+                  <Clock className="w-3 h-3 mr-1" style={{ color: 'var(--color-primary)' }} />
                   30 min
                 </div>
                 <div className="flex items-center">
-                  <DollarSign className="w-3 h-3 mr-1 text-green-700" />
+                  <DollarSign className="w-3 h-3 mr-1" style={{ color: 'var(--color-primary)' }} />
                   Fee: $3.99
                 </div>
                 <div className="flex items-center">
-                  <MapPin className="w-3 h-3 mr-1 text-green-700" />
+                  <MapPin className="w-3 h-3 mr-1" style={{ color: 'var(--color-primary)' }} />
                   {Math.round(branch.distanceFromMyLocation)}km max distance
                 </div>
               </div>

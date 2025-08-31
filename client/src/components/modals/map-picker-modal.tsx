@@ -141,13 +141,13 @@ export default function MapPickerModal({
           </div>
 
           {/* Selected Location Info */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-800 mb-2">Selected Location:</h4>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--configurable-primary-alpha-10)', borderColor: 'var(--configurable-primary-alpha-20)', borderWidth: '1px' }}>
+            <h4 className="font-medium mb-2" style={{ color: 'var(--color-primary)' }}>Selected Location:</h4>
             <div className="space-y-1 text-sm">
-              <div className="text-blue-700">
+              <div style={{ color: 'var(--color-primary)' }}>
                 <strong>Coordinates:</strong> {selectedLat.toFixed(6)}, {selectedLng.toFixed(6)}
               </div>
-              <div className="text-blue-700">
+              <div style={{ color: 'var(--color-primary)' }}>
                 <strong>Address:</strong> {isLoadingAddress ? "Loading address..." : address}
               </div>
             </div>
