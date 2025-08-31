@@ -25,6 +25,7 @@ export default function DeliveryPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
+  const [maxDistance, setMaxDistance] = useState(20);
   const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('delivery');
   const { setServiceType } = useCartStore();
   const [, setLocation] = useLocation();
@@ -52,7 +53,8 @@ export default function DeliveryPage() {
         latitude,
         longitude,
         address: "", // As requested, send empty string
-        branchName: "" // As requested, send empty string
+        branchName: "", // As requested, send empty string
+        maxDistance
       });
 
       setBranches(response.data);
@@ -69,6 +71,40 @@ export default function DeliveryPage() {
         variant: "destructive",
         title: "Search Failed",
         description: "Unable to find restaurants for delivery. Please try again.",
+      });
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  // Search for reservation branches
+  const searchReservationBranches = async (latitude: number, longitude: number) => {
+    setBranchesLoading(true);
+    setBranchesError(null);
+    
+    try {
+      const response = await BranchService.searchReservationBranches({
+        latitude,
+        longitude,
+        address: userLocation || "",
+        branchName: searchQuery || "",
+        maxDistance
+      });
+
+      setBranches(response.data);
+      
+      toast({
+        title: "Reservation Restaurants Found",
+        description: `Found ${response.data.length} restaurants available for reservations.`,
+      });
+    } catch (error: any) {
+      console.error('Reservation branch search failed:', error);
+      setBranchesError(error.message || 'Failed to find restaurants for reservations');
+      
+      toast({
+        variant: "destructive",
+        title: "Search Failed",
+        description: "Unable to find restaurants for reservations. Please try again.",
       });
     } finally {
       setBranchesLoading(false);
@@ -516,12 +552,50 @@ export default function DeliveryPage() {
               <p className="text-gray-600">Book a table at your favorite restaurant for the perfect dining experience.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
                   Restaurant Location
                 </label>
+                
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={getCurrentLocation}
+                    disabled={isLoadingLocation}
+                    className="flex items-center justify-center gap-2"
+                    data-testid="button-current-location-reservation"
+                  >
+                    <Navigation className="w-4 h-4 configurable-primary-text" />
+                    {isLoadingLocation ? 'Getting...' : 'Current Location'}
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMapLocationSelect}
+                    className="flex items-center justify-center gap-2"
+                    data-testid="button-map-location-reservation"
+                  >
+                    <Map className="w-4 h-4 configurable-primary-text" />
+                    Pick on Map
+                  </Button>
+                </div>
+
+                {/* Show coordinates if available */}
+                {userCoords && (
+                  <div className="configurable-secondary p-2 rounded-md border configurable-border mb-2">
+                    <div className="flex items-center configurable-primary-text text-xs">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      <span>Location set: {userCoords.lat.toFixed(4)}, {userCoords.lng.toFixed(4)}</span>
+                    </div>
+                  </div>
+                )}
+                
                 <Input
                   value={userLocation}
                   onChange={(e) => setUserLocation(e.target.value)}
@@ -532,12 +606,29 @@ export default function DeliveryPage() {
 
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Max Distance (km)
+                </label>
+                <Input
+                  type="number"
+                  value={maxDistance}
+                  onChange={(e) => setMaxDistance(Number(e.target.value) || 20)}
+                  placeholder="Maximum distance in km"
+                  min="1"
+                  max="100"
+                  data-testid="input-max-distance"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <Calendar className="w-4 h-4 mr-1 configurable-primary-text" />
                   Date & Time
                 </label>
                 <Input
                   type="datetime-local"
-                  className="mb-2"
                   data-testid="input-reservation-datetime"
                 />
               </div>
@@ -560,6 +651,28 @@ export default function DeliveryPage() {
                   <option value="9+">9+ guests</option>
                 </select>
               </div>
+            </div>
+            
+            <div className="flex justify-center">
+              <Button
+                onClick={async () => {
+                  if (!userCoords) {
+                    toast({
+                      variant: "destructive",
+                      title: "Location Required",
+                      description: "Please set your location to search for restaurants.",
+                    });
+                    return;
+                  }
+                  await searchReservationBranches(userCoords.lat, userCoords.lng);
+                }}
+                disabled={!userCoords || branchesLoading}
+                className="flex items-center gap-2"
+                data-testid="button-search-reservations"
+              >
+                <Search className="w-4 h-4" />
+                {branchesLoading ? 'Searching...' : 'Search Restaurants'}
+              </Button>
             </div>
           </div>
         )}
