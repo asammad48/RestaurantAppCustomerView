@@ -98,34 +98,74 @@ export default function Home() {
     setServiceType(service);
   };
   
-  // Search for reservation branches
-  const searchReservationBranches = async (latitude: number, longitude: number) => {
+  // Search for branches based on selected service type
+  const searchBranchesForSelectedService = async (latitude: number, longitude: number) => {
     setBranchesLoading(true);
     setBranchesError(null);
     
     try {
-      const response = await BranchService.searchReservationBranches({
-        latitude,
-        longitude,
-        address: userLocation || "",
-        branchName: searchQuery || "",
-        maxDistance
-      });
+      let response;
+      let serviceDescription = "";
+      
+      switch (selectedService) {
+        case 'delivery':
+          response = await BranchService.searchBranches({
+            latitude,
+            longitude,
+            address: "",
+            branchName: "",
+            maxDistance
+          });
+          serviceDescription = "delivery";
+          break;
+        case 'takeaway':
+          response = await BranchService.searchTakeawayBranches({
+            latitude,
+            longitude,
+            address: userLocation || "",
+            branchName: searchQuery || "",
+            maxDistance
+          });
+          serviceDescription = "takeaway";
+          break;
+        case 'dine-in':
+          response = await BranchService.searchBranches({
+            latitude,
+            longitude,
+            address: userLocation || "",
+            branchName: searchQuery || "",
+            maxDistance
+          });
+          serviceDescription = "dine-in";
+          break;
+        case 'reservation':
+          response = await BranchService.searchReservationBranches({
+            latitude,
+            longitude,
+            address: userLocation || "",
+            branchName: searchQuery || "",
+            maxDistance
+          });
+          serviceDescription = "reservations";
+          break;
+        default:
+          throw new Error('Invalid service type');
+      }
 
       setBranches(response.data);
       
       toast({
-        title: "Reservation Branches Found",
-        description: `Found ${response.data.length} restaurants available for reservations.`,
+        title: "Restaurants Found",
+        description: `Found ${response.data.length} restaurants available for ${serviceDescription}.`,
       });
     } catch (error: any) {
-      console.error('Reservation branch search failed:', error);
-      setBranchesError(error.message || 'Failed to find reservation branches');
+      console.error(`${selectedService} branch search failed:`, error);
+      setBranchesError(error.message || `Failed to find restaurants for ${selectedService}`);
       
       toast({
         variant: "destructive",
         title: "Search Failed",
-        description: "Unable to find restaurants for reservations. Please try again.",
+        description: `Unable to find restaurants for ${selectedService}. Please try again.`,
       });
     } finally {
       setBranchesLoading(false);
@@ -156,7 +196,7 @@ export default function Home() {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           setUserCoords({ lat, lng });
-          searchReservationBranches(lat, lng);
+          searchBranchesForSelectedService(lat, lng);
           setIsLoadingLocation(false);
         },
         () => {
@@ -172,7 +212,7 @@ export default function Home() {
     setUserLocation(address);
     setUserCoords({ lat, lng });
     setShowMap(false);
-    searchReservationBranches(lat, lng);
+    searchBranchesForSelectedService(lat, lng);
   };
 
   if (isLoading) {
@@ -353,7 +393,7 @@ export default function Home() {
               
               <div className="mt-4 flex justify-center">
                 <Button 
-                  onClick={() => userCoords && searchReservationBranches(userCoords.lat, userCoords.lng)}
+                  onClick={() => userCoords && searchBranchesForSelectedService(userCoords.lat, userCoords.lng)}
                   disabled={!userCoords || branchesLoading}
                   className="configurable-primary"
                 >

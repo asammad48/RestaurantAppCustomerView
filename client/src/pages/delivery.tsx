@@ -43,8 +43,8 @@ export default function DeliveryPage() {
     return matchesSearch;
   });
 
-  // Search for nearby branches
-  const searchBranches = async (latitude: number, longitude: number) => {
+  // Search for delivery branches
+  const searchDeliveryBranches = async (latitude: number, longitude: number) => {
     setBranchesLoading(true);
     setBranchesError(null);
     
@@ -64,7 +64,7 @@ export default function DeliveryPage() {
         description: `Found ${response.data.length} restaurants available for delivery.`,
       });
     } catch (error: any) {
-      console.error('Branch search failed:', error);
+      console.error('Delivery branch search failed:', error);
       setBranchesError(error.message || 'Failed to find restaurants for delivery');
       
       toast({
@@ -77,7 +77,75 @@ export default function DeliveryPage() {
     }
   };
 
-  // Search for reservation branches
+  // Search for takeaway branches
+  const searchTakeawayBranches = async (latitude: number, longitude: number) => {
+    setBranchesLoading(true);
+    setBranchesError(null);
+    
+    try {
+      const response = await BranchService.searchTakeawayBranches({
+        latitude,
+        longitude,
+        address: userLocation || "",
+        branchName: searchQuery || "",
+        maxDistance
+      });
+
+      setBranches(response.data);
+      
+      toast({
+        title: "Takeaway Restaurants Found",
+        description: `Found ${response.data.length} restaurants available for takeaway.`,
+      });
+    } catch (error: any) {
+      console.error('Takeaway branch search failed:', error);
+      setBranchesError(error.message || 'Failed to find restaurants for takeaway');
+      
+      toast({
+        variant: "destructive",
+        title: "Search Failed",
+        description: "Unable to find restaurants for takeaway. Please try again.",
+      });
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  // Search for dine-in branches
+  const searchDineInBranches = async (latitude: number, longitude: number) => {
+    setBranchesLoading(true);
+    setBranchesError(null);
+    
+    try {
+      const response = await BranchService.searchBranches({
+        latitude,
+        longitude,
+        address: userLocation || "",
+        branchName: searchQuery || "",
+        maxDistance
+      });
+
+      setBranches(response.data);
+      
+      toast({
+        title: "Dine-in Restaurants Found",
+        description: `Found ${response.data.length} restaurants available for dine-in.`,
+      });
+    } catch (error: any) {
+      console.error('Dine-in branch search failed:', error);
+      setBranchesError(error.message || 'Failed to find restaurants for dine-in');
+      
+      toast({
+        variant: "destructive",
+        title: "Search Failed",
+        description: "Unable to find restaurants for dine-in. Please try again.",
+      });
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  // Generic search function that calls the appropriate API based on selected service\n  const searchBranchesForService = async (latitude: number, longitude: number) => {\n    switch (selectedService) {\n      case 'delivery':\n        await searchDeliveryBranches(latitude, longitude);\n        break;\n      case 'takeaway':\n        await searchTakeawayBranches(latitude, longitude);\n        break;\n      case 'dine-in':\n        await searchDineInBranches(latitude, longitude);\n        break;\n      case 'reservation':\n        await searchReservationBranches(latitude, longitude);\n        break;\n    }\n  };\n\n  // Search for reservation branches
   const searchReservationBranches = async (latitude: number, longitude: number) => {
     setBranchesLoading(true);
     setBranchesError(null);
@@ -147,8 +215,8 @@ export default function DeliveryPage() {
             setUserLocation(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
             setUserCoords({ lat, lng });
             
-            // Search for nearby branches
-            await searchBranches(lat, lng);
+            // Search for branches based on selected service
+            await searchBranchesForService(lat, lng);
             
             toast({
               title: "Location Found",
@@ -194,8 +262,8 @@ export default function DeliveryPage() {
     setUserCoords({ lat, lng });
     setShowMap(false);
     
-    // Search for nearby branches
-    await searchBranches(lat, lng);
+    // Search for branches based on selected service
+    await searchBranchesForService(lat, lng);
     
     toast({
       title: "Location Set",
@@ -633,7 +701,7 @@ export default function DeliveryPage() {
                     });
                     return;
                   }
-                  await searchReservationBranches(userCoords.lat, userCoords.lng);
+                  await searchBranchesForService(userCoords.lat, userCoords.lng);
                 }}
                 disabled={!userCoords || branchesLoading}
                 className="flex items-center gap-2"
