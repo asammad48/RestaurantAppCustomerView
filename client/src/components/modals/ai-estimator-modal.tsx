@@ -34,11 +34,6 @@ export default function AiEstimatorModal() {
   // Form state
   const [groupSize, setGroupSize] = useState<number>(2);
   const [budget, setBudget] = useState<number>(5000);
-  const [preferences, setPreferences] = useState({
-    vegetarian: false,
-    spicy: false,
-    includeDrinks: true,
-  });
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   
   // Get branch ID
@@ -84,8 +79,7 @@ export default function AiEstimatorModal() {
 
     categoriesData.forEach(categoryName => {
       const categoryItems = apiMenuData.menuItems.filter(item => 
-        item.categoryName === categoryName &&
-        (!preferences.vegetarian || item.description.toLowerCase().includes('veg'))
+        item.categoryName === categoryName
       );
 
       if (categoryItems.length === 0) return;
@@ -201,7 +195,7 @@ export default function AiEstimatorModal() {
 
   return (
     <Dialog open={isAiEstimatorModalOpen} onOpenChange={setAiEstimatorModalOpen}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <DialogTitle className="text-2xl font-bold text-black flex items-center gap-2">
             <Bot className="w-6 h-6 configurable-primary-text" />
@@ -251,42 +245,6 @@ export default function AiEstimatorModal() {
               </p>
             </div>
 
-            {/* Preferences */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Preferences (Optional)</Label>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="vegetarian"
-                    checked={preferences.vegetarian}
-                    onCheckedChange={(checked) => 
-                      setPreferences(prev => ({ ...prev, vegetarian: checked as boolean }))
-                    }
-                  />
-                  <Label htmlFor="vegetarian" className="text-sm">Vegetarian only</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="spicy"
-                    checked={preferences.spicy}
-                    onCheckedChange={(checked) => 
-                      setPreferences(prev => ({ ...prev, spicy: checked as boolean }))
-                    }
-                  />
-                  <Label htmlFor="spicy" className="text-sm">Spicy food preferred</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="include-drinks"
-                    checked={preferences.includeDrinks}
-                    onCheckedChange={(checked) => 
-                      setPreferences(prev => ({ ...prev, includeDrinks: checked as boolean }))
-                    }
-                  />
-                  <Label htmlFor="include-drinks" className="text-sm">Include drinks</Label>
-                </div>
-              </div>
-            </div>
 
             {/* Category Selection */}
             <div className="space-y-3">
