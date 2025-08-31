@@ -150,7 +150,7 @@ export default function AddToCartModal() {
   const renderDealContent = (deal: ApiDeal) => {
     return (
       <div className="space-y-4">
-        <div className="p-4 rounded-lg border" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.2', borderColor: 'var(--color-primary)' }}>
+        <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
           <h3 className="font-semibold text-lg configurable-text-primary mb-3">Deal Includes:</h3>
           
           {/* Menu Items */}
@@ -159,7 +159,7 @@ export default function AddToCartModal() {
               <h4 className="font-medium configurable-text-primary mb-2">Main Items:</h4>
               <ul className="space-y-2">
                 {deal.menuItems.map((item) => (
-                  <li key={item.menuItemId} className="p-3 rounded-lg border" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.15', borderColor: 'var(--color-primary)' }}>
+                  <li key={item.menuItemId} className="p-3 rounded-lg border bg-white border-gray-200">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center mb-2">
@@ -202,7 +202,7 @@ export default function AddToCartModal() {
           
           {/* Deal End Date with shading */}
           <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-primary)' }}>
-            <div className="p-2 rounded" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.2' }}>
+            <div className="p-2 rounded bg-gray-100">
               <p className="text-xs configurable-text-primary font-medium">
                 Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}
               </p>
@@ -213,13 +213,13 @@ export default function AddToCartModal() {
         {/* Deal Variants/Customizations */}
         <div>
           <h3 className="font-bold text-lg mb-3">Deal Options</h3>
-          <div className="p-3 rounded-lg border" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.1', borderColor: 'var(--color-primary)' }}>
+          <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
             <div className="flex justify-between items-center">
               <span className="font-medium configurable-text-primary">Standard Deal</span>
               <span className="text-sm font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
             </div>
             {deal.discount && deal.discount.value > 0 && (
-              <div className="mt-2 p-2 rounded" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.2' }}>
+              <div className="mt-2 p-2 rounded bg-green-50">
                 <p className="text-xs font-medium" style={{color: 'var(--configurable-primary)'}}>
                   You save {deal.discount.value}% on this deal!
                 </p>
@@ -248,7 +248,7 @@ export default function AddToCartModal() {
                       ? 'border-2 configurable-border configurable-primary-text' 
                       : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
                   }`}
-                  style={selectedVariation === variation.id ? { backgroundColor: 'var(--color-primary)', opacity: '0.2' } : {}}
+                  style={selectedVariation === variation.id ? { backgroundColor: '#e0f2fe' } : {}}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{variation.name}</span>
@@ -263,7 +263,7 @@ export default function AddToCartModal() {
         {/* Modifiers Section */}
         {menuItem.modifiers && menuItem.modifiers.length > 0 && (
           <Collapsible open={modifiersOpen} onOpenChange={setModifiersOpen}>
-            <CollapsibleTrigger className="w-full p-3 rounded-lg flex items-center justify-between font-medium" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.15' }}>
+            <CollapsibleTrigger className="w-full p-3 rounded-lg flex items-center justify-between font-medium bg-gray-100">
               Modifiers
               {modifiersOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
             </CollapsibleTrigger>
@@ -302,7 +302,7 @@ export default function AddToCartModal() {
           <div className="space-y-4">
             {menuItem.customizations.map((customization) => (
               <Collapsible key={customization.id} open={customizationsOpen} onOpenChange={setCustomizationsOpen}>
-                <CollapsibleTrigger className="w-full p-3 rounded-lg flex items-center justify-between font-medium" style={{ backgroundColor: 'var(--color-primary)', opacity: '0.15' }}>
+                <CollapsibleTrigger className="w-full p-3 rounded-lg flex items-center justify-between font-medium bg-gray-100">
                   {customization.name}
                   {customizationsOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
                 </CollapsibleTrigger>
@@ -316,7 +316,7 @@ export default function AddToCartModal() {
                           ? 'border configurable-border' 
                           : 'bg-gray-50 hover:bg-gray-100'
                       }`}
-                      style={selectedCustomizations[customization.id] === option.id ? { backgroundColor: 'var(--color-primary)', opacity: '0.2' } : {}}
+                      style={selectedCustomizations[customization.id] === option.id ? { backgroundColor: '#e0f2fe' } : {}}
                     >
                       <div className="flex justify-between items-center">
                         <span>{option.name}</span>
