@@ -115,19 +115,9 @@ export default function RestaurantMenuPage() {
   );
 
   const handleBack = () => {
-    switch (serviceType) {
-      case 'delivery':
-        setLocation('/delivery');
-        break;
-      case 'takeaway':
-        setLocation('/takeaway');
-        break;
-      case 'qr':
-        setLocation('/');
-        break;
-      default:
-        setLocation('/');
-    }
+    // All services now go back to the main delivery page
+    // since it handles all service types (delivery, takeaway, dine-in, reservation)
+    setLocation('/');
   };
 
   const getServiceBadge = () => {
