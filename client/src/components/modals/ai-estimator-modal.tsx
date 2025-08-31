@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/lib/store";
-import { Users, DollarSign, Pizza, Sandwich, Coffee, ChefHat, Cake, Plus, Bot, Sparkles } from "lucide-react";
+import { Users, DollarSign, Pizza, Sandwich, Coffee, ChefHat, Cake, Plus, Bot, Sparkles, Clock, TrendingUp, Info, Lightbulb } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
@@ -35,6 +36,8 @@ export default function AiEstimatorModal() {
   const [groupSize, setGroupSize] = useState<number>(2);
   const [budget, setBudget] = useState<number>(5000);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [mealType, setMealType] = useState<string>('');
+  const [dietaryPrefs, setDietaryPrefs] = useState<string[]>([]);
   
   // Get branch ID
   const getBranchId = () => {
@@ -225,7 +228,7 @@ export default function AiEstimatorModal() {
             </div>
 
             {/* Budget */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="budget" className="text-sm font-medium flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
                 Total Budget (PKR)
@@ -241,14 +244,84 @@ export default function AiEstimatorModal() {
                 data-testid="input-budget"
               />
               <p className="text-sm text-gray-600">
-                That's about PKR {Math.round(budget / groupSize)} per person
+                About PKR {Math.round(budget / groupSize)} per person
               </p>
+              
+              {/* Popular Budget Suggestions */}
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">Popular Budget Ranges</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Light', range: '1000-2000', perPerson: '500-1000' },
+                    { label: 'Standard', range: '2000-5000', perPerson: '1000-2500' },
+                    { label: 'Premium', range: '5000+', perPerson: '2500+' }
+                  ].map((option) => (
+                    <Button
+                      key={option.label}
+                      variant="outline"
+                      size="sm"
+                      className="h-auto p-2 flex flex-col items-center text-xs"
+                      onClick={() => setBudget(parseInt(option.range.split('-')[0]))}
+                    >
+                      <span className="font-medium">{option.label}</span>
+                      <span className="text-gray-600">{option.perPerson}/person</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </div>
 
 
+            {/* Meal Type Selection */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Meal Type (Optional)
+              </Label>
+              <Select value={mealType} onValueChange={setMealType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select meal type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="breakfast">🌅 Breakfast (8 AM - 11 AM)</SelectItem>
+                  <SelectItem value="lunch">☀️ Lunch (11 AM - 4 PM)</SelectItem>
+                  <SelectItem value="dinner">🌙 Dinner (4 PM - 11 PM)</SelectItem>
+                  <SelectItem value="snack">🍿 Snacks & Light Bites</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Dietary Preferences */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Dietary Preferences (Optional)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {['Vegetarian', 'Spicy', 'Low Calorie', 'Family Friendly'].map(pref => (
+                  <div key={pref} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`pref-${pref}`}
+                      checked={dietaryPrefs.includes(pref)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setDietaryPrefs(prev => [...prev, pref]);
+                        } else {
+                          setDietaryPrefs(prev => prev.filter(p => p !== pref));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`pref-${pref}`} className="text-sm">
+                      {pref}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Category Selection */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Categories (Optional - leave empty for all categories)</Label>
+              <Label className="text-sm font-medium">Food Categories (Optional)</Label>
               <div className="grid grid-cols-2 gap-2">
                 {uniqueCategories.map(category => (
                   <div key={category} className="flex items-center space-x-2">
@@ -266,6 +339,49 @@ export default function AiEstimatorModal() {
               </div>
             </div>
 
+            {/* Tips Section */}
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium text-green-800">Smart Ordering Tips</span>
+              </div>
+              <div className="space-y-2 text-xs text-green-700">
+                <div className="flex items-start gap-2">
+                  <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                  <span>Budget 20% extra for drinks and desserts</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                  <span>Combo meals often provide better value than individual items</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                  <span>Consider sharing family-sized portions for groups of 3+</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                  <span>AI suggestions prioritize variety and balanced nutrition</span>
+                </div>
+              </div>
+            </div>
+
+            {/* How AI Works */}
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Info className="w-4 h-4 text-purple-600" />
+                <span className="text-sm font-medium text-purple-800">How Our AI Works</span>
+              </div>
+              <div className="text-xs text-purple-700 space-y-2">
+                <p>Our smart algorithm analyzes your preferences and creates personalized food combinations that:</p>
+                <div className="grid grid-cols-1 gap-1 ml-2">
+                  <span>• Maximize variety within your budget</span>
+                  <span>• Balance nutritional value and taste</span>
+                  <span>• Consider group sharing opportunities</span>
+                  <span>• Optimize price-per-person ratios</span>
+                </div>
+              </div>
+            </div>
+
             {/* Generate Button */}
             <div className="pt-4">
               <Button
@@ -277,6 +393,9 @@ export default function AiEstimatorModal() {
                 <Bot className="w-4 h-4 mr-2" />
                 Generate AI Suggestions
               </Button>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Get personalized meal combinations in seconds
+              </p>
             </div>
           </div>
         )}
