@@ -173,11 +173,17 @@ export default function Home() {
   };
 
   const handleBranchSelect = (branch: Branch) => {
-    // Store the selected branch in cart store for theming
+    // Store the selected branch in cart store
     setSelectedBranch(branch);
+    setServiceType(selectedService);
     
-    // Navigate to reservation detail page with selected branch
-    setLocation(`/reservation-detail?branchId=${branch.branchId}&branchName=${encodeURIComponent(branch.branchName)}`);
+    // Navigate based on selected service type
+    if (selectedService === 'reservation') {
+      setLocation(`/reservation-detail?branchId=${branch.branchId}&branchName=${encodeURIComponent(branch.branchName)}`);
+    } else {
+      // For other services, navigate to restaurant menu
+      setLocation('/restaurant-menu');
+    }
   };
 
   // Filter branches
@@ -487,7 +493,9 @@ export default function Home() {
                                 size="sm" 
                                 className="w-full configurable-primary text-white configurable-primary-hover"
                               >
-                                Book Table
+                                {selectedService === 'reservation' ? 'Proceed to reservation' : 
+                                 selectedService === 'takeaway' ? 'Order Now' :
+                                 selectedService === 'delivery' ? 'Order for Delivery' : 'View Menu'}
                               </Button>
                             </div>
                           </div>

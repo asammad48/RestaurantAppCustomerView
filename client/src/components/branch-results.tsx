@@ -9,9 +9,25 @@ interface BranchResultsProps {
   branches: Branch[];
   loading?: boolean;
   onSelectBranch?: (branch: Branch) => void;
+  serviceType?: 'delivery' | 'takeaway' | 'dine-in' | 'reservation';
 }
 
-export default function BranchResults({ branches, loading = false, onSelectBranch }: BranchResultsProps) {
+export default function BranchResults({ branches, loading = false, onSelectBranch, serviceType = 'delivery' }: BranchResultsProps) {
+  const getButtonText = (service: string) => {
+    switch (service) {
+      case 'reservation':
+        return 'Proceed to reservation';
+      case 'takeaway':
+        return 'Order Now';
+      case 'delivery':
+        return 'Order for Delivery';
+      case 'dine-in':
+        return 'View Menu';
+      default:
+        return 'View Menu';
+    }
+  };
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -123,7 +139,7 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
                   }}
                   data-testid={`button-order-from-${branch.branchId}`}
                 >
-                  {branch.isBranchClosed ? 'Currently Closed' : 'View Menu'}
+                  {branch.isBranchClosed ? 'Currently Closed' : getButtonText(serviceType)}
                 </Button>
               </div>
             </div>

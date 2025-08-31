@@ -209,13 +209,22 @@ export default function DeliveryPage() {
     const { setSelectedBranch } = useCartStore.getState();
     setServiceType(selectedService);
     setSelectedBranch(branch);
-    toast({
-      title: "Restaurant Selected",
-      description: `Selected ${branch.branchName} for ${selectedService}. Redirecting to menu...`,
-    });
     
-    // Navigate to menu page
-    setLocation('/restaurant-menu');
+    if (selectedService === 'reservation') {
+      toast({
+        title: "Restaurant Selected",
+        description: `Selected ${branch.branchName} for reservation. Redirecting to reservation details...`,
+      });
+      // Navigate to reservation detail page
+      setLocation(`/reservation-detail?branchId=${branch.branchId}&branchName=${encodeURIComponent(branch.branchName)}`);
+    } else {
+      toast({
+        title: "Restaurant Selected",
+        description: `Selected ${branch.branchName} for ${selectedService}. Redirecting to menu...`,
+      });
+      // Navigate to menu page
+      setLocation('/restaurant-menu');
+    }
   };
 
   // Get current location using browser geolocation
@@ -774,6 +783,7 @@ export default function DeliveryPage() {
                 branches={filteredBranches}
                 loading={branchesLoading}
                 onSelectBranch={handleSelectBranch}
+                serviceType={selectedService}
               />
             </>
           )}
