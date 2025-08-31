@@ -9,9 +9,10 @@ interface FoodCardProps {
   item: MenuItem | ApiMenuItem;
   variant?: "grid" | "list" | "compact";
   isRecommended?: boolean;
+  className?: string;
 }
 
-export default function FoodCard({ item, variant = "grid", isRecommended = false }: FoodCardProps) {
+export default function FoodCard({ item, variant = "grid", isRecommended = false, className = "" }: FoodCardProps) {
   const { addItem, setAddToCartModalOpen, setLastAddedItem } = useCartStore();
   
   // Helper functions to work with both old and new API data
@@ -168,7 +169,7 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
 
   if (variant === "compact") {
     return (
-      <div className="food-card bg-white rounded-lg shadow-sm p-3 flex gap-3">
+      <div className={`food-card bg-white rounded-lg shadow-sm p-3 flex gap-3 h-full ${className}`}>
         <div className="relative w-20 h-20 flex-shrink-0">
           <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg" />
           {isRecommended && (
@@ -213,7 +214,7 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
   }
 
   return (
-    <div className="food-card bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className={`food-card bg-white rounded-xl shadow-sm overflow-hidden h-full ${className}`}>
       <div className="relative">
         <img src={getImage()} alt={item.name} className="w-full h-48 object-cover" />
         {isRecommended && (

@@ -596,7 +596,7 @@ export default function RestaurantMenuPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mb-6" style={{ minHeight: '600px' }}>
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 {isLoading ? (
                   Array.from({ length: itemsPerPage }, (_, i) => (
                     <Card key={i} className="animate-pulse">
@@ -614,11 +614,13 @@ export default function RestaurantMenuPage() {
                   ))
                 ) : (
                   paginatedItems.map((item: ApiMenuItem) => (
-                    <FoodCard 
-                      key={item.menuItemId} 
-                      item={item} 
-                      variant="compact"
-                    />
+                    <div key={item.menuItemId} className="h-full">
+                      <FoodCard 
+                        item={item} 
+                        variant="compact"
+                        className="h-full"
+                      />
+                    </div>
                   ))
                 )}
               </div>
