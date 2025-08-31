@@ -42,7 +42,7 @@ export default function RestaurantMenuPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedVariations, setSelectedVariations] = useState<{[key: number]: number}>({});
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   const queryClient = useQueryClient();
 
@@ -91,10 +91,8 @@ export default function RestaurantMenuPage() {
   useEffect(() => {
     if (selectedBranch?.primaryColor) {
       applyBranchPrimaryColor(selectedBranch.primaryColor);
-    } else if (apiMenuData?.branchPrimaryColor) {
-      applyBranchPrimaryColor(apiMenuData.branchPrimaryColor);
     }
-  }, [selectedBranch?.primaryColor, apiMenuData?.branchPrimaryColor]);
+  }, [selectedBranch?.primaryColor]);
 
   // Get unique categories from menu items
   const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
@@ -149,12 +147,6 @@ export default function RestaurantMenuPage() {
             <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 configurable-primary-text" />
             <div className="text-gray-600">{selectedBranch.branchAddress}</div>
           </div>
-          {serviceType === 'delivery' && (
-            <div className="flex items-center">
-              <DollarSign className="w-4 h-4 mr-2 configurable-primary-text" />
-              Delivery Fee: PKR {selectedBranch.deliveryFee}
-            </div>
-          )}
         </div>
       );
     }
@@ -349,60 +341,52 @@ export default function RestaurantMenuPage() {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Back Button */}
-          {serviceType !== 'qr' && (
-            <div className="mb-6">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                className="flex items-center"
-                data-testid="button-back-to-restaurants"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to {serviceType === 'delivery' ? 'Delivery' : serviceType === 'takeaway' ? 'Takeaway' : 'Restaurants'}
-              </Button>
-            </div>
-          )}
+        {/* Back Button */}
+        {serviceType !== 'qr' && (
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              className="flex items-center"
+              data-testid="button-back-to-restaurants"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to {serviceType === 'delivery' ? 'Delivery' : serviceType === 'takeaway' ? 'Takeaway' : 'Restaurants'}
+            </Button>
+          </div>
+        )}
 
-          {/* Restaurant/Branch Header */}
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <img
-                  src={selectedBranch?.branchPicture ? getImageUrl(selectedBranch.branchPicture) : selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
-                  alt={selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant'}
-                  className="w-full md:w-48 h-32 object-cover rounded-lg flex-shrink-0"
-                />
-                
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                        {selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant Menu'}
-                      </h1>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="flex items-center">
-                          <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
-                          <span className="font-medium">{selectedBranch?.rating || selectedRestaurant?.rating || '4.5'}</span>
-                        </div>
-                        {getServiceBadge()}
+        {/* Restaurant/Branch Header */}
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-6">
+              <img
+                src={selectedBranch?.branchPicture ? getImageUrl(selectedBranch.branchPicture) : selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
+                alt={selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant'}
+                className="w-full md:w-48 h-32 object-cover rounded-lg flex-shrink-0"
+              />
+              
+              <div className="flex-1">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                      {selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant Menu'}
+                    </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center">
+                        <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
+                        <span className="font-medium">{selectedBranch?.rating || selectedRestaurant?.rating || '4.5'}</span>
                       </div>
+                      {getServiceBadge()}
                     </div>
                   </div>
-
-                  {getServiceInfo()}
-
-                  {serviceType === 'delivery' && selectedBranch && (
-                    <div className="mt-4 p-3 rounded-lg configurable-primary-bg-alpha-10">
-                      <p className="text-sm" style={{ color: 'var(--configurable-primary)' }}>
-                        <strong>Maximum Delivery Distance:</strong> {selectedBranch.maxDistanceForDelivery} km
-                      </p>
-                    </div>
-                  )}
                 </div>
+
+                {getServiceInfo()}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Recommended Section */}
         {apiMenuData?.recommendedForYou && apiMenuData.recommendedForYou.length > 0 && (
@@ -460,8 +444,22 @@ export default function RestaurantMenuPage() {
           {/* Left Side - Menu Items */}
           <div className="flex-1">
             <section>
-              <h2 className="text-2xl font-bold configurable-text-primary mb-6">Menu Items</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold configurable-text-primary">Menu Items</h2>
+                {/* Mobile AI Estimator Button */}
+                <div className="lg:hidden">
+                  <Button
+                    onClick={() => setAiEstimatorModalOpen(true)}
+                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2"
+                    data-testid="button-open-ai-estimator-mobile"
+                  >
+                    <Bot className="w-4 h-4" />
+                    AI Estimator
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4 mb-6" style={{ minHeight: '600px' }}>
                 {isLoading ? (
                   Array.from({ length: itemsPerPage }, (_, i) => (
                     <Card key={i} className="animate-pulse">
@@ -490,7 +488,7 @@ export default function RestaurantMenuPage() {
               
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-2 mt-6">
+                <div className="flex items-center justify-center space-x-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -537,52 +535,59 @@ export default function RestaurantMenuPage() {
 
           {/* Right Side - AI Estimator Panel (Desktop Only) */}
           <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-24">
-              <Card className="border-2" style={{ borderColor: 'var(--configurable-primary-alpha-20)' }}>
+            <div className="sticky top-4">
+              <Card className="h-full" style={{ minHeight: '700px' }}>
                 <CardContent className="p-6">
-                  <div className="text-center mb-4">
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--configurable-primary-alpha-10)' }}>
-                      <Bot className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
-                    </div>
-                    <h3 className="text-lg font-bold configurable-text-primary">AI Budget Estimator</h3>
-                    <p className="text-sm text-gray-600 mt-2">Get personalized meal suggestions based on your group size and budget</p>
+                  <div className="text-center mb-6">
+                    <Bot className="w-12 h-12 configurable-primary-text mx-auto mb-4" />
+                    <h3 className="text-xl font-bold configurable-text-primary mb-2">AI Budget Estimator</h3>
+                    <p className="text-sm configurable-text-secondary mb-4">
+                      Let our AI help you plan the perfect meal within your budget for your group
+                    </p>
+                    <Button
+                      onClick={() => setAiEstimatorModalOpen(true)}
+                      className="w-full configurable-primary hover:configurable-primary-hover text-white"
+                      data-testid="button-open-ai-estimator-desktop"
+                    >
+                      <Bot className="w-4 h-4 mr-2" />
+                      Start AI Estimator
+                    </Button>
                   </div>
                   
-                  <Button
-                    onClick={() => setAiEstimatorModalOpen(true)}
-                    className="w-full configurable-primary hover:configurable-primary-hover text-white"
-                    data-testid="button-open-ai-estimator"
-                  >
-                    Start Planning
-                  </Button>
+                  {/* Category Preview */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold configurable-text-primary">Available Categories</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {uniqueCategories.slice(0, 6).map(category => (
+                        <div key={category} className="p-2 rounded-lg configurable-secondary text-center">
+                          <span className="text-xs configurable-text-secondary">
+                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </span>
+                        </div>
+                      ))}
+                      {uniqueCategories.length > 6 && (
+                        <div className="p-2 rounded-lg configurable-secondary text-center">
+                          <span className="text-xs configurable-text-secondary">
+                            +{uniqueCategories.length - 6} more
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 p-4 rounded-lg configurable-primary-bg-alpha-10">
+                    <h4 className="font-semibold configurable-text-primary mb-2">How it works</h4>
+                    <ul className="text-xs configurable-text-secondary space-y-1">
+                      <li>• Enter your group size and budget</li>
+                      <li>• Select preferred categories (optional)</li>
+                      <li>• Get AI-powered meal combinations</li>
+                      <li>• Add suggested combos to your cart</li>
+                    </ul>
+                  </div>
                 </CardContent>
               </Card>
             </div>
           </div>
-        </div>
-
-        {/* Mobile AI Estimator Button */}
-        <div className="lg:hidden mb-8">
-          <Card className="border-2" style={{ borderColor: 'var(--configurable-primary-alpha-20)' }}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--configurable-primary-alpha-10)' }}>
-                  <Bot className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold configurable-text-primary">AI Budget Estimator</h3>
-                  <p className="text-xs text-gray-600">Get meal suggestions for your group</p>
-                </div>
-                <Button
-                  onClick={() => setAiEstimatorModalOpen(true)}
-                  className="configurable-primary hover:configurable-primary-hover text-white"
-                  data-testid="button-open-ai-estimator-mobile"
-                >
-                  Start
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Deals Section */}
