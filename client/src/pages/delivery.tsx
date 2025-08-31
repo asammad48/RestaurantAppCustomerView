@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, Search, Navigation, Map, Bike, ShoppingBag, Calendar, UtensilsCrossed } from "lucide-react";
+import { MapPin, Search, Navigation, Map, Bike, ShoppingBag, Calendar, UtensilsCrossed, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -79,20 +79,7 @@ export default function DeliveryPage() {
   const handleServiceSelect = (service: 'delivery' | 'takeaway' | 'dine-in' | 'reservation') => {
     setSelectedService(service);
     setServiceType(service);
-    
-    // Navigate to specific pages for non-delivery services
-    switch (service) {
-      case 'takeaway':
-        setLocation('/takeaway');
-        break;
-      case 'reservation':
-        setLocation('/reservation');
-        break;
-      case 'dine-in':
-      case 'delivery':
-        // Stay on this page
-        break;
-    }
+    // All services stay on this page now - no navigation
   };
 
   // Handle branch selection
@@ -267,101 +254,339 @@ export default function DeliveryPage() {
           </div>
         </div>
 
-        {/* Location and Search */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
-                {selectedService === 'delivery' ? 'Delivery Location' : 
-                 selectedService === 'takeaway' ? 'Pickup Location' :
-                 selectedService === 'dine-in' ? 'Restaurant Location' :
-                 'Reservation Location'}
-              </label>
-              
-              {/* Location Options */}
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={getCurrentLocation}
-                  disabled={isLoadingLocation}
-                  className="flex items-center justify-center gap-2"
-                  data-testid="button-current-location-delivery"
-                >
-                  <Navigation className="w-4 h-4 configurable-primary-text" />
-                  {isLoadingLocation ? 'Getting...' : 'Current Location'}
-                </Button>
+        {/* Dynamic Content Based on Service Selection */}
+        {selectedService === 'delivery' && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Delivery Location
+                </label>
                 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleMapLocationSelect}
-                  className="flex items-center justify-center gap-2"
-                  data-testid="button-map-location-delivery"
-                >
-                  <Map className="w-4 h-4 configurable-primary-text" />
-                  Pick on Map
-                </Button>
+                {/* Location Options */}
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={getCurrentLocation}
+                    disabled={isLoadingLocation}
+                    className="flex items-center justify-center gap-2"
+                    data-testid="button-current-location-delivery"
+                  >
+                    <Navigation className="w-4 h-4 configurable-primary-text" />
+                    {isLoadingLocation ? 'Getting...' : 'Current Location'}
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMapLocationSelect}
+                    className="flex items-center justify-center gap-2"
+                    data-testid="button-map-location-delivery"
+                  >
+                    <Map className="w-4 h-4 configurable-primary-text" />
+                    Pick on Map
+                  </Button>
+                </div>
+
+                {/* Show coordinates if available */}
+                {userCoords && (
+                  <div className="configurable-secondary p-2 rounded-md border configurable-border mb-2">
+                    <div className="flex items-center configurable-primary-text text-xs">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      <span>Location set: {userCoords.lat.toFixed(4)}, {userCoords.lng.toFixed(4)}</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  <Input
+                    value={userLocation}
+                    onChange={(e) => setUserLocation(e.target.value)}
+                    placeholder="Enter your delivery address"
+                    data-testid="input-delivery-location"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleAddressSearch}
+                    variant="outline"
+                    disabled={!userLocation.trim()}
+                  >
+                    Search
+                  </Button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Search className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Search Restaurants
+                </label>
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name or address"
+                  data-testid="input-search-restaurants"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedService === 'takeaway' && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="text-center mb-6">
+              <ShoppingBag className="w-12 h-12 configurable-primary-text mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Set Your Pickup Location</h3>
+              <p className="text-gray-600">Please set your location to find restaurants available for pickup in your area.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Pickup Location
+                </label>
+                
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={getCurrentLocation}
+                    disabled={isLoadingLocation}
+                    className="flex items-center justify-center gap-2"
+                    data-testid="button-current-location-takeaway"
+                  >
+                    <Navigation className="w-4 h-4 configurable-primary-text" />
+                    {isLoadingLocation ? 'Getting...' : 'Current Location'}
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMapLocationSelect}
+                    className="flex items-center justify-center gap-2"
+                    data-testid="button-map-location-takeaway"
+                  >
+                    <Map className="w-4 h-4 configurable-primary-text" />
+                    Pick on Map
+                  </Button>
+                </div>
+
+                {/* Show coordinates if available */}
+                {userCoords && (
+                  <div className="configurable-secondary p-2 rounded-md border configurable-border mb-2">
+                    <div className="flex items-center configurable-primary-text text-xs">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      <span>Location set: {userCoords.lat.toFixed(4)}, {userCoords.lng.toFixed(4)}</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  <Input
+                    value={userLocation}
+                    onChange={(e) => setUserLocation(e.target.value)}
+                    placeholder="Enter your pickup location"
+                    data-testid="input-pickup-location"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleAddressSearch}
+                    variant="outline"
+                    disabled={!userLocation.trim()}
+                  >
+                    Search
+                  </Button>
+                </div>
               </div>
 
-              {/* Show coordinates if available */}
-              {userCoords && (
-                <div className="configurable-secondary p-2 rounded-md border configurable-border mb-2">
-                  <div className="flex items-center configurable-primary-text text-xs">
-                    <MapPin className="w-3 h-3 mr-1" />
-                    <span>Location set: {userCoords.lat.toFixed(4)}, {userCoords.lng.toFixed(4)}</span>
-                  </div>
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Search className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Search Restaurants
+                </label>
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name or address"
+                  data-testid="input-search-restaurants"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedService === 'dine-in' && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="text-center mb-6">
+              <UtensilsCrossed className="w-12 h-12 configurable-primary-text mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Find Restaurants for Dining In</h3>
+              <p className="text-gray-600">Browse restaurants in your area where you can dine in and enjoy your meal.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Restaurant Location
+                </label>
+                
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={getCurrentLocation}
+                    disabled={isLoadingLocation}
+                    className="flex items-center justify-center gap-2"
+                    data-testid="button-current-location-dinein"
+                  >
+                    <Navigation className="w-4 h-4 configurable-primary-text" />
+                    {isLoadingLocation ? 'Getting...' : 'Current Location'}
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMapLocationSelect}
+                    className="flex items-center justify-center gap-2"
+                    data-testid="button-map-location-dinein"
+                  >
+                    <Map className="w-4 h-4 configurable-primary-text" />
+                    Pick on Map
+                  </Button>
                 </div>
-              )}
-              
-              <div className="flex gap-2">
+
+                {/* Show coordinates if available */}
+                {userCoords && (
+                  <div className="configurable-secondary p-2 rounded-md border configurable-border mb-2">
+                    <div className="flex items-center configurable-primary-text text-xs">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      <span>Location set: {userCoords.lat.toFixed(4)}, {userCoords.lng.toFixed(4)}</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  <Input
+                    value={userLocation}
+                    onChange={(e) => setUserLocation(e.target.value)}
+                    placeholder="Enter area to search restaurants"
+                    data-testid="input-dinein-location"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleAddressSearch}
+                    variant="outline"
+                    disabled={!userLocation.trim()}
+                  >
+                    Search
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Search className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Search Restaurants
+                </label>
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name or address"
+                  data-testid="input-search-restaurants"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedService === 'reservation' && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="text-center mb-6">
+              <Calendar className="w-12 h-12 configurable-primary-text mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Make a Restaurant Reservation</h3>
+              <p className="text-gray-600">Book a table at your favorite restaurant for the perfect dining experience.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Restaurant Location
+                </label>
                 <Input
                   value={userLocation}
                   onChange={(e) => setUserLocation(e.target.value)}
-                  placeholder="Enter your address or use location options above"
-                  data-testid="input-delivery-location"
-                  className="flex-1"
+                  placeholder="Enter area or restaurant name"
+                  data-testid="input-reservation-location"
                 />
-                <Button
-                  onClick={handleAddressSearch}
-                  variant="outline"
-                  disabled={!userLocation.trim()}
-                >
-                  Search
-                </Button>
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Calendar className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Date & Time
+                </label>
+                <Input
+                  type="datetime-local"
+                  className="mb-2"
+                  data-testid="input-reservation-datetime"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Users className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Number of Guests
+                </label>
+                <select className="w-full p-2 border border-gray-300 rounded-md" data-testid="select-guests">
+                  <option value="">Select guests</option>
+                  <option value="1">1 guest</option>
+                  <option value="2">2 guests</option>
+                  <option value="3">3 guests</option>
+                  <option value="4">4 guests</option>
+                  <option value="5">5 guests</option>
+                  <option value="6">6 guests</option>
+                  <option value="7">7 guests</option>
+                  <option value="8">8 guests</option>
+                  <option value="9+">9+ guests</option>
+                </select>
               </div>
             </div>
-            
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Search className="w-4 h-4 mr-1 configurable-primary-text" />
-                Search Restaurants
-              </label>
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or address"
-                data-testid="input-search-restaurants"
-              />
-            </div>
           </div>
-        </div>
+        )}
 
         {/* Search Results */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Available Restaurants for Delivery
+            {selectedService === 'delivery' ? 'Available Restaurants for Delivery' :
+             selectedService === 'takeaway' ? 'Available Restaurants for Pickup' :
+             selectedService === 'dine-in' ? 'Available Restaurants for Dining In' :
+             'Available Restaurants for Reservation'}
           </h2>
           
           {!userCoords ? (
             <div className="text-center py-12">
               <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Set Your Delivery Location</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {selectedService === 'delivery' ? 'Set Your Delivery Location' :
+                 selectedService === 'takeaway' ? 'Set Your Pickup Location' :
+                 selectedService === 'dine-in' ? 'Find Restaurants Near You' :
+                 'Find Restaurants for Reservation'}
+              </h3>
               <p className="text-gray-500">
-                Please set your location to find restaurants available for delivery in your area.
+                {selectedService === 'delivery' ? 'Please set your location to find restaurants available for delivery in your area.' :
+                 selectedService === 'takeaway' ? 'Please set your location to find restaurants available for pickup in your area.' :
+                 selectedService === 'dine-in' ? 'Please set your location to find restaurants where you can dine in.' :
+                 'Please search for restaurants where you can make a reservation.'}
               </p>
             </div>
           ) : (
