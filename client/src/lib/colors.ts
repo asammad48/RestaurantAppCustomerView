@@ -100,6 +100,18 @@ export const applyColors = (colors: ColorConfig) => {
   root.style.setProperty('--color-food-deal', colors.food.deal);
   root.style.setProperty('--color-food-recommended', colors.food.recommended);
   root.style.setProperty('--color-food-category', colors.food.category);
+  
+  // Convert hex to rgba for transparency
+  const hexToRgba = (hex: string, alpha: number): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+  
+  // Set default alpha variants for primary color
+  root.style.setProperty('--configurable-primary-alpha-10', hexToRgba(colors.primary, 0.1));
+  root.style.setProperty('--configurable-primary-alpha-20', hexToRgba(colors.primary, 0.2));
 };
 
 // Initialize colors on app start
@@ -139,6 +151,18 @@ export const applyBranchPrimaryColor = (primaryColor?: string) => {
   root.style.setProperty('--color-primary', primaryColor);
   root.style.setProperty('--color-primary-hover', primaryHover);
   root.style.setProperty('--ring', primaryColor);
+  
+  // Convert hex to rgba for transparency
+  const hexToRgba = (hex: string, alpha: number): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+  
+  // Set alpha variants
+  root.style.setProperty('--configurable-primary-alpha-10', hexToRgba(primaryColor, 0.1));
+  root.style.setProperty('--configurable-primary-alpha-20', hexToRgba(primaryColor, 0.2));
 };
 
 // Helper function to adjust color brightness

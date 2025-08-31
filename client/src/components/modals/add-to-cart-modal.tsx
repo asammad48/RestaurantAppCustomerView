@@ -248,7 +248,7 @@ export default function AddToCartModal() {
                       ? 'border-2 configurable-border configurable-primary-text' 
                       : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
                   }`}
-                  style={selectedVariation === variation.id ? { backgroundColor: '#e0f2fe' } : {}}
+                  style={selectedVariation === variation.id ? { backgroundColor: 'var(--configurable-primary-alpha-20)' } : {}}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{variation.name}</span>
@@ -316,7 +316,7 @@ export default function AddToCartModal() {
                           ? 'border configurable-border' 
                           : 'bg-gray-50 hover:bg-gray-100'
                       }`}
-                      style={selectedCustomizations[customization.id] === option.id ? { backgroundColor: '#e0f2fe' } : {}}
+                      style={selectedCustomizations[customization.id] === option.id ? { backgroundColor: 'var(--configurable-primary-alpha-20)' } : {}}
                     >
                       <div className="flex justify-between items-center">
                         <span>{option.name}</span>
