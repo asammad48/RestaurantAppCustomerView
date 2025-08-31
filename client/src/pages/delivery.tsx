@@ -145,7 +145,25 @@ export default function DeliveryPage() {
     }
   };
 
-  // Generic search function that calls the appropriate API based on selected service\n  const searchBranchesForService = async (latitude: number, longitude: number) => {\n    switch (selectedService) {\n      case 'delivery':\n        await searchDeliveryBranches(latitude, longitude);\n        break;\n      case 'takeaway':\n        await searchTakeawayBranches(latitude, longitude);\n        break;\n      case 'dine-in':\n        await searchDineInBranches(latitude, longitude);\n        break;\n      case 'reservation':\n        await searchReservationBranches(latitude, longitude);\n        break;\n    }\n  };\n\n  // Search for reservation branches
+  // Generic search function that calls the appropriate API based on selected service
+  const searchBranchesForService = async (latitude: number, longitude: number) => {
+    switch (selectedService) {
+      case 'delivery':
+        await searchDeliveryBranches(latitude, longitude);
+        break;
+      case 'takeaway':
+        await searchTakeawayBranches(latitude, longitude);
+        break;
+      case 'dine-in':
+        await searchDineInBranches(latitude, longitude);
+        break;
+      case 'reservation':
+        await searchReservationBranches(latitude, longitude);
+        break;
+    }
+  };
+
+  // Search for reservation branches
   const searchReservationBranches = async (latitude: number, longitude: number) => {
     setBranchesLoading(true);
     setBranchesError(null);
