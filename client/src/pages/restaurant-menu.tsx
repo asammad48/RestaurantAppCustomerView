@@ -10,7 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot } from "lucide-react";
+import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import CartModal from "@/components/modals/cart-modal";
@@ -42,6 +44,12 @@ export default function RestaurantMenuPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedVariations, setSelectedVariations] = useState<{[key: number]: number}>({});
+  
+  // AI Estimator state
+  const [aiStep, setAiStep] = useState<'input' | 'suggestions'>('input');
+  const [aiGroupSize, setAiGroupSize] = useState<number>(2);
+  const [aiBudget, setAiBudget] = useState<number>(5000);
+  const [aiSelectedCategories, setAiSelectedCategories] = useState<string[]>([]);
   const itemsPerPage = 10;
 
   const queryClient = useQueryClient();
@@ -222,6 +230,135 @@ export default function RestaurantMenuPage() {
     setLastAddedItem(deal);
     setAddToCartModalOpen(true);
   };
+
+  // AI Estimator helper functions
+  const getCategoryIcon = (categoryName: string) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('pizza')) return <Pizza className="w-4 h-4" />;
+    if (name.includes('burger')) return <Sandwich className="w-4 h-4" />;
+    if (name.includes('drink') || name.includes('beverage')) return <Coffee className="w-4 h-4" />;
+    if (name.includes('dessert') || name.includes('sweet')) return <Cake className="w-4 h-4" />;
+    return <ChefHat className="w-4 h-4" />;
+  };
+
+  const handleAiCategoryToggle = (category: string, checked: boolean) => {
+    if (checked) {
+      setAiSelectedCategories(prev => [...prev, category]);
+    } else {
+      setAiSelectedCategories(prev => prev.filter(c => c !== category));
+    }
+  };
+
+  const generateAiSuggestions = () => {
+    if (!apiMenuData?.menuItems) return [];
+
+    const categoriesData = aiSelectedCategories.length > 0 ? aiSelectedCategories : uniqueCategories;
+    const budgetPerCategory = Math.floor(aiBudget / categoriesData.length);
+
+    const suggestions: any[] = [];
+
+    categoriesData.forEach(categoryName => {
+      const categoryItems = apiMenuData.menuItems.filter(item => 
+        item.categoryName === categoryName
+      );
+
+      if (categoryItems.length === 0) return;
+
+      const sortedItems = categoryItems.sort((a, b) => {
+        const priceA = a.variations?.[0]?.price || 0;
+        const priceB = b.variations?.[0]?.price || 0;
+        return priceA - priceB;
+      });
+
+      const combo = {
+        categoryName,
+        icon: getCategoryIcon(categoryName),
+        items: [] as any[],
+        totalPrice: 0
+      };
+
+      let remainingBudget = budgetPerCategory;
+      let currentIndex = 0;
+
+      const isMainCategory = !categoryName.toLowerCase().includes('drink') && 
+                           !categoryName.toLowerCase().includes('dessert') &&
+                           !categoryName.toLowerCase().includes('side');
+
+      if (isMainCategory) {
+        for (let person = 0; person < aiGroupSize && currentIndex < sortedItems.length; person++) {
+          const item = sortedItems[currentIndex];
+          const itemPrice = item.variations?.[0]?.price || 0;
+          
+          if (itemPrice <= remainingBudget) {
+            const existingItem = combo.items.find(i => i.menuItemId === item.menuItemId);
+            if (existingItem) {
+              existingItem.quantity++;
+            } else {
+              combo.items.push({
+                name: item.name,
+                quantity: 1,
+                price: itemPrice,
+                menuItemId: item.menuItemId
+              });
+            }
+            combo.totalPrice += itemPrice;
+            remainingBudget -= itemPrice;
+          }
+        }
+      }
+
+      while (remainingBudget > 0 && currentIndex < sortedItems.length) {
+        const item = sortedItems[currentIndex];
+        const itemPrice = item.variations?.[0]?.price || 0;
+        
+        if (itemPrice <= remainingBudget) {
+          const existingItem = combo.items.find(i => i.menuItemId === item.menuItemId);
+          if (existingItem) {
+            existingItem.quantity++;
+          } else {
+            combo.items.push({
+              name: item.name,
+              quantity: 1,
+              price: itemPrice,
+              menuItemId: item.menuItemId
+            });
+          }
+          combo.totalPrice += itemPrice;
+          remainingBudget -= itemPrice;
+        } else {
+          currentIndex++;
+        }
+      }
+
+      if (combo.items.length > 0) {
+        suggestions.push(combo);
+      }
+    });
+
+    return suggestions;
+  };
+
+  const handleGenerateAiSuggestions = () => {
+    if (aiGroupSize > 0 && aiBudget > 0) {
+      setAiStep('suggestions');
+    }
+  };
+
+  const handleAddComboToCart = (combo: any) => {
+    combo.items.forEach((item: any) => {
+      const menuItem = apiMenuData?.menuItems.find(m => m.menuItemId === item.menuItemId);
+      if (menuItem) {
+        for (let i = 0; i < item.quantity; i++) {
+          const { addItem } = useCartStore.getState();
+          addItem(menuItem);
+        }
+      }
+    });
+    useCartStore.getState().setCartOpen(true);
+  };
+
+  const aiSuggestions = aiStep === 'suggestions' ? generateAiSuggestions() : [];
+  const totalSuggestedCost = aiSuggestions.reduce((sum: number, combo: any) => sum + combo.totalPrice, 0);
 
   // Render deal card
   const renderDeal = (deal: ApiDeal) => {
@@ -459,7 +596,7 @@ export default function RestaurantMenuPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4 mb-6" style={{ minHeight: '600px' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 mb-6" style={{ minHeight: '600px' }}>
                 {isLoading ? (
                   Array.from({ length: itemsPerPage }, (_, i) => (
                     <Card key={i} className="animate-pulse">
@@ -539,51 +676,172 @@ export default function RestaurantMenuPage() {
               <Card className="h-full" style={{ minHeight: '700px' }}>
                 <CardContent className="p-6">
                   <div className="text-center mb-6">
-                    <Bot className="w-12 h-12 configurable-primary-text mx-auto mb-4" />
-                    <h3 className="text-xl font-bold configurable-text-primary mb-2">AI Budget Estimator</h3>
-                    <p className="text-sm configurable-text-secondary mb-4">
-                      Let our AI help you plan the perfect meal within your budget for your group
-                    </p>
-                    <Button
-                      onClick={() => setAiEstimatorModalOpen(true)}
-                      className="w-full configurable-primary hover:configurable-primary-hover text-white"
-                      data-testid="button-open-ai-estimator-desktop"
-                    >
-                      <Bot className="w-4 h-4 mr-2" />
-                      Start AI Estimator
-                    </Button>
+                    <Bot className="w-8 h-8 configurable-primary-text mx-auto mb-3" />
+                    <h3 className="text-xl font-bold configurable-text-primary mb-2 flex items-center justify-center gap-2">
+                      AI Budget Estimator
+                      <Sparkles className="w-4 h-4 text-yellow-500" />
+                    </h3>
                   </div>
-                  
-                  {/* Category Preview */}
-                  <div className="space-y-4">
-                    <h4 className="font-semibold configurable-text-primary">Available Categories</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {uniqueCategories.slice(0, 6).map(category => (
-                        <div key={category} className="p-2 rounded-lg configurable-secondary text-center">
-                          <span className="text-xs configurable-text-secondary">
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
-                          </span>
+
+                  {aiStep === 'input' && (
+                    <div className="space-y-4">
+                      {/* Group Size */}
+                      <div className="space-y-2">
+                        <Label htmlFor="ai-group-size" className="text-sm font-medium flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          Group Size
+                        </Label>
+                        <Input
+                          id="ai-group-size"
+                          type="number"
+                          min="1"
+                          max="20"
+                          value={aiGroupSize}
+                          onChange={(e) => setAiGroupSize(parseInt(e.target.value) || 1)}
+                          className="w-full"
+                          data-testid="input-ai-group-size"
+                        />
+                      </div>
+
+                      {/* Budget */}
+                      <div className="space-y-2">
+                        <Label htmlFor="ai-budget" className="text-sm font-medium flex items-center gap-2">
+                          <DollarSign className="w-4 h-4" />
+                          Total Budget (PKR)
+                        </Label>
+                        <Input
+                          id="ai-budget"
+                          type="number"
+                          min="500"
+                          step="100"
+                          value={aiBudget}
+                          onChange={(e) => setAiBudget(parseInt(e.target.value) || 500)}
+                          className="w-full"
+                          data-testid="input-ai-budget"
+                        />
+                        <p className="text-xs text-gray-600">
+                          About PKR {Math.round(aiBudget / aiGroupSize)} per person
+                        </p>
+                      </div>
+
+                      {/* Category Selection */}
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">Categories (Optional)</Label>
+                        <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                          {uniqueCategories.map(category => (
+                            <div key={category} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`ai-category-${category}`}
+                                checked={aiSelectedCategories.includes(category)}
+                                onCheckedChange={(checked) => handleAiCategoryToggle(category, checked as boolean)}
+                              />
+                              <Label htmlFor={`ai-category-${category}`} className="text-xs flex items-center gap-2">
+                                {getCategoryIcon(category)}
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                              </Label>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                      {uniqueCategories.length > 6 && (
-                        <div className="p-2 rounded-lg configurable-secondary text-center">
-                          <span className="text-xs configurable-text-secondary">
-                            +{uniqueCategories.length - 6} more
-                          </span>
-                        </div>
-                      )}
+                      </div>
+
+                      {/* Generate Button */}
+                      <div className="pt-4">
+                        <Button
+                          onClick={handleGenerateAiSuggestions}
+                          className="w-full configurable-primary hover:configurable-primary-hover text-white py-3"
+                          disabled={aiGroupSize <= 0 || aiBudget <= 0}
+                          data-testid="button-generate-ai-suggestions"
+                        >
+                          <Bot className="w-4 h-4 mr-2" />
+                          Generate AI Suggestions
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="mt-6 p-4 rounded-lg configurable-primary-bg-alpha-10">
-                    <h4 className="font-semibold configurable-text-primary mb-2">How it works</h4>
-                    <ul className="text-xs configurable-text-secondary space-y-1">
-                      <li>• Enter your group size and budget</li>
-                      <li>• Select preferred categories (optional)</li>
-                      <li>• Get AI-powered meal combinations</li>
-                      <li>• Add suggested combos to your cart</li>
-                    </ul>
-                  </div>
+                  )}
+
+                  {aiStep === 'suggestions' && (
+                    <div className="space-y-4">
+                      {/* Summary */}
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <h4 className="font-semibold mb-2 text-sm">Your Request</h4>
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <p>Group: {aiGroupSize} people</p>
+                          <p>Budget: PKR {aiBudget}</p>
+                          <p>Per person: PKR {Math.round(aiBudget / aiGroupSize)}</p>
+                        </div>
+                      </div>
+
+                      {/* AI Suggestions */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-bold">AI Recommendations</h4>
+                          <Badge className="configurable-primary text-white text-xs">
+                            PKR {totalSuggestedCost}
+                          </Badge>
+                        </div>
+
+                        {aiSuggestions.length === 0 ? (
+                          <Card>
+                            <CardContent className="p-4 text-center">
+                              <p className="text-xs text-gray-600">No combinations found within budget. Try increasing budget.</p>
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <div className="space-y-3 max-h-60 overflow-y-auto">
+                            {aiSuggestions.map((combo: any, index: number) => (
+                              <Card key={index} className="border hover:border-gray-300 transition-colors">
+                                <CardContent className="p-3">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    {combo.icon}
+                                    <span className="text-sm font-semibold">{combo.categoryName}</span>
+                                    <Badge variant="outline" className="text-xs">PKR {combo.totalPrice}</Badge>
+                                  </div>
+                                  <div className="space-y-1 mb-3">
+                                    {combo.items.map((item: any, itemIndex: number) => (
+                                      <div key={itemIndex} className="flex justify-between text-xs">
+                                        <span>{item.quantity}x {item.name}</span>
+                                        <span className="font-medium">PKR {item.price * item.quantity}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <Button
+                                    onClick={() => handleAddComboToCart(combo)}
+                                    className="w-full configurable-primary hover:configurable-primary-hover text-white text-xs py-2"
+                                    data-testid={`button-add-combo-${index}`}
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Add Combo
+                                  </Button>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Budget remaining */}
+                        {totalSuggestedCost < aiBudget && (
+                          <Card className="bg-green-50 border-green-200">
+                            <CardContent className="p-3">
+                              <div className="text-center">
+                                <p className="text-xs font-medium text-green-800">Budget Remaining</p>
+                                <p className="text-xs text-green-600">PKR {aiBudget - totalSuggestedCost} left</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+
+                      {/* Back Button */}
+                      <Button
+                        variant="outline"
+                        onClick={() => setAiStep('input')}
+                        className="w-full"
+                        data-testid="button-back-to-ai-input"
+                      >
+                        Back to Input
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
