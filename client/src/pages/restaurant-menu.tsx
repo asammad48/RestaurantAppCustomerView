@@ -455,74 +455,135 @@ export default function RestaurantMenuPage() {
           </div>
         </section>
 
-        {/* Menu Items */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold configurable-text-primary mb-6">Menu Items</h2>
-          <div className="space-y-4">
-            {isLoading ? (
-              Array.from({ length: itemsPerPage }, (_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4">
-                    <div className="flex">
-                      <div className="w-48 h-32 bg-gray-200 rounded-lg mr-4"></div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              paginatedItems.map((item: ApiMenuItem) => (
-                <FoodCard 
-                  key={item.menuItemId} 
-                  item={item} 
-                  variant="list"
-                />
-              ))
-            )}
-          </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 mt-8">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft size={16} />
-              </Button>
+        {/* Split Layout: Menu Items Left, AI Estimator Right */}
+        <div className="flex flex-col lg:flex-row gap-8 mb-12">
+          {/* Left Side - Menu Items */}
+          <div className="flex-1">
+            <section>
+              <h2 className="text-2xl font-bold configurable-text-primary mb-6">Menu Items</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
+                {isLoading ? (
+                  Array.from({ length: itemsPerPage }, (_, i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-3">
+                        <div className="flex">
+                          <div className="w-20 h-20 bg-gray-200 rounded-lg mr-3"></div>
+                          <div className="flex-1">
+                            <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  paginatedItems.map((item: ApiMenuItem) => (
+                    <FoodCard 
+                      key={item.menuItemId} 
+                      item={item} 
+                      variant="compact"
+                    />
+                  ))
+                )}
+              </div>
               
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center space-x-2 mt-6">
                   <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "ghost"}
-                    size="icon"
-                    className={currentPage === pageNum ? "configurable-primary text-white" : ""}
-                    onClick={() => setCurrentPage(pageNum)}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    data-testid="button-prev-page"
                   >
-                    {pageNum}
+                    <ChevronLeft size={16} />
+                    <span className="hidden sm:inline ml-1">Previous</span>
                   </Button>
-                );
-              })}
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight size={16} />
-              </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "ghost"}
+                          size="sm"
+                          className={currentPage === pageNum ? "configurable-primary text-white" : ""}
+                          onClick={() => setCurrentPage(pageNum)}
+                          data-testid={`button-page-${pageNum}`}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    data-testid="button-next-page"
+                  >
+                    <span className="hidden sm:inline mr-1">Next</span>
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Right Side - AI Estimator Panel (Desktop Only) */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <div className="sticky top-24">
+              <Card className="border-2" style={{ borderColor: 'var(--configurable-primary-alpha-20)' }}>
+                <CardContent className="p-6">
+                  <div className="text-center mb-4">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--configurable-primary-alpha-10)' }}>
+                      <Bot className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
+                    </div>
+                    <h3 className="text-lg font-bold configurable-text-primary">AI Budget Estimator</h3>
+                    <p className="text-sm text-gray-600 mt-2">Get personalized meal suggestions based on your group size and budget</p>
+                  </div>
+                  
+                  <Button
+                    onClick={() => setAiEstimatorModalOpen(true)}
+                    className="w-full configurable-primary hover:configurable-primary-hover text-white"
+                    data-testid="button-open-ai-estimator"
+                  >
+                    Start Planning
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-          )}
-        </section>
+          </div>
+        </div>
+
+        {/* Mobile AI Estimator Button */}
+        <div className="lg:hidden mb-8">
+          <Card className="border-2" style={{ borderColor: 'var(--configurable-primary-alpha-20)' }}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--configurable-primary-alpha-10)' }}>
+                  <Bot className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold configurable-text-primary">AI Budget Estimator</h3>
+                  <p className="text-xs text-gray-600">Get meal suggestions for your group</p>
+                </div>
+                <Button
+                  onClick={() => setAiEstimatorModalOpen(true)}
+                  className="configurable-primary hover:configurable-primary-hover text-white"
+                  data-testid="button-open-ai-estimator-mobile"
+                >
+                  Start
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Deals Section */}
         {apiMenuData?.deals && apiMenuData.deals.length > 0 && (
@@ -546,22 +607,9 @@ export default function RestaurantMenuPage() {
       <Footer />
       <ThemeSwitcher />
 
-      {/* Floating Buttons */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-        {/* AI Budget Estimator Button */}
-        <Button
-          onClick={() => setAiEstimatorModalOpen(true)}
-          className="rounded-full w-16 h-16 shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white flex items-center justify-center"
-          data-testid="button-ai-estimator"
-        >
-          <div className="flex flex-col items-center">
-            <Bot className="w-4 h-4" />
-            <span className="text-xs font-bold">AI</span>
-          </div>
-        </Button>
-        
-        {/* Cart indicator */}
-        {getCartCount() > 0 && (
+      {/* Floating Cart Button */}
+      {getCartCount() > 0 && (
+        <div className="fixed bottom-6 right-6 z-50">
           <Button
             onClick={() => useCartStore.getState().setCartOpen(true)}
             className="rounded-full w-16 h-16 shadow-lg configurable-primary hover:configurable-primary-hover text-white"
@@ -572,8 +620,8 @@ export default function RestaurantMenuPage() {
               <div className="text-lg font-bold">{getCartCount()}</div>
             </div>
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modals */}
       <CartModal />

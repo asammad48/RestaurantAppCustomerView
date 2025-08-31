@@ -7,7 +7,7 @@ import { getImageUrl } from "@/lib/config";
 
 interface FoodCardProps {
   item: MenuItem | ApiMenuItem;
-  variant?: "grid" | "list";
+  variant?: "grid" | "list" | "compact";
   isRecommended?: boolean;
 }
 
@@ -159,6 +159,52 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
             </div>
             <Button onClick={handleAddToCart} className="configurable-primary text-white hover:configurable-primary-hover">
               Add to cart
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "compact") {
+    return (
+      <div className="food-card bg-white rounded-lg shadow-sm p-3 flex gap-3">
+        <div className="relative w-20 h-20 flex-shrink-0">
+          <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+          {isRecommended && (
+            <Badge className="absolute -top-1 -right-1 configurable-recommended text-white text-xs scale-75">
+              Rec
+            </Badge>
+          )}
+          {discountPercentage > 0 && (
+            <Badge className="absolute -top-1 -left-1 configurable-deal text-white text-xs scale-75">
+              {discountPercentage}%
+            </Badge>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold configurable-text-primary text-sm mb-1 truncate">{item.name}</h3>
+          <p className="configurable-text-secondary text-xs mb-2 line-clamp-2">{item.description}</p>
+          
+          {/* Price and Add Button */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              {discountPercentage > 0 ? (
+                <>
+                  <span className="text-sm font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {discountedPrice.toFixed(2)}</span>
+                  <span className="text-xs text-gray-400 line-through">Rs. {originalPrice.toFixed(2)}</span>
+                </>
+              ) : (
+                <span className="text-sm font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {totalPrice.toFixed(2)}</span>
+              )}
+            </div>
+            <Button 
+              onClick={handleAddToCart} 
+              size="sm"
+              className="configurable-primary text-white hover:configurable-primary-hover text-xs px-3 py-1"
+              data-testid={`button-add-to-cart-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
+            >
+              Add
             </Button>
           </div>
         </div>
