@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ChevronLeft, ChevronRight, Armchair } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Armchair, MapPin, Navigation, Map, Bike, ShoppingBag, Calendar, UtensilsCrossed, Star, Clock, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import FoodCard from "@/components/food-card";
@@ -20,17 +22,46 @@ import ThemeSwitcher from "@/components/theme-switcher";
 import { MenuItem } from "@/lib/mock-data";
 import { useCartStore } from "@/lib/store";
 import { getQueryFn } from "@/lib/queryClient";
+import { BranchService } from "@/services/branch-service";
+import { Branch } from "@/types/branch";
+import { applyGreenTheme } from "@/lib/colors";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import MapPickerModal from "@/components/modals/map-picker-modal";
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('delivery');
+  
+  // Reservation-specific states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userLocation, setUserLocation] = useState("Downtown");
+  const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branchesError, setBranchesError] = useState<string | null>(null);
+  const [maxDistance, setMaxDistance] = useState(20);
+  
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const { setSelectedBranch, setServiceType } = useCartStore();
 
   const { data: menuItems = [], isLoading } = useQuery<MenuItem[]>({
     queryKey: ["/api/menu-items"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
+  
+  // Apply green theme when reservation is selected
+  useEffect(() => {
+    if (selectedService === 'reservation') {
+      applyGreenTheme();
+    }
+  }, [selectedService]);
   
 
   // Extract unique categories from menu items
@@ -60,6 +91,89 @@ export default function Home() {
 
   const recommendedItems = menuItems.filter(item => item.isRecommended);
   const dealItems = menuItems.filter(item => item.isDeal);
+  
+  // Handle service type selection
+  const handleServiceSelect = (service: 'delivery' | 'takeaway' | 'dine-in' | 'reservation') => {
+    setSelectedService(service);
+    setServiceType(service);
+  };
+  
+  // Search for reservation branches
+  const searchReservationBranches = async (latitude: number, longitude: number) => {
+    setBranchesLoading(true);
+    setBranchesError(null);
+    
+    try {
+      const response = await BranchService.searchReservationBranches({
+        latitude,
+        longitude,
+        address: userLocation || "",
+        branchName: searchQuery || "",
+        maxDistance
+      });
+
+      setBranches(response.data);
+      
+      toast({
+        title: "Reservation Branches Found",
+        description: `Found ${response.data.length} restaurants available for reservations.`,
+      });
+    } catch (error: any) {
+      console.error('Reservation branch search failed:', error);
+      setBranchesError(error.message || 'Failed to find reservation branches');
+      
+      toast({
+        variant: "destructive",
+        title: "Search Failed",
+        description: "Unable to find restaurants for reservations. Please try again.",
+      });
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  const handleBranchSelect = (branch: Branch) => {
+    // Store the selected branch in cart store for theming
+    setSelectedBranch(branch);
+    
+    // Navigate to reservation detail page with selected branch
+    setLocation(`/reservation-detail?branchId=${branch.branchId}&branchName=${encodeURIComponent(branch.branchName)}`);
+  };
+
+  // Filter branches
+  const filteredBranches = branches.filter((branch: Branch) => {
+    const matchesSearch = branch.branchName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
+  // Get current location
+  const getCurrentLocation = () => {
+    setIsLoadingLocation(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setUserCoords({ lat, lng });
+          searchReservationBranches(lat, lng);
+          setIsLoadingLocation(false);
+        },
+        () => {
+          setIsLoadingLocation(false);
+          alert("Unable to get location");
+        }
+      );
+    }
+  };
+
+  // Handle map location
+  const handleLocationFromMap = (lat: number, lng: number, address: string) => {
+    setUserLocation(address);
+    setUserCoords({ lat, lng });
+    setShowMap(false);
+    searchReservationBranches(lat, lng);
+  };
 
   if (isLoading) {
     return (
@@ -99,13 +213,272 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Location Section */}
-        <section className="mb-12">
-          <LocationPicker />
+        {/* Service Selection */}
+        <section className="mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {[
+              {
+                id: 'delivery',
+                title: 'Delivery',
+                description: 'Get food delivered to your doorstep',
+                icon: Bike,
+                color: selectedService === 'delivery' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+              },
+              {
+                id: 'takeaway',
+                title: 'Take Away',
+                description: 'Pick up your order from the restaurant',
+                icon: ShoppingBag,
+                color: selectedService === 'takeaway' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+              },
+              {
+                id: 'dine-in',
+                title: 'Dine In',
+                description: 'Eat at the restaurant',
+                icon: UtensilsCrossed,
+                color: selectedService === 'dine-in' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+              },
+              {
+                id: 'reservation',
+                title: 'Reservation',
+                description: 'Book a table for dining in',
+                icon: Calendar,
+                color: selectedService === 'reservation' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+              },
+            ].map((service) => {
+              const Icon = service.icon;
+              return (
+                <Card 
+                  key={service.id} 
+                  className={`cursor-pointer transition-all duration-200 border ${service.color}`}
+                  onClick={() => handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
+                >
+                  <CardContent className="flex flex-col items-center p-6 text-center">
+                    <div className={`p-3 rounded-full ${selectedService === service.id ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
+                      <Icon size={24} className={selectedService === service.id ? 'text-white' : 'configurable-primary-text'} />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">
+                      {service.title}
+                    </h3>
+                    <p className={`text-sm ${selectedService === service.id ? 'text-white/80' : 'text-gray-600'}`}>
+                      {service.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </section>
+        
+        {/* Location Section - only show for non-reservation services */}
+        {selectedService !== 'reservation' && (
+          <section className="mb-12">
+            <LocationPicker />
+          </section>
+        )}
 
-        {/* Recommended Section */}
-        {recommendedItems.length > 0 && (
+        {/* Reservation Section */}
+        {selectedService === 'reservation' && (
+          <section className="mb-8">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Select Restaurant
+              </h1>
+              <p className="text-gray-600">
+                Choose a restaurant for your table reservation
+              </p>
+            </div>
+
+            {/* Location and Search */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                    Your Location
+                  </label>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={getCurrentLocation}
+                      disabled={isLoadingLocation}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <Navigation className="w-4 h-4 configurable-primary-text" />
+                      {isLoadingLocation ? 'Getting...' : 'Current Location'}
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowMap(true)}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <Map className="w-4 h-4 configurable-primary-text" />
+                      Pick on Map
+                    </Button>
+                  </div>
+
+                  <Input
+                    value={userLocation}
+                    onChange={(e) => setUserLocation(e.target.value)}
+                    placeholder="Enter your location"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <Search className="w-4 h-4 mr-1 configurable-primary-text" />
+                    Search Restaurants
+                  </label>
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by restaurant name"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    Max Distance (km)
+                  </label>
+                  <Input
+                    type="number"
+                    value={maxDistance}
+                    onChange={(e) => setMaxDistance(Number(e.target.value))}
+                    placeholder="20"
+                    min="1"
+                    max="50"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-4 flex justify-center">
+                <Button 
+                  onClick={() => userCoords && searchReservationBranches(userCoords.lat, userCoords.lng)}
+                  disabled={!userCoords || branchesLoading}
+                  className="configurable-primary"
+                >
+                  {branchesLoading ? 'Searching...' : 'Search Restaurants'}
+                </Button>
+              </div>
+              
+              <div className="mt-4 text-sm text-gray-600">
+                {filteredBranches.length} restaurants found for reservations
+                {branchesError && (
+                  <div className="text-red-600 mt-1">{branchesError}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Restaurant List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Restaurants</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {branchesLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-48 bg-gray-200 rounded-t-lg mb-4"></div>
+                        <div className="p-4">
+                          <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {filteredBranches.map((branch: Branch) => (
+                      <Card 
+                        key={branch.branchId} 
+                        className="cursor-pointer transition-all duration-200 hover:shadow-lg"
+                        onClick={() => handleBranchSelect(branch)}
+                      >
+                        <CardContent className="p-0">
+                          <div className="relative">
+                            <img
+                              src={BranchService.getBranchImageUrl(branch.branchPicture)}
+                              alt={branch.branchName}
+                              className="w-full h-48 object-cover rounded-t-lg"
+                            />
+                            <div className="absolute top-3 right-3">
+                              <Badge className="bg-white text-black shadow-sm">
+                                <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                                {branch.rating}
+                              </Badge>
+                            </div>
+                            <div className="absolute top-3 left-3">
+                              <Badge className="configurable-primary text-white">
+                                Reservation
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="p-4">
+                            <div className="mb-2">
+                              <h3 className="font-semibold text-gray-900 mb-1">
+                                {branch.branchName}
+                              </h3>
+                              <Badge variant="outline" className="text-xs">
+                                {branch.distanceFromMyLocation.toFixed(1)} km away
+                              </Badge>
+                            </div>
+
+                            <div className="space-y-1 text-xs text-gray-600 mb-3">
+                              <div className="flex items-center">
+                                <Clock className="w-3 h-3 mr-1 configurable-primary-text" />
+                                {branch.branchOpenTime} - {branch.branchCloseTime}
+                              </div>
+                              <div className="flex items-center">
+                                <MapPin className="w-3 h-3 mr-1 configurable-primary-text" />
+                                {branch.branchAddress.substring(0, 40)}...
+                              </div>
+                              {branch.maxGuestsPerReservation && (
+                                <div className="flex items-center">
+                                  <Users className="w-3 h-3 mr-1 configurable-primary-text" />
+                                  Max {branch.maxGuestsPerReservation} guests
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="pt-2 border-t border-gray-100">
+                              <Button 
+                                size="sm" 
+                                className="w-full configurable-primary text-white configurable-primary-hover"
+                              >
+                                Book Table
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {filteredBranches.length === 0 && !branchesLoading && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      {branches.length === 0 ? 
+                        "Set your location to find restaurants for reservations." :
+                        "No restaurants found matching your search."
+                      }
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+        )}
+        
+        {/* Recommended Section - only show for non-reservation services */}
+        {selectedService !== 'reservation' && recommendedItems.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold configurable-text-primary mb-6">Recommended For You</h2>
             <div className="space-y-4">
@@ -116,88 +489,92 @@ export default function Home() {
           </section>
         )}
 
-        {/* Menu Filters */}
-        <section className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {uniqueCategories.map((category) => (
-                    <SelectItem key={category} value={category.toLowerCase()}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        {/* Menu Filters - only show for non-reservation services */}
+        {selectedService !== 'reservation' && (
+          <section className="mb-8">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {uniqueCategories.map((category) => (
+                      <SelectItem key={category} value={category.toLowerCase()}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-80">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Input
+                    type="text"
+                    placeholder="Search..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* Menu Items */}
-        <section className="mb-12">
-          <div className="space-y-4">
-            {paginatedItems.map((item) => (
-              <FoodCard key={item.id} item={item} variant="list" />
-            ))}
-          </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 mt-8">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft size={16} />
-              </Button>
-              
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "ghost"}
-                    size="icon"
-                    className={currentPage === pageNum ? "configurable-primary text-white" : ""}
-                    onClick={() => setCurrentPage(pageNum)}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight size={16} />
-              </Button>
+        {/* Menu Items - only show for non-reservation services */}
+        {selectedService !== 'reservation' && (
+          <section className="mb-12">
+            <div className="space-y-4">
+              {paginatedItems.map((item) => (
+                <FoodCard key={item.id} item={item} variant="list" />
+              ))}
             </div>
-          )}
-        </section>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-2 mt-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "ghost"}
+                      size="icon"
+                      className={currentPage === pageNum ? "configurable-primary text-white" : ""}
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+            )}
+          </section>
+        )}
 
-        {/* Deals Section */}
-        {dealItems.length > 0 && (
+        {/* Deals Section - only show for non-reservation services */}
+        {selectedService !== 'reservation' && dealItems.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold configurable-text-primary mb-6">Deals</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -221,6 +598,15 @@ export default function Home() {
       <ReviewModal />
       <ServiceRequestModal />
       <OrderConfirmationModal />
+      
+      {/* Map Modal */}
+      {showMap && (
+        <MapPickerModal
+          isOpen={showMap}
+          onClose={() => setShowMap(false)}
+          onLocationSelect={handleLocationFromMap}
+        />
+      )}
     </div>
   );
 }
