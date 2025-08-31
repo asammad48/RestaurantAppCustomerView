@@ -621,37 +621,6 @@ export default function DeliveryPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Calendar className="w-4 h-4 mr-1 configurable-primary-text" />
-                  Date & Time
-                </label>
-                <Input
-                  type="datetime-local"
-                  data-testid="input-reservation-datetime"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Users className="w-4 h-4 mr-1 configurable-primary-text" />
-                  Number of Guests
-                </label>
-                <select className="w-full p-2 border border-gray-300 rounded-md" data-testid="select-guests">
-                  <option value="">Select guests</option>
-                  <option value="1">1 guest</option>
-                  <option value="2">2 guests</option>
-                  <option value="3">3 guests</option>
-                  <option value="4">4 guests</option>
-                  <option value="5">5 guests</option>
-                  <option value="6">6 guests</option>
-                  <option value="7">7 guests</option>
-                  <option value="8">8 guests</option>
-                  <option value="9+">9+ guests</option>
-                </select>
-              </div>
-            </div>
             
             <div className="flex justify-center">
               <Button
