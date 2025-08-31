@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles } from "lucide-react";
+import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/navbar";
@@ -706,7 +706,7 @@ export default function RestaurantMenuPage() {
                       </div>
 
                       {/* Budget */}
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Label htmlFor="ai-budget" className="text-sm font-medium flex items-center gap-2">
                           <DollarSign className="w-4 h-4" />
                           Total Budget (PKR)
@@ -724,12 +724,38 @@ export default function RestaurantMenuPage() {
                         <p className="text-xs text-gray-600">
                           About PKR {Math.round(aiBudget / aiGroupSize)} per person
                         </p>
+                        
+                        {/* Popular Budget Suggestions */}
+                        <div className="bg-blue-50 p-2 rounded-lg">
+                          <div className="flex items-center gap-1 mb-2">
+                            <TrendingUp className="w-3 h-3 text-blue-600" />
+                            <span className="text-xs font-medium text-blue-800">Popular Ranges</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            {[
+                              { label: 'Light', amount: 1500 },
+                              { label: 'Standard', amount: 3000 },
+                              { label: 'Premium', amount: 6000 }
+                            ].map((option) => (
+                              <Button
+                                key={option.label}
+                                variant="outline"
+                                size="sm"
+                                className="h-auto p-1 flex flex-col items-center text-xs"
+                                onClick={() => setAiBudget(option.amount)}
+                              >
+                                <span className="font-medium text-xs">{option.label}</span>
+                                <span className="text-gray-600 text-xs">{option.amount}</span>
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Category Selection */}
                       <div className="space-y-3">
-                        <Label className="text-sm font-medium">Categories (Optional)</Label>
-                        <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                        <Label className="text-sm font-medium">Food Categories (Optional)</Label>
+                        <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
                           {uniqueCategories.map(category => (
                             <div key={category} className="flex items-center space-x-2">
                               <Checkbox
@@ -746,6 +772,45 @@ export default function RestaurantMenuPage() {
                         </div>
                       </div>
 
+                      {/* Smart Tips Section */}
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Lightbulb className="w-3 h-3 text-green-600" />
+                          <span className="text-xs font-medium text-green-800">Smart Tips</span>
+                        </div>
+                        <div className="space-y-1 text-xs text-green-700">
+                          <div className="flex items-start gap-1">
+                            <span className="w-1 h-1 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></span>
+                            <span>Budget 20% extra for drinks</span>
+                          </div>
+                          <div className="flex items-start gap-1">
+                            <span className="w-1 h-1 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></span>
+                            <span>Combo meals offer better value</span>
+                          </div>
+                          <div className="flex items-start gap-1">
+                            <span className="w-1 h-1 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></span>
+                            <span>Share family portions for groups 3+</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* How AI Works */}
+                      <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Info className="w-3 h-3 text-purple-600" />
+                          <span className="text-xs font-medium text-purple-800">How AI Works</span>
+                        </div>
+                        <div className="text-xs text-purple-700 space-y-1">
+                          <p>Our algorithm creates combinations that:</p>
+                          <div className="grid grid-cols-1 gap-1 ml-2">
+                            <span>• Maximize variety within budget</span>
+                            <span>• Balance nutrition and taste</span>
+                            <span>• Consider group sharing</span>
+                            <span>• Optimize value per person</span>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Generate Button */}
                       <div className="pt-4">
                         <Button
@@ -757,6 +822,9 @@ export default function RestaurantMenuPage() {
                           <Bot className="w-4 h-4 mr-2" />
                           Generate AI Suggestions
                         </Button>
+                        <p className="text-xs text-gray-500 text-center mt-2">
+                          Get personalized meal combinations in seconds
+                        </p>
                       </div>
                     </div>
                   )}
