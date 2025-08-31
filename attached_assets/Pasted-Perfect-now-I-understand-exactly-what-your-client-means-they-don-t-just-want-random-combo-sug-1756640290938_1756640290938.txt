@@ -1,0 +1,90 @@
+Perfect 👍 now I understand exactly what your client means — they don’t just want **random combo suggestions**, but **category-wise AI suggestions** (Pizza suggestions, Burger suggestions, Drinks suggestions, etc.) based on budget. That makes the feature **more structured** and **aligned with your existing menu categories**.
+
+Let’s refine your **AI Budget Estimator** to include **Category-based suggestions**:
+
+---
+
+## 🔹 Updated AI Budget Estimator Flow (with Categories)
+
+### 1. **Step 1 – Input**
+
+* Group size
+* Total budget
+* (Optional) Preferences (Veg/Non-Veg, Spicy level, Drinks included, etc.)
+* **Category selection (optional):**
+
+  * Either user selects categories they want (e.g., "Pizza + Drinks")
+  * Or AI suggests across all categories automatically.
+
+---
+
+### 2. **Step 2 – AI Calculation (Category Aware)**
+
+* AI fetches items grouped by **restaurant menu categories** (Pizza, Burger, BBQ, Drinks, Dessert, etc.).
+* For each category:
+
+  * It finds the **best-fit combo** that covers the group within the budget.
+  * Example logic:
+
+    * Divide budget into category portions (e.g., 60% main dish, 20% drinks, 20% sides/desserts).
+    * Ensure at least 1 main dish per person.
+    * Fill remaining budget with extras.
+
+---
+
+### 3. **Step 3 – Suggestions (Category-wise)**
+
+Instead of **Option A / B / C only**, AI shows:
+
+* 🍕 **Pizza Combos**
+
+  * 2 x Large Pepperoni Pizza + 1 Garlic Bread + 5 Drinks → Rs. 4900
+  * 3 x Medium Chicken Fajita + 1 Fries → Rs. 4700
+
+* 🍔 **Burger Combos**
+
+  * 5 x Zinger Burger + 5 Drinks → Rs. 4950
+  * 3 x Beef Burger + 2 x Fries + 5 Drinks → Rs. 4800
+
+* 🍗 **BBQ Combos**
+
+  * 2 x Chicken Tikka (Full) + 3 x Seekh Kebab + 5 Roti + 5 Drinks → Rs. 5000
+
+* 🍰 **Dessert Add-on (if budget left)**
+
+  * Add 1 Chocolate Lava Cake for Rs. 350 (Optional).
+
+---
+
+### 4. **Step 4 – Add to Cart**
+
+* User can pick **full category combo** (e.g., Pizza Combo).
+* Or **mix from different category suggestions** (e.g., 1 Pizza Combo + 1 Dessert Add-on).
+* Cart updates dynamically with **remaining budget shown**.
+
+---
+
+## 🔹 Extra Enhancements for Category-based AI
+
+* ✅ **Smart Filters** → User can tick which categories they want suggestions from (e.g., Pizza + Drinks only).
+* ✅ **Balanced Auto-Mode** → If user doesn’t choose categories, AI divides budget across **Main + Sides + Drinks** automatically.
+* ✅ **Per Person View** → Show something like:
+
+  * "Everyone gets 🍕 2 slices pizza + 🥤 1 drink + 🍟 shared fries."
+* ✅ **Upselling** → If Rs. 200–500 left, AI suggests small add-ons from a category (fries, drinks, dessert).
+
+---
+
+## 🔹 Benefits of Category-Wise AI
+
+* Customers see **organized recommendations** instead of random mixes.
+* Restaurant can **highlight all categories** equally.
+* Easier for groups to compare (Pizza vs Burger vs BBQ) before ordering.
+* Helps upsell across categories ("Oh we still have 400 PKR left, let’s add dessert").
+
+---
+
+👉 So the updated flow is:
+**Group Info → Budget Input → Category Filter (optional) → AI Category-wise Suggestions → Add Combo(s) to Cart → Checkout.**
+
+---
