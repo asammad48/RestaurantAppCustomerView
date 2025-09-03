@@ -4,16 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
+import { useAuthStore } from "@/lib/auth-store";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CartModal() {
   const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem } = useCartStore();
   const { items, updateQuantity, clearCart, total } = useCart();
+  const { user, setLoginModalOpen } = useAuthStore();
+  const { toast } = useToast();
 
   const serviceCharge = 500;
   const discount = 500;
   const grandTotal = total + serviceCharge - discount;
 
   const handleProceedToPayment = () => {
+    // Check if user is logged in for delivery orders
+    if (serviceType === 'delivery' && !user) {
+      setCartOpen(false);
+      setLoginModalOpen(true);
+      toast({
+        title: "Login Required",
+        description: "Please log in to place a delivery order and enter your delivery details.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setCartOpen(false);
     
     // For delivery orders, go to delivery details first
