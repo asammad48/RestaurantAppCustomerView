@@ -1,5 +1,5 @@
-import { apiClient, OrderRequest, OrderResponse, ApiResponse } from '@/lib/api-client';
-import { CartItem, ServiceType } from '@/lib/store';
+import { apiClient, OrderRequest, OrderResponse, ApiResponse, DeliveryDetails, SplitBill } from '@/lib/api-client';
+import { CartItem, ServiceType, DeliveryDetails as StoreDeliveryDetails } from '@/lib/store';
 
 export class OrderService {
   // Get order type based on service type
@@ -60,6 +60,26 @@ export class OrderService {
     });
   }
 
+  // Convert store delivery details to API format
+  private convertDeliveryDetails(storeDetails: StoreDeliveryDetails | null): DeliveryDetails | null {
+    if (!storeDetails) return null;
+    
+    return {
+      fullName: storeDetails.customerName,
+      email: storeDetails.customerEmail,
+      phoneNumber: storeDetails.customerPhone,
+      deliveryAddress: storeDetails.deliveryAddress,
+      streetAddress: storeDetails.deliveryAddress, // Using same as deliveryAddress
+      apartment: storeDetails.apartmentUnit || '',
+      deliveryInstruction: storeDetails.deliveryInstructions || '',
+      prefferedDeliveryTime: storeDetails.preferredTime ? 
+        new Date(storeDetails.preferredTime).toISOString() : 
+        new Date().toISOString(),
+      longitude: 0, // This should be set from location picker
+      latitude: 0   // This should be set from location picker
+    };
+  }
+
   // Create order with dynamic configuration
   async createOrder({
     cartItems,
@@ -68,7 +88,9 @@ export class OrderService {
     locationId,
     username,
     tipAmount = 0,
-    deviceInfo = 'WEB_APP'
+    deviceInfo = 'WEB_APP',
+    deliveryDetails = null,
+    splitBills = null
   }: {
     cartItems: CartItem[];
     serviceType: ServiceType;
@@ -77,6 +99,8 @@ export class OrderService {
     username: string;
     tipAmount?: number;
     deviceInfo?: string;
+    deliveryDetails?: StoreDeliveryDetails | null;
+    splitBills?: SplitBill[] | null;
   }): Promise<ApiResponse<OrderResponse>> {
     const orderData: OrderRequest = {
       branchId,
@@ -86,7 +110,9 @@ export class OrderService {
       username,
       orderType: this.getOrderType(serviceType),
       orderItems: this.convertCartItemsToOrderItems(cartItems),
-      orderPackages: [] // Can be extended for deal packages
+      orderPackages: [], // Can be extended for deal packages
+      deliveryDetails: serviceType === 'delivery' ? this.convertDeliveryDetails(deliveryDetails) : null,
+      splitBills: splitBills || null
     };
 
     return apiClient.createOrder(orderData);

@@ -9,6 +9,8 @@ import { useCartStore } from "@/lib/store";
 import { orderService } from "@/services/order-service";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/use-cart";
+import { SplitBill } from "@/lib/api-client";
+import { CartItem } from "@/lib/store";
 
 export default function PaymentModal() {
   const { 
@@ -19,7 +21,9 @@ export default function PaymentModal() {
     setOrderConfirmationOpen,
     setOrderResponse,
     serviceType,
-    selectedBranch
+    selectedBranch,
+    deliveryDetails,
+    splitBillMode
   } = useCartStore();
   const { items } = useCart();
   const { toast } = useToast();
@@ -27,6 +31,31 @@ export default function PaymentModal() {
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [splitBill, setSplitBill] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Generate split bills based on mode
+  const generateSplitBills = (cartItems: CartItem[], mode: 'equality' | 'items'): SplitBill[] => {
+    if (mode === 'equality') {
+      const totalAmount = cartItems.reduce((total, item) => {
+        const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0;
+        return total + (price * item.quantity);
+      }, 0);
+      
+      return [{
+        splitType: 1, // Equality
+        price: totalAmount * 100, // Convert to cents
+        mobileNumber: "guest_mobile", // This should be collected from user
+        itemName: "Total Bill"
+      }];
+    } else {
+      // Split by items
+      return cartItems.map(item => ({
+        splitType: 2, // By Item
+        price: (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0) * item.quantity * 100, // Convert to cents
+        mobileNumber: "guest_mobile", // This should be collected from user
+        itemName: item.name
+      }));
+    }
+  };
 
   const handlePlaceOrder = async () => {
     if (!selectedBranch) {
@@ -41,6 +70,9 @@ export default function PaymentModal() {
     setIsLoading(true);
     
     try {
+      // Generate split bills if split bill is enabled
+      const splitBillsData = splitBill && splitBillMode ? generateSplitBills(items, splitBillMode) : null;
+
       const response = await orderService.createOrder({
         cartItems: items,
         serviceType,
@@ -48,7 +80,9 @@ export default function PaymentModal() {
         locationId: serviceType === 'dine-in' ? selectedBranch.branchId : undefined,
         username: "guest_user", // This should be replaced with actual user info
         tipAmount: 0, // This can be extended to include tip selection
-        deviceInfo: "WEB_APP"
+        deviceInfo: "WEB_APP",
+        deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,
+        splitBills: splitBillsData
       });
 
       if (response.success && response.data) {

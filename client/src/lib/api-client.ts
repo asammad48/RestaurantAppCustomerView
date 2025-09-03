@@ -24,6 +24,26 @@ export interface OrderPackage {
   quantity: number;
 }
 
+export interface DeliveryDetails {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  deliveryAddress: string;
+  streetAddress: string;
+  apartment: string;
+  deliveryInstruction: string;
+  prefferedDeliveryTime: string; // ISO date string
+  longitude: number;
+  latitude: number;
+}
+
+export interface SplitBill {
+  splitType: number; // 1=Equality, 2=ByItem
+  price: number;
+  mobileNumber: string;
+  itemName: string;
+}
+
 export interface OrderRequest {
   branchId: number;
   locationId?: number;
@@ -33,6 +53,8 @@ export interface OrderRequest {
   orderType: number; // 1=Delivery, 2=Takeaway, 3=DineIn
   orderItems: OrderItem[];
   orderPackages?: OrderPackage[];
+  deliveryDetails?: DeliveryDetails | null;
+  splitBills?: SplitBill[] | null;
 }
 
 export interface OrderResponse {

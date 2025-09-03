@@ -77,6 +77,7 @@ export interface CartItem {
 
 interface CartStore {
   items: CartItem[];
+  cartBranchId: number | null; // Track which restaurant's items are in cart
   lastAddedItem: MenuItem | ApiMenuItem | ApiDeal | null;
   serviceType: ServiceType;
   selectedRestaurant: Restaurant | null;
@@ -131,6 +132,7 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      cartBranchId: null,
       lastAddedItem: null,
       serviceType: 'qr',
       selectedRestaurant: null,
@@ -154,8 +156,22 @@ export const useCartStore = create<CartStore>()(
       splitBillMode: 'equality',
   
   addItem: (item: MenuItem | ApiMenuItem | ApiDeal, variation?: string) => {
+    const state = get();
     const itemId = 'id' in item ? item.id : 'menuItemId' in item ? item.menuItemId.toString() : item.dealId.toString();
-    const existingItemIndex = get().items.findIndex(
+    
+    // Check if adding item from different restaurant - clear cart if so
+    if (state.items.length > 0 && state.selectedBranch && state.cartBranchId !== null) {
+      const currentRestaurant = state.selectedBranch.branchId;
+      if (state.cartBranchId !== currentRestaurant) {
+        // Clear cart when switching restaurants
+        set({ items: [], cartBranchId: currentRestaurant });
+      }
+    } else if (state.selectedBranch && state.cartBranchId === null) {
+      // Set cart branch ID when adding first item
+      set({ cartBranchId: state.selectedBranch.branchId });
+    }
+    
+    const existingItemIndex = state.items.findIndex(
       (cartItem) => cartItem.id === itemId && cartItem.variation === variation
     );
     
@@ -200,7 +216,7 @@ export const useCartStore = create<CartStore>()(
   },
   
   clearCart: () => {
-    set({ items: [] });
+    set({ items: [], cartBranchId: null });
   },
   
   getCartTotal: () => {
@@ -240,6 +256,7 @@ export const useCartStore = create<CartStore>()(
       name: 'cart-storage',
       partialize: (state) => ({
         items: state.items,
+        cartBranchId: state.cartBranchId,
         serviceType: state.serviceType,
         selectedRestaurant: state.selectedRestaurant,
         selectedBranch: state.selectedBranch,
