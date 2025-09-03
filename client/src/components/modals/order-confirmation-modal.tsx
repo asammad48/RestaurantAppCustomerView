@@ -3,19 +3,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
+import { useEffect } from "react";
 
 export default function OrderConfirmationModal() {
   const { isOrderConfirmationOpen, setOrderConfirmationOpen, orderResponse } = useCartStore();
   const { clearCart } = useCart();
 
+  // Automatically clear cart when order is confirmed
+  useEffect(() => {
+    if (isOrderConfirmationOpen && orderResponse) {
+      clearCart();
+    }
+  }, [isOrderConfirmationOpen, orderResponse, clearCart]);
+
   const handleContinueShopping = () => {
     setOrderConfirmationOpen(false);
-    clearCart();
   };
 
   const handleTrackOrder = () => {
     setOrderConfirmationOpen(false);
-    clearCart();
     // Navigate to orders page
   };
 
