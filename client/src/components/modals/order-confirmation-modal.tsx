@@ -5,7 +5,7 @@ import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
 
 export default function OrderConfirmationModal() {
-  const { isOrderConfirmationOpen, setOrderConfirmationOpen } = useCartStore();
+  const { isOrderConfirmationOpen, setOrderConfirmationOpen, orderResponse } = useCartStore();
   const { clearCart } = useCart();
 
   const handleContinueShopping = () => {
@@ -33,9 +33,52 @@ export default function OrderConfirmationModal() {
             <Check className="text-white" size={40} />
           </div>
           
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-sm configurable-text-secondary mb-1">Order ID</p>
-            <p className="font-bold configurable-text-primary text-lg">#ORD-{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+            <div>
+              <p className="text-sm configurable-text-secondary mb-1">Order Number</p>
+              <p className="font-bold configurable-text-primary text-lg">
+                {orderResponse?.orderNumber || '#ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase()}
+              </p>
+            </div>
+            
+            {orderResponse && (
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex justify-between text-sm">
+                  <span className="configurable-text-secondary">Order ID:</span>
+                  <span className="font-medium configurable-text-primary">#{orderResponse.orderId}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="configurable-text-secondary">Total Amount:</span>
+                  <span className="font-medium configurable-text-primary">
+                    ${(orderResponse.totalAmount / 100).toFixed(2)}
+                  </span>
+                </div>
+                {orderResponse.deliveryCharges > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="configurable-text-secondary">Delivery Charges:</span>
+                    <span className="font-medium configurable-text-primary">
+                      ${(orderResponse.deliveryCharges / 100).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {orderResponse.serviceCharges > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="configurable-text-secondary">Service Charges:</span>
+                    <span className="font-medium configurable-text-primary">
+                      ${(orderResponse.serviceCharges / 100).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {orderResponse.tipAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="configurable-text-secondary">Tip:</span>
+                    <span className="font-medium configurable-text-primary">
+                      ${(orderResponse.tipAmount / 100).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="space-y-3">

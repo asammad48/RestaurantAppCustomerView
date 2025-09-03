@@ -1,6 +1,49 @@
 // Generic API client with status code handling
 const BASE_URL = 'https://5dtrtpzg-7261.inc1.devtunnels.ms';
 
+// Order API Types
+export interface OrderModifier {
+  modifierId: number;
+}
+
+export interface OrderCustomization {
+  customizationId: number;
+  optionId: number;
+}
+
+export interface OrderItem {
+  menuItemId: number;
+  variantId?: number;
+  quantity: number;
+  modifiers?: OrderModifier[];
+  customizations?: OrderCustomization[];
+}
+
+export interface OrderPackage {
+  menuPackageId: number;
+  quantity: number;
+}
+
+export interface OrderRequest {
+  branchId: number;
+  locationId?: number;
+  deviceInfo: string;
+  tipAmount: number;
+  username: string;
+  orderType: number; // 1=Delivery, 2=Takeaway, 3=DineIn
+  orderItems: OrderItem[];
+  orderPackages?: OrderPackage[];
+}
+
+export interface OrderResponse {
+  orderId: number;
+  orderNumber: string;
+  serviceCharges: number;
+  deliveryCharges: number;
+  totalAmount: number;
+  tipAmount: number;
+}
+
 export interface ApiResponse<T = any> {
   data: T;
   status: number;
@@ -135,6 +178,11 @@ class ApiClient {
     if (!path) return '';
     if (path.startsWith('http')) return path;
     return `${this.baseURL}/${path}`;
+  }
+
+  // Order API methods
+  async createOrder(orderData: OrderRequest): Promise<ApiResponse<OrderResponse>> {
+    return this.post<OrderResponse>('/api/Order', orderData);
   }
 }
 

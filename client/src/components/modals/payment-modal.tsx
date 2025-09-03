@@ -1,20 +1,77 @@
 import { useState } from "react";
-import { CreditCard, Banknote, Building2 } from "lucide-react";
+import { CreditCard, Banknote, Building2, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCartStore } from "@/lib/store";
+import { orderService } from "@/services/order-service";
+import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/use-cart";
 
 export default function PaymentModal() {
-  const { isPaymentModalOpen, setPaymentModalOpen, setSplitBillModalOpen, setReviewModalOpen } = useCartStore();
+  const { 
+    isPaymentModalOpen, 
+    setPaymentModalOpen, 
+    setSplitBillModalOpen, 
+    setReviewModalOpen, 
+    setOrderConfirmationOpen,
+    setOrderResponse,
+    serviceType,
+    selectedBranch
+  } = useCartStore();
+  const { items } = useCart();
+  const { toast } = useToast();
+  
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [splitBill, setSplitBill] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePlaceOrder = () => {
-    setPaymentModalOpen(false);
-    setReviewModalOpen(true);
+  const handlePlaceOrder = async () => {
+    if (!selectedBranch) {
+      toast({
+        title: "Branch Required",
+        description: "Please select a restaurant branch before placing your order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await orderService.createOrder({
+        cartItems: items,
+        serviceType,
+        branchId: selectedBranch.branchId,
+        locationId: serviceType === 'dine-in' ? selectedBranch.branchId : undefined,
+        username: "guest_user", // This should be replaced with actual user info
+        tipAmount: 0, // This can be extended to include tip selection
+        deviceInfo: "WEB_APP"
+      });
+
+      if (response.success && response.data) {
+        setOrderResponse(response.data);
+        setPaymentModalOpen(false);
+        setOrderConfirmationOpen(true);
+        
+        toast({
+          title: "Order Placed Successfully!",
+          description: `Order #${response.data.orderNumber} has been created.`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Order creation failed:', error);
+      
+      toast({
+        title: "Order Failed",
+        description: error.message || "Failed to create order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSplitBill = () => {
@@ -66,9 +123,17 @@ export default function PaymentModal() {
             <Button 
               onClick={handlePlaceOrder} 
               className="w-full configurable-primary text-white font-bold hover:configurable-primary-hover"
-              disabled={!paymentMethod}
+              disabled={!paymentMethod || isLoading}
+              data-testid="button-place-order"
             >
-              Place Order
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing Order...
+                </>
+              ) : (
+                'Place Order'
+              )}
             </Button>
             {splitBill && (
               <Button 

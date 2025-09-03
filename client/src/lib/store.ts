@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { MenuItem, ApiMenuItem, ApiDeal } from './mock-data';
 import { Branch } from '../types/branch';
+import { OrderResponse } from './api-client';
 
 export type ServiceType = 'dine-in' | 'delivery' | 'takeaway' | 'reservation' | 'qr';
 
@@ -94,6 +96,7 @@ interface CartStore {
   isReviewModalOpen: boolean;
   isOrderConfirmationOpen: boolean;
   isAiEstimatorModalOpen: boolean;
+  orderResponse: OrderResponse | null;
   splitBillMode: 'equality' | 'items';
   addItem: (item: MenuItem | ApiMenuItem | ApiDeal, variation?: string) => void;
   removeItem: (itemId: string) => void;
@@ -121,30 +124,34 @@ interface CartStore {
   setSelectedRestaurant: (restaurant: Restaurant | null) => void;
   setSelectedBranch: (branch: Branch | null) => void;
   setUserLocation: (location: string) => void;
+  setOrderResponse: (response: OrderResponse | null) => void;
 }
 
-export const useCartStore = create<CartStore>((set, get) => ({
-  items: [],
-  lastAddedItem: null,
-  serviceType: 'qr',
-  selectedRestaurant: null,
-  selectedBranch: null,
-  userLocation: '',
-  deliveryDetails: null,
-  takeawayDetails: null,
-  isCartOpen: false,
-  isServiceModalOpen: false,
-  isServiceSelectionOpen: false,
-  initialServiceOpen: false,
-  isAddToCartModalOpen: false,
-  isDeliveryDetailsModalOpen: false,
-  isTakeawayDetailsModalOpen: false,
-  isPaymentModalOpen: false,
-  isSplitBillModalOpen: false,
-  isReviewModalOpen: false,
-  isOrderConfirmationOpen: false,
-  isAiEstimatorModalOpen: false,
-  splitBillMode: 'equality',
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      lastAddedItem: null,
+      serviceType: 'qr',
+      selectedRestaurant: null,
+      selectedBranch: null,
+      userLocation: '',
+      deliveryDetails: null,
+      takeawayDetails: null,
+      isCartOpen: false,
+      isServiceModalOpen: false,
+      isServiceSelectionOpen: false,
+      initialServiceOpen: false,
+      isAddToCartModalOpen: false,
+      isDeliveryDetailsModalOpen: false,
+      isTakeawayDetailsModalOpen: false,
+      isPaymentModalOpen: false,
+      isSplitBillModalOpen: false,
+      isReviewModalOpen: false,
+      isOrderConfirmationOpen: false,
+      isAiEstimatorModalOpen: false,
+      orderResponse: null,
+      splitBillMode: 'equality',
   
   addItem: (item: MenuItem | ApiMenuItem | ApiDeal, variation?: string) => {
     const itemId = 'id' in item ? item.id : 'menuItemId' in item ? item.menuItemId.toString() : item.dealId.toString();
@@ -227,4 +234,19 @@ export const useCartStore = create<CartStore>((set, get) => ({
   setSelectedRestaurant: (restaurant: Restaurant | null) => set({ selectedRestaurant: restaurant }),
   setSelectedBranch: (branch: Branch | null) => set({ selectedBranch: branch }),
   setUserLocation: (location: string) => set({ userLocation: location }),
-}));
+  setOrderResponse: (response: OrderResponse | null) => set({ orderResponse: response }),
+    }),
+    {
+      name: 'cart-storage',
+      partialize: (state) => ({
+        items: state.items,
+        serviceType: state.serviceType,
+        selectedRestaurant: state.selectedRestaurant,
+        selectedBranch: state.selectedBranch,
+        userLocation: state.userLocation,
+        deliveryDetails: state.deliveryDetails,
+        takeawayDetails: state.takeawayDetails,
+      }),
+    }
+  )
+);
