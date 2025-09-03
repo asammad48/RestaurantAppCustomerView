@@ -12,8 +12,10 @@ export default function ReviewModal() {
   const [review, setReview] = useState("");
 
   const handleSubmitReview = () => {
+    // Reviews should be submitted after order is completed and served, not before
+    // This modal should redirect back to payment selection or order confirmation
     setReviewModalOpen(false);
-    setOrderConfirmationOpen(true);
+    // Don't open order confirmation here - it should only open after actual order placement
   };
 
   return (
@@ -62,7 +64,7 @@ export default function ReviewModal() {
             onClick={handleSubmitReview} 
             className="w-full configurable-primary text-white font-bold hover:configurable-primary-hover"
           >
-            Submit Review & Claim Cashback
+            Continue Without Review
           </Button>
         </div>
       </DialogContent>

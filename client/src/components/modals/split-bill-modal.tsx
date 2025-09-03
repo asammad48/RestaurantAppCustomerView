@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Minus, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
+import { orderService } from "@/services/order-service";
+import { useAuthStore } from "@/lib/auth-store";
+import { useToast } from "@/hooks/use-toast";
+import { ApiError, SplitBill } from "@/lib/api-client";
 
 export default function SplitBillModal() {
-  const { isSplitBillModalOpen, setSplitBillModalOpen, splitBillMode, setSplitBillMode, setReviewModalOpen } = useCartStore();
+  const { 
+    isSplitBillModalOpen, 
+    setSplitBillModalOpen, 
+    splitBillMode, 
+    setSplitBillMode, 
+    setReviewModalOpen, 
+    selectedBranch, 
+    serviceType, 
+    deliveryDetails, 
+    takeawayDetails,
+    setOrderResponse,
+    setOrderConfirmationOpen 
+  } = useCartStore();
   const { items, total } = useCart();
+  const { user, setLoginModalOpen } = useAuthStore();
+  const { toast } = useToast();
   const [peopleCount, setPeopleCount] = useState(3);
   const [mobileNumbers, setMobileNumbers] = useState<string[]>([]);
   const [assignedPersons, setAssignedPersons] = useState<{ [itemId: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const perPersonAmount = total / peopleCount;
 
@@ -29,10 +48,146 @@ export default function SplitBillModal() {
     setAssignedPersons(prev => ({ ...prev, [itemId]: mobileNumber }));
   };
 
-  const handleSendLink = () => {
-    setSplitBillModalOpen(false);
-    setReviewModalOpen(true);
+  const handleSendLink = async () => {
+    // Check if user is logged in
+    if (!user) {
+      setSplitBillModalOpen(false);
+      setLoginModalOpen(true);
+      toast({
+        title: "Login Required",
+        description: "Please log in to complete your order with split billing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate split bill data
+    const splitBills = generateSplitBills();
+    if (splitBills.length === 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter mobile numbers for all people or assign items to people.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate that all mobile numbers are properly entered
+    if (splitBillMode === 'equality') {
+      for (let i = 0; i < peopleCount; i++) {
+        if (!mobileNumbers[i] || mobileNumbers[i].length !== 10) {
+          toast({
+            title: "Invalid Mobile Number",
+            description: `Please enter a valid 10-digit mobile number for Person ${i + 1}.`,
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+    } else {
+      const hasUnassignedItems = items.some(item => !assignedPersons[item.id] || assignedPersons[item.id].length !== 10);
+      if (hasUnassignedItems) {
+        toast({
+          title: "Items Not Assigned",
+          description: "Please assign all items to people with valid 10-digit mobile numbers.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      // Create the order with split bills
+      const orderResponse = await orderService.createOrder({
+        cartItems: items,
+        serviceType,
+        branchId: selectedBranch?.branchId || 1,
+        username: user.name || user.email || 'guest',
+        tipAmount: 0,
+        deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,
+        splitBills
+      });
+
+      if (orderResponse.success) {
+        setOrderResponse(orderResponse.data);
+        setSplitBillModalOpen(false);
+        setOrderConfirmationOpen(true);
+        
+        toast({
+          title: "Order Placed Successfully!",
+          description: "Split bill links have been sent to all participants.",
+        });
+      }
+    } catch (error) {
+      console.error('Order creation failed:', error);
+      
+      if (error instanceof ApiError) {
+        toast({
+          title: "Order Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Order Failed",
+          description: "Unable to place order. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const generateSplitBills = (): SplitBill[] => {
+    const splitBills: SplitBill[] = [];
+    
+    if (splitBillMode === 'equality') {
+      const perPersonAmount = total / peopleCount;
+      for (let i = 0; i < peopleCount; i++) {
+        if (mobileNumbers[i] && mobileNumbers[i].length === 10) {
+          splitBills.push({
+            splitType: 1, // Equality
+            price: Math.round(perPersonAmount * 100), // Convert to cents
+            mobileNumber: mobileNumbers[i],
+            itemName: 'Split Bill (Equal Share)'
+          });
+        }
+      }
+    } else {
+      // Split by items
+      items.forEach(item => {
+        const assignedMobile = assignedPersons[item.id];
+        if (assignedMobile && assignedMobile.length === 10) {
+          const itemTotal = parseFloat(item.price.toString()) * item.quantity;
+          splitBills.push({
+            splitType: 2, // By item
+            price: Math.round(itemTotal * 100), // Convert to cents
+            mobileNumber: assignedMobile,
+            itemName: `${item.name} (x${item.quantity})`
+          });
+        }
+      });
+    }
+    
+    return splitBills;
+  };
+
+  // Reset mobile numbers when people count changes
+  useEffect(() => {
+    if (splitBillMode === 'equality') {
+      setMobileNumbers(prev => {
+        const newNumbers = [...prev];
+        // Ensure array has correct length
+        while (newNumbers.length < peopleCount) {
+          newNumbers.push('');
+        }
+        return newNumbers.slice(0, peopleCount);
+      });
+    }
+  }, [peopleCount, splitBillMode]);
 
   return (
     <Dialog open={isSplitBillModalOpen} onOpenChange={setSplitBillModalOpen}>
@@ -119,7 +274,7 @@ export default function SplitBillModal() {
                   <div key={item.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium configurable-text-primary">{item.name}</span>
-                      <span className="font-bold configurable-text-primary">Rs. {(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
+                      <span className="font-bold configurable-text-primary">Rs. {(parseFloat(item.price.toString()) * item.quantity).toFixed(2)}</span>
                     </div>
                     <Input
                       type="tel"
@@ -140,9 +295,10 @@ export default function SplitBillModal() {
           
           <Button 
             onClick={handleSendLink} 
-            className="w-full configurable-primary text-white font-bold hover:configurable-primary-hover"
+            disabled={isSubmitting}
+            className="w-full configurable-primary text-white font-bold hover:configurable-primary-hover disabled:opacity-50"
           >
-            Send Link
+            {isSubmitting ? 'Processing Order...' : 'Confirm Order & Send Links'}
           </Button>
           </div>
         </ScrollArea>

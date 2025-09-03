@@ -156,11 +156,28 @@ class ApiClient {
         throw error;
       }
 
-      // Network or other errors
+      // Handle different types of network errors
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new ApiError({
+          status: 0,
+          message: 'Unable to connect to server. Please check your internet connection and try again.',
+          details: { type: 'network_error', originalError: error },
+        });
+      }
+
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new ApiError({
+          status: 0,
+          message: 'Request timed out. Please try again.',
+          details: { type: 'timeout_error', originalError: error },
+        });
+      }
+
+      // Generic network or other errors
       throw new ApiError({
         status: 0,
-        message: 'Network error - Please check your connection',
-        details: error,
+        message: 'Something went wrong. Please try again later.',
+        details: { type: 'unknown_error', originalError: error },
       });
     }
   }

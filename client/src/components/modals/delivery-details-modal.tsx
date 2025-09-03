@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, User, Mail, Phone, Clock, Navigation, Map } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/auth-store";
 import MapPickerModal from "./map-picker-modal";
 
 interface DeliveryDetails {
@@ -26,8 +27,10 @@ export default function DeliveryDetailsModal() {
     setDeliveryDetailsModalOpen, 
     setPaymentModalOpen,
     selectedRestaurant,
-    setDeliveryDetails
+    setDeliveryDetails,
+    deliveryDetails
   } = useCartStore();
+  const { user } = useAuthStore();
 
   const [details, setDetails] = useState<DeliveryDetails>({
     customerName: "",
@@ -40,6 +43,25 @@ export default function DeliveryDetailsModal() {
     latitude: undefined,
     longitude: undefined
   });
+
+  // Auto-populate user information when modal opens or user changes
+  useEffect(() => {
+    if (isDeliveryDetailsModalOpen && user) {
+      setDetails(prev => ({
+        ...prev,
+        customerName: prev.customerName || user.fullName || user.name || "",
+        customerEmail: prev.customerEmail || user.email || "",
+        customerPhone: prev.customerPhone || user.mobileNumber || "",
+      }));
+    }
+  }, [isDeliveryDetailsModalOpen, user]);
+
+  // Load existing delivery details if available
+  useEffect(() => {
+    if (isDeliveryDetailsModalOpen && deliveryDetails) {
+      setDetails(deliveryDetails);
+    }
+  }, [isDeliveryDetailsModalOpen, deliveryDetails]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
