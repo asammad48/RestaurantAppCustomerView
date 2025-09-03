@@ -6,15 +6,24 @@ import { useCart } from "@/hooks/use-cart";
 import { useEffect } from "react";
 
 export default function OrderConfirmationModal() {
-  const { isOrderConfirmationOpen, setOrderConfirmationOpen, orderResponse } = useCartStore();
+  const { 
+    isOrderConfirmationOpen, 
+    setOrderConfirmationOpen, 
+    orderResponse,
+    setDeliveryDetails,
+    setTakeawayDetails
+  } = useCartStore();
   const { clearCart } = useCart();
 
-  // Automatically clear cart when order is confirmed
+  // Automatically clear cart and order details when order is confirmed
   useEffect(() => {
     if (isOrderConfirmationOpen && orderResponse) {
       clearCart();
+      // Clear delivery and takeaway details after successful order
+      setDeliveryDetails(null);
+      setTakeawayDetails(null);
     }
-  }, [isOrderConfirmationOpen, orderResponse, clearCart]);
+  }, [isOrderConfirmationOpen, orderResponse, clearCart, setDeliveryDetails, setTakeawayDetails]);
 
   const handleContinueShopping = () => {
     setOrderConfirmationOpen(false);

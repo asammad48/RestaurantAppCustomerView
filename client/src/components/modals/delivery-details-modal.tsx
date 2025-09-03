@@ -44,24 +44,23 @@ export default function DeliveryDetailsModal() {
     longitude: undefined
   });
 
-  // Auto-populate user information when modal opens or user changes
+  // Load delivery details and auto-populate user information when modal opens
   useEffect(() => {
-    if (isDeliveryDetailsModalOpen && user) {
-      setDetails(prev => ({
-        ...prev,
-        customerName: prev.customerName || user.fullName || user.name || "",
-        customerEmail: prev.customerEmail || user.email || "",
-        customerPhone: prev.customerPhone || user.mobileNumber || "",
-      }));
+    if (isDeliveryDetailsModalOpen) {
+      if (deliveryDetails) {
+        // Load existing delivery details if available
+        setDetails(deliveryDetails);
+      } else if (user) {
+        // Auto-populate user information for new delivery orders
+        setDetails(prev => ({
+          ...prev,
+          customerName: user.fullName || user.name || "",
+          customerEmail: user.email || "",
+          customerPhone: user.mobileNumber || "",
+        }));
+      }
     }
-  }, [isDeliveryDetailsModalOpen, user]);
-
-  // Load existing delivery details if available
-  useEffect(() => {
-    if (isDeliveryDetailsModalOpen && deliveryDetails) {
-      setDetails(deliveryDetails);
-    }
-  }, [isDeliveryDetailsModalOpen, deliveryDetails]);
+  }, [isDeliveryDetailsModalOpen, user, deliveryDetails]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
