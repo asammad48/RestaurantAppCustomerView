@@ -100,7 +100,7 @@ export default function OrderHistory() {
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {data.items.map((order) => (
           <OrderCard key={order.id} order={order} />
         ))}
@@ -158,101 +158,78 @@ function OrderCard({ order }: { order: Order }) {
 
   return (
     <>
-    <Card className="transition-all duration-200 hover:shadow-md max-w-2xl mx-auto" data-testid={`card-order-${order.id}`}>
-      <CardHeader className="pb-3">
+    <Card className="transition-all duration-200 hover:shadow-md w-full max-w-md" data-testid={`card-order-${order.id}`}>
+      <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg font-semibold" data-testid={`text-order-number-${order.id}`}>
-              Order #{order.orderNumber.slice(-8)}
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-base font-semibold truncate" data-testid={`text-order-number-${order.id}`}>
+              #{order.orderNumber.slice(-6)}
             </CardTitle>
-            <p className="text-sm text-gray-600 flex items-center mt-1">
-              <Clock className="h-4 w-4 mr-1" />
-              {format(new Date(order.createdAt), 'MMM dd, yyyy • hh:mm a')}
+            <p className="text-xs text-gray-500 mt-0.5">
+              {format(new Date(order.createdAt), 'MMM dd • hh:mm a')}
             </p>
           </div>
-          <div className="text-right">
-            <Badge className={getStatusColor(order.orderStatus)} data-testid={`status-${order.id}`}>
+          <div className="text-right ml-2">
+            <Badge className={`${getStatusColor(order.orderStatus)} text-xs px-1.5 py-0.5`} data-testid={`status-${order.id}`}>
               {getOrderStatusText(order.orderStatus)}
             </Badge>
-            <p className="text-lg font-bold mt-1" data-testid={`text-total-${order.id}`}>
+            <p className="text-sm font-bold mt-1" data-testid={`text-total-${order.id}`}>
               {formatCurrency(order.totalAmount)}
             </p>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-          <div className="flex items-center text-sm">
-            <Package className="h-4 w-4 mr-2 text-gray-400" />
+      <CardContent className="pt-0 pb-3">
+        <div className="space-y-1 mb-3">
+          <div className="flex items-center text-xs text-gray-600">
+            <Package className="h-3 w-3 mr-1.5" />
             <span>{getOrderTypeText(order.orderType)}</span>
-          </div>
-          
-          <div className="flex items-center text-sm">
-            <Building2 className="h-4 w-4 mr-2 text-gray-400" />
+            <span className="mx-2">•</span>
+            <Building2 className="h-3 w-3 mr-1" />
             <span className="truncate">{order.branchName}</span>
-            {order.locationName && (
-              <span className="ml-1 text-gray-500">• {order.locationName}</span>
-            )}
           </div>
           
-          {order.orderDeliveryDetails && (
-            <div className="flex items-center text-sm col-span-full">
-              <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-              <span className="truncate">{order.orderDeliveryDetails.deliveryAddress}</span>
+          {order.locationName && (
+            <div className="flex items-center text-xs text-gray-500">
+              <MapPin className="h-3 w-3 mr-1.5" />
+              <span className="truncate">{order.locationName}</span>
             </div>
           )}
           
-          {order.splitBills.length > 0 && (
-            <div className="flex items-center text-sm">
-              <Users className="h-4 w-4 mr-2 text-gray-400" />
-              <span>Split with {order.splitBills.length} people</span>
+          {order.orderDeliveryDetails && (
+            <div className="flex items-center text-xs text-gray-500">
+              <MapPin className="h-3 w-3 mr-1.5" />
+              <span className="truncate">{order.orderDeliveryDetails.deliveryAddress}</span>
             </div>
           )}
         </div>
 
         {/* Order Items Summary */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Items ({order.orderItems.length + (order.orderPackages?.length || 0)})</h4>
+            <span className="text-xs font-medium text-gray-700">
+              {order.orderItems.length + (order.orderPackages?.length || 0)} items
+            </span>
             <Button 
               onClick={() => setShowDetailModal(true)}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="flex items-center gap-1 text-xs"
+              className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
               data-testid={`button-view-details-${order.id}`}
             >
-              <Eye className="h-3 w-3" />
-              View Details
+              <Eye className="h-3 w-3 mr-1" />
+              Details
             </Button>
           </div>
-          <div className="space-y-1">
-            {order.orderItems.slice(0, showDetails ? undefined : 2).map((item, index) => (
-              <div key={item.id} className="flex justify-between text-sm" data-testid={`item-${order.id}-${index}`}>
-                <span>
-                  {item.quantity}× {item.itemName}
-                  {item.variantName && <span className="text-gray-500"> ({item.variantName})</span>}
-                </span>
-                <span data-testid={`item-price-${order.id}-${index}`}>
-                  {formatCurrency(item.totalPrice)}
-                </span>
-              </div>
+          <div className="text-xs text-gray-600">
+            {order.orderItems.slice(0, 1).map((item, index) => (
+              <span key={item.id}>
+                {item.quantity}× {item.itemName.length > 20 ? item.itemName.substring(0, 20) + '...' : item.itemName}
+              </span>
             ))}
-            
-            {order.orderPackages && order.orderPackages.length > 0 && (
-              <div className="text-sm text-orange-600">
-                +{order.orderPackages.length} package{order.orderPackages.length > 1 ? 's' : ''}
-              </div>
-            )}
-            
-            {!showDetails && order.orderItems.length > 2 && (
-              <button
-                onClick={() => setShowDetails(true)}
-                className="text-sm text-blue-600 hover:text-blue-800"
-                data-testid={`button-show-more-${order.id}`}
-              >
-                +{order.orderItems.length - 2} more items
-              </button>
+            {order.orderItems.length > 1 && (
+              <span className="text-gray-400"> +{order.orderItems.length - 1} more</span>
             )}
           </div>
         </div>
