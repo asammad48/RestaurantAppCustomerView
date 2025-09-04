@@ -7,21 +7,35 @@
  */
 export function generateDeviceId(): string {
   const STORAGE_KEY = 'restaurant_device_id';
+  const BACKUP_KEY = 'restaurant_device_backup';
+  const COOKIE_KEY = 'rest_device_id';
   
-  // First, check if we already have a stored device ID
-  const storedDeviceId = localStorage.getItem(STORAGE_KEY);
-  if (storedDeviceId) {
-    return storedDeviceId;
+  // Multiple fallback checks for maximum persistence
+  let deviceId = localStorage.getItem(STORAGE_KEY) || 
+                sessionStorage.getItem(STORAGE_KEY) ||
+                getCookie(COOKIE_KEY);
+  
+  if (deviceId) {
+    // Ensure it's stored in all locations for redundancy
+    storeDeviceIdEverywhere(deviceId);
+    return deviceId;
+  }
+
+  // Check backup storage
+  const backupId = localStorage.getItem(BACKUP_KEY);
+  if (backupId) {
+    storeDeviceIdEverywhere(backupId);
+    return backupId;
   }
 
   // Generate new device ID based on browser fingerprinting
   const fingerprint = createBrowserFingerprint();
-  const deviceId = `WEB_${fingerprint}`;
+  const newDeviceId = `WEB_${fingerprint}_${Date.now().toString(36)}`;
   
-  // Store for future use
-  localStorage.setItem(STORAGE_KEY, deviceId);
+  // Store everywhere for maximum persistence
+  storeDeviceIdEverywhere(newDeviceId);
   
-  return deviceId;
+  return newDeviceId;
 }
 
 /**
@@ -57,9 +71,12 @@ function createBrowserFingerprint(): string {
     getCanvasFingerprint()
   ];
 
+  // Add timestamp-based component for additional uniqueness
+  characteristics.push(Math.floor(Date.now() / (1000 * 60 * 60 * 24)).toString()); // Daily component
+  
   // Combine all characteristics and create a hash
   const combined = characteristics.join('|');
-  return hashString(combined).slice(0, 12); // Take first 12 characters
+  return hashString(combined).slice(0, 16); // Take first 16 characters for more uniqueness
 }
 
 /**
@@ -132,6 +149,63 @@ function hashString(str: string): string {
 }
 
 /**
+ * Store device ID in multiple locations for redundancy
+ */
+function storeDeviceIdEverywhere(deviceId: string): void {
+  const STORAGE_KEY = 'restaurant_device_id';
+  const BACKUP_KEY = 'restaurant_device_backup';
+  const COOKIE_KEY = 'rest_device_id';
+  
+  try {
+    // Primary storage
+    localStorage.setItem(STORAGE_KEY, deviceId);
+    
+    // Backup in localStorage
+    localStorage.setItem(BACKUP_KEY, deviceId);
+    
+    // Session storage as fallback
+    sessionStorage.setItem(STORAGE_KEY, deviceId);
+    
+    // Cookie with 1 year expiration
+    setCookie(COOKIE_KEY, deviceId, 365);
+    
+  } catch (error) {
+    console.warn('Failed to store device ID:', error);
+  }
+}
+
+/**
+ * Set a cookie with expiration
+ */
+function setCookie(name: string, value: string, days: number): void {
+  try {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+  } catch (error) {
+    console.warn('Failed to set cookie:', error);
+  }
+}
+
+/**
+ * Get a cookie value
+ */
+function getCookie(name: string): string | null {
+  try {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+  } catch (error) {
+    console.warn('Failed to get cookie:', error);
+  }
+  return null;
+}
+
+/**
  * Get the current device ID (generates if doesn't exist)
  */
 export function getDeviceId(): string {
@@ -142,5 +216,20 @@ export function getDeviceId(): string {
  * Reset the device ID (for testing purposes)
  */
 export function resetDeviceId(): void {
-  localStorage.removeItem('restaurant_device_id');
+  const STORAGE_KEY = 'restaurant_device_id';
+  const BACKUP_KEY = 'restaurant_device_backup';
+  const COOKIE_KEY = 'rest_device_id';
+  
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(BACKUP_KEY);
+  sessionStorage.removeItem(STORAGE_KEY);
+  setCookie(COOKIE_KEY, '', -1); // Delete cookie
+}
+
+/**
+ * Check if device ID exists and is persistent
+ */
+export function isDeviceIdPersistent(): boolean {
+  const deviceId = getDeviceId();
+  return !!deviceId && deviceId.length > 0;
 }
