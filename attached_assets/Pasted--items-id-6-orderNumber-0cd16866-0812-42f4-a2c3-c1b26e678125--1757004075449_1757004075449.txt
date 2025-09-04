@@ -1,0 +1,367 @@
+{
+  "items": [
+    {
+      "id": 6,
+      "orderNumber": "0cd16866-0812-42f4-a2c3-c1b26e678125",
+      "branchId": 2,
+      "locationId": null,
+      "userId": null,
+      "username": "guest_user",
+      "deviceInfo": "WEB_APP",
+      "serviceCharges": 0,
+      "deliveryCharges": 0,
+      "orderAmount": 100,
+      "taxAmount": 0,
+      "tipAmount": 0,
+      "totalAmount": 100,
+      "orderStatus": 1,
+      "orderType": 1,
+      "createdAt": "2025-09-03T20:07:07.135128",
+      "orderDeliveryDetails": null,
+      "orderItems": [
+        {
+          "id": 3,
+          "menuItemId": 6,
+          "variantId": null,
+          "itemName": "Pizza Peperonni",
+          "unitPrice": 0,
+          "quantity": 1,
+          "totalPrice": 100,
+          "variantName": null,
+          "personServing": null,
+          "orderItemModifiers": [
+            {
+              "id": 3,
+              "modifierId": 11,
+              "modifierName": "Pepsi",
+              "price": 100,
+              "quantity": 0
+            }
+          ],
+          "orderItemCustomizations": []
+        }
+      ],
+      "orderPackages": [],
+      "splitBills": []
+    },
+    {
+      "id": 7,
+      "orderNumber": "25f81f8c-6df4-4110-a1f7-0fa07aa08198",
+      "branchId": 2,
+      "locationId": null,
+      "userId": null,
+      "username": "guest_user",
+      "deviceInfo": "WEB_APP",
+      "serviceCharges": 0,
+      "deliveryCharges": 0,
+      "orderAmount": 100,
+      "taxAmount": 0,
+      "tipAmount": 0,
+      "totalAmount": 100,
+      "orderStatus": 1,
+      "orderType": 1,
+      "createdAt": "2025-09-03T21:15:42.235708",
+      "orderDeliveryDetails": null,
+      "orderItems": [
+        {
+          "id": 4,
+          "menuItemId": 6,
+          "variantId": null,
+          "itemName": "Pizza Peperonni",
+          "unitPrice": 0,
+          "quantity": 2,
+          "totalPrice": 100,
+          "variantName": null,
+          "personServing": null,
+          "orderItemModifiers": [
+            {
+              "id": 4,
+              "modifierId": 11,
+              "modifierName": "Pepsi",
+              "price": 100,
+              "quantity": 0
+            }
+          ],
+          "orderItemCustomizations": []
+        },
+        {
+          "id": 5,
+          "menuItemId": 6,
+          "variantId": null,
+          "itemName": "Pizza Peperonni",
+          "unitPrice": 0,
+          "quantity": 1,
+          "totalPrice": 0,
+          "variantName": null,
+          "personServing": null,
+          "orderItemModifiers": [],
+          "orderItemCustomizations": []
+        }
+      ],
+      "orderPackages": [],
+      "splitBills": []
+    },
+    {
+      "id": 8,
+      "orderNumber": "cd1b2515-2b1c-4692-b23d-4f4546a67df6",
+      "branchId": 2,
+      "locationId": null,
+      "userId": null,
+      "username": "Ali bhai",
+      "deviceInfo": "WEB_APP",
+      "serviceCharges": 0,
+      "deliveryCharges": 0,
+      "orderAmount": 100,
+      "taxAmount": 0,
+      "tipAmount": 0,
+      "totalAmount": 100,
+      "orderStatus": 1,
+      "orderType": 1,
+      "createdAt": "2025-09-03T22:12:16.224578",
+      "orderDeliveryDetails": {
+        "id": 1,
+        "fullName": "RICH PAKISTAN",
+        "email": "asammad48@gmail.com",
+        "phoneNumber": "03005516522",
+        "deliveryAddress": "STREET NO 3 DHOK HAFIZ NEAR AIRPORT LINK ROAD RAWALPINDI\nMENTIONED ABOVE",
+        "streetAddress": "STREET NO 3 DHOK HAFIZ NEAR AIRPORT LINK ROAD RAWALPINDI\nMENTIONED ABOVE",
+        "apartment": "saldkadl",
+        "deliveryInstruction": "skslfkslf",
+        "prefferedDeliveryTime": "2025-09-03T22:11:42.274",
+        "longitude": 0,
+        "latitude": 0
+      },
+      "orderItems": [
+        {
+          "id": 6,
+          "menuItemId": 6,
+          "variantId": null,
+          "itemName": "Pizza Peperonni",
+          "unitPrice": 0,
+          "quantity": 2,
+          "totalPrice": 100,
+          "variantName": null,
+          "personServing": null,
+          "orderItemModifiers": [
+            {
+              "id": 5,
+              "modifierId": 11,
+              "modifierName": "Pepsi",
+              "price": 100,
+              "quantity": 0
+            }
+          ],
+          "orderItemCustomizations": []
+        }
+      ],
+      "orderPackages": [],
+      "splitBills": [
+        {
+          "id": 1,
+          "splitType": 2,
+          "price": 147600,
+          "mobileNumber": "0300551652",
+          "itemName": "Pizza Peperonni (x2)"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "orderNumber": "d40c53bd-f7c1-444e-b137-ba02801567c3",
+      "branchId": 2,
+      "locationId": null,
+      "userId": null,
+      "username": "guest_user",
+      "deviceInfo": "WEB_APP",
+      "serviceCharges": 0,
+      "deliveryCharges": 0,
+      "orderAmount": 100,
+      "taxAmount": 0,
+      "tipAmount": 0,
+      "totalAmount": 100,
+      "orderStatus": 1,
+      "orderType": 1,
+      "createdAt": "2025-09-03T22:15:42.103363",
+      "orderDeliveryDetails": {
+        "id": 2,
+        "fullName": "RICH PAKISTAN",
+        "email": "asammad48@gmail.com",
+        "phoneNumber": "03005516522",
+        "deliveryAddress": "STREET NO 3 DHOK HAFIZ NEAR AIRPORT LINK ROAD RAWALPINDI\nMENTIONED ABOVE",
+        "streetAddress": "STREET NO 3 DHOK HAFIZ NEAR AIRPORT LINK ROAD RAWALPINDI\nMENTIONED ABOVE",
+        "apartment": "saldkadl",
+        "deliveryInstruction": "skslfkslf",
+        "prefferedDeliveryTime": "2025-09-03T22:15:35.454",
+        "longitude": 0,
+        "latitude": 0
+      },
+      "orderItems": [
+        {
+          "id": 7,
+          "menuItemId": 6,
+          "variantId": null,
+          "itemName": "Pizza Peperonni",
+          "unitPrice": 0,
+          "quantity": 3,
+          "totalPrice": 100,
+          "variantName": null,
+          "personServing": null,
+          "orderItemModifiers": [
+            {
+              "id": 6,
+              "modifierId": 11,
+              "modifierName": "Pepsi",
+              "price": 100,
+              "quantity": 0
+            }
+          ],
+          "orderItemCustomizations": []
+        }
+      ],
+      "orderPackages": [],
+      "splitBills": [
+        {
+          "id": 2,
+          "splitType": 2,
+          "price": 221400,
+          "mobileNumber": "guest_mobile",
+          "itemName": "Pizza Peperonni"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "orderNumber": "77f9cfda-90e1-4e47-8b80-9021b4449127",
+      "branchId": 2,
+      "locationId": null,
+      "userId": null,
+      "username": "Ali bhai",
+      "deviceInfo": "WEB_APP",
+      "serviceCharges": 0,
+      "deliveryCharges": 0,
+      "orderAmount": 100,
+      "taxAmount": 0,
+      "tipAmount": 0,
+      "totalAmount": 100,
+      "orderStatus": 1,
+      "orderType": 1,
+      "createdAt": "2025-09-03T22:21:37.169016",
+      "orderDeliveryDetails": {
+        "id": 3,
+        "fullName": "RICH PAKISTAN",
+        "email": "asammad48@gmail.com",
+        "phoneNumber": "03005516522",
+        "deliveryAddress": "STREET NO 3 DHOK HAFIZ NEAR AIRPORT LINK ROAD RAWALPINDI\nMENTIONED ABOVE",
+        "streetAddress": "STREET NO 3 DHOK HAFIZ NEAR AIRPORT LINK ROAD RAWALPINDI\nMENTIONED ABOVE",
+        "apartment": "saldkadl",
+        "deliveryInstruction": "skslfkslf",
+        "prefferedDeliveryTime": "2025-09-03T22:21:33.366",
+        "longitude": 0,
+        "latitude": 0
+      },
+      "orderItems": [
+        {
+          "id": 8,
+          "menuItemId": 6,
+          "variantId": null,
+          "itemName": "Pizza Peperonni",
+          "unitPrice": 0,
+          "quantity": 1,
+          "totalPrice": 100,
+          "variantName": null,
+          "personServing": null,
+          "orderItemModifiers": [
+            {
+              "id": 7,
+              "modifierId": 11,
+              "modifierName": "Pepsi",
+              "price": 100,
+              "quantity": 0
+            }
+          ],
+          "orderItemCustomizations": []
+        }
+      ],
+      "orderPackages": [],
+      "splitBills": [
+        {
+          "id": 3,
+          "splitType": 2,
+          "price": 55800,
+          "mobileNumber": "0300551652",
+          "itemName": "Pizza Peperonni (x1)"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "orderNumber": "f79a5764-7f1f-40ee-b6cd-a6dcb63dd040",
+      "branchId": 2,
+      "locationId": null,
+      "userId": null,
+      "username": "guest_user",
+      "deviceInfo": "WEB_APP",
+      "serviceCharges": 0,
+      "deliveryCharges": 0,
+      "orderAmount": 100,
+      "taxAmount": 0,
+      "tipAmount": 0,
+      "totalAmount": 100,
+      "orderStatus": 1,
+      "orderType": 1,
+      "createdAt": "2025-09-03T22:22:31.131975",
+      "orderDeliveryDetails": {
+        "id": 4,
+        "fullName": "Ali bhai",
+        "email": "alibhai@gmail.com",
+        "phoneNumber": "03005516522",
+        "deliveryAddress": "STREET NO 3 DHOK HAFIZ NEAR AIRPORT LINK ROAD RAWALPINDI\nMENTIONED ABOVE",
+        "streetAddress": "STREET NO 3 DHOK HAFIZ NEAR AIRPORT LINK ROAD RAWALPINDI\nMENTIONED ABOVE",
+        "apartment": "saldkadl",
+        "deliveryInstruction": "skslfkslf",
+        "prefferedDeliveryTime": "2025-09-03T22:22:26.196",
+        "longitude": 0,
+        "latitude": 0
+      },
+      "orderItems": [
+        {
+          "id": 9,
+          "menuItemId": 6,
+          "variantId": null,
+          "itemName": "Pizza Peperonni",
+          "unitPrice": 0,
+          "quantity": 1,
+          "totalPrice": 100,
+          "variantName": null,
+          "personServing": null,
+          "orderItemModifiers": [
+            {
+              "id": 8,
+              "modifierId": 11,
+              "modifierName": "Pepsi",
+              "price": 100,
+              "quantity": 0
+            }
+          ],
+          "orderItemCustomizations": []
+        }
+      ],
+      "orderPackages": [],
+      "splitBills": [
+        {
+          "id": 4,
+          "splitType": 2,
+          "price": 55800,
+          "mobileNumber": "guest_mobile",
+          "itemName": "Pizza Peperonni"
+        }
+      ]
+    }
+  ],
+  "pageNumber": 1,
+  "pageSize": 10,
+  "totalCount": 6,
+  "totalPages": 1,
+  "hasPrevious": false,
+  "hasNext": false
+}

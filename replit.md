@@ -152,4 +152,31 @@ The application implements a complete restaurant ordering ecosystem with emphasi
 ### Future API Integration
 The system is designed to be easily replaced with external API calls. Simply update the `getColors()` function in `client/src/lib/colors.ts` to fetch from your restaurant management system's color configuration API.
 
-**Last Updated**: January 26, 2025 - Implemented comprehensive color configuration system
+## Order History Integration
+
+### API Integration
+- **External API**: Integrated with order history API at `https://5dtrtpzg-7261.inc1.devtunnels.ms/api/Order/ByUserAndDevice`
+- **Parameters**: Supports UserId (when logged in), DeviceId (persistent), PageNumber, and PageSize for pagination
+- **Response**: Comprehensive order data including items, delivery details, split bills, and order status tracking
+
+### Device ID System
+- **Persistent Device Identification**: Browser fingerprinting system that generates consistent device IDs
+- **Storage**: Uses localStorage with fallback to generate new ID if needed
+- **Format**: `WEB_` prefix followed by unique fingerprint hash
+- **Characteristics**: Combines screen resolution, timezone, user agent, platform, hardware specs, and canvas fingerprinting
+
+### Order History Features
+- **Pagination**: Full pagination support with previous/next navigation
+- **Order Details**: Expandable cards showing complete order information
+- **Status Tracking**: Color-coded order status badges (Pending, Confirmed, Preparing, Ready, Delivered, Cancelled)
+- **Split Bills**: Display of split bill details and payment assignments
+- **Delivery Info**: Complete delivery address and instruction display
+- **User Context**: Shows orders for logged-in users or device-specific orders for guests
+
+### UI Components
+- **OrderHistory Component**: Main component with TanStack Query integration for data fetching
+- **OrderCard**: Individual order display with expandable details
+- **Navigation**: Added to user dropdown menu in navbar for authenticated users
+- **Responsive Design**: Mobile-friendly layout with adaptive card design
+
+**Last Updated**: January 26, 2025 - Integrated comprehensive order history system with external API and persistent device identification

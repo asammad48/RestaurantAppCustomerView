@@ -1,4 +1,4 @@
-import { ShoppingCart, Receipt, Utensils, Home, User, LogOut } from "lucide-react";
+import { ShoppingCart, Receipt, Utensils, Home, User, LogOut, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -109,6 +109,12 @@ export default function Navbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  <Link href="/order-history">
+                    <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer">
+                      <History size={16} />
+                      <span>Order History</span>
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem 
                     onClick={logout}
                     className="flex items-center space-x-2 cursor-pointer"
