@@ -143,17 +143,7 @@ function OrderCard({ order }: { order: Order }) {
   const [showDetailModal, setShowDetailModal] = useState(false);
   
   const getStatusColor = (status: string | number) => {
-    // Handle both string and number statuses
-    const statusStr = typeof status === 'string' ? status.toLowerCase() : '';
-    const statusNum = typeof status === 'number' ? status : 0;
-    
-    if (statusStr.includes('pending') || statusNum === 1) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    if (statusStr.includes('confirmed') || statusNum === 2) return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (statusStr.includes('preparing') || statusNum === 3) return 'bg-orange-100 text-orange-800 border-orange-200';
-    if (statusStr.includes('ready') || statusNum === 4) return 'bg-purple-100 text-purple-800 border-purple-200';
-    if (statusStr.includes('delivered') || statusNum === 5) return 'bg-green-100 text-green-800 border-green-200';
-    if (statusStr.includes('cancelled') || statusNum === 6) return 'bg-red-100 text-red-800 border-red-200';
-    return 'bg-gray-100 text-gray-800 border-gray-200';
+    return 'bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/20';
   };
 
   return (
@@ -215,7 +205,7 @@ function OrderCard({ order }: { order: Order }) {
               onClick={() => setShowDetailModal(true)}
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+              className="h-6 px-2 text-xs text-[#15803d] hover:text-[#15803d] hover:bg-[#15803d]/10"
               data-testid={`button-view-details-${order.id}`}
             >
               <Eye className="h-3 w-3 mr-1" />
