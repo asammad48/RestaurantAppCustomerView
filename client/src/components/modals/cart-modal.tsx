@@ -112,14 +112,14 @@ export default function CartModal() {
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => updateQuantity(item.id.toString(), item.quantity - 1)}
+                      onClick={() => updateQuantity(String(item.id), item.quantity - 1)}
                       className="w-8 h-8 configurable-primary text-white rounded flex items-center justify-center hover:configurable-primary-hover"
                     >
                       <Minus size={14} />
                     </button>
                     <span className="w-12 text-center font-medium text-black">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.id.toString(), item.quantity + 1)}
+                      onClick={() => updateQuantity(String(item.id), item.quantity + 1)}
                       className="w-8 h-8 configurable-primary text-white rounded flex items-center justify-center hover:configurable-primary-hover"
                     >
                       <Plus size={14} />
@@ -127,7 +127,7 @@ export default function CartModal() {
                   </div>
                   
                   <button
-                    onClick={() => removeItem(item.id.toString())}
+                    onClick={() => removeItem(String(item.id))}
                     className="p-2 text-red-500 hover:text-red-700"
                   >
                     <Trash2 size={18} />

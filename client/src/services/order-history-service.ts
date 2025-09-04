@@ -75,7 +75,11 @@ export async function fetchOrderById(orderId: number): Promise<any> {
 /**
  * Helper function to get order status text
  */
-export function getOrderStatusText(status: number): string {
+export function getOrderStatusText(status: string | number): string {
+  if (typeof status === 'string') {
+    return status;
+  }
+  // Fallback for numeric statuses
   switch (status) {
     case 1: return 'Pending';
     case 2: return 'Confirmed';
@@ -90,7 +94,11 @@ export function getOrderStatusText(status: number): string {
 /**
  * Helper function to get order type text
  */
-export function getOrderTypeText(type: number): string {
+export function getOrderTypeText(type: string | number): string {
+  if (typeof type === 'string') {
+    return type;
+  }
+  // Fallback for numeric types
   switch (type) {
     case 1: return 'Dine In';
     case 2: return 'Takeaway';

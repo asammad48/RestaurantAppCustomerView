@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChevronLeft, ChevronRight, Package, Clock, MapPin, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Clock, MapPin, Users, Eye, Building2 } from 'lucide-react';
 import { fetchOrderHistory, getOrderStatusText, getOrderTypeText, formatCurrency } from '@/services/order-history-service';
 import { useAuthStore } from '@/lib/auth-store';
 import { Order } from '@/types/order-history';
 import { format } from 'date-fns';
+import OrderDetailModal from './modals/order-detail-modal';
 
 export default function OrderHistory() {
   const { user } = useAuthStore();
@@ -139,21 +140,25 @@ export default function OrderHistory() {
 
 function OrderCard({ order }: { order: Order }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   
-  const getStatusColor = (status: number) => {
-    switch (status) {
-      case 1: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 2: return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 3: return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 4: return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 5: return 'bg-green-100 text-green-800 border-green-200';
-      case 6: return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  const getStatusColor = (status: string | number) => {
+    // Handle both string and number statuses
+    const statusStr = typeof status === 'string' ? status.toLowerCase() : '';
+    const statusNum = typeof status === 'number' ? status : 0;
+    
+    if (statusStr.includes('pending') || statusNum === 1) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    if (statusStr.includes('confirmed') || statusNum === 2) return 'bg-blue-100 text-blue-800 border-blue-200';
+    if (statusStr.includes('preparing') || statusNum === 3) return 'bg-orange-100 text-orange-800 border-orange-200';
+    if (statusStr.includes('ready') || statusNum === 4) return 'bg-purple-100 text-purple-800 border-purple-200';
+    if (statusStr.includes('delivered') || statusNum === 5) return 'bg-green-100 text-green-800 border-green-200';
+    if (statusStr.includes('cancelled') || statusNum === 6) return 'bg-red-100 text-red-800 border-red-200';
+    return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   return (
-    <Card className="transition-all duration-200 hover:shadow-md" data-testid={`card-order-${order.id}`}>
+    <>
+    <Card className="transition-all duration-200 hover:shadow-md max-w-2xl mx-auto" data-testid={`card-order-${order.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
@@ -177,14 +182,22 @@ function OrderCard({ order }: { order: Order }) {
       </CardHeader>
 
       <CardContent className="pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           <div className="flex items-center text-sm">
             <Package className="h-4 w-4 mr-2 text-gray-400" />
             <span>{getOrderTypeText(order.orderType)}</span>
           </div>
           
+          <div className="flex items-center text-sm">
+            <Building2 className="h-4 w-4 mr-2 text-gray-400" />
+            <span className="truncate">{order.branchName}</span>
+            {order.locationName && (
+              <span className="ml-1 text-gray-500">• {order.locationName}</span>
+            )}
+          </div>
+          
           {order.orderDeliveryDetails && (
-            <div className="flex items-center text-sm">
+            <div className="flex items-center text-sm col-span-full">
               <MapPin className="h-4 w-4 mr-2 text-gray-400" />
               <span className="truncate">{order.orderDeliveryDetails.deliveryAddress}</span>
             </div>
@@ -200,12 +213,24 @@ function OrderCard({ order }: { order: Order }) {
 
         {/* Order Items Summary */}
         <div className="space-y-2">
-          <h4 className="font-medium text-sm">Items ({order.orderItems.length})</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm">Items ({order.orderItems.length + (order.orderPackages?.length || 0)})</h4>
+            <Button 
+              onClick={() => setShowDetailModal(true)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 text-xs"
+              data-testid={`button-view-details-${order.id}`}
+            >
+              <Eye className="h-3 w-3" />
+              View Details
+            </Button>
+          </div>
           <div className="space-y-1">
-            {order.orderItems.slice(0, showDetails ? undefined : 3).map((item, index) => (
+            {order.orderItems.slice(0, showDetails ? undefined : 2).map((item, index) => (
               <div key={item.id} className="flex justify-between text-sm" data-testid={`item-${order.id}-${index}`}>
                 <span>
-                  {item.quantity}x {item.itemName}
+                  {item.quantity}× {item.itemName}
                   {item.variantName && <span className="text-gray-500"> ({item.variantName})</span>}
                 </span>
                 <span data-testid={`item-price-${order.id}-${index}`}>
@@ -214,13 +239,19 @@ function OrderCard({ order }: { order: Order }) {
               </div>
             ))}
             
-            {!showDetails && order.orderItems.length > 3 && (
+            {order.orderPackages && order.orderPackages.length > 0 && (
+              <div className="text-sm text-orange-600">
+                +{order.orderPackages.length} package{order.orderPackages.length > 1 ? 's' : ''}
+              </div>
+            )}
+            
+            {!showDetails && order.orderItems.length > 2 && (
               <button
                 onClick={() => setShowDetails(true)}
                 className="text-sm text-blue-600 hover:text-blue-800"
                 data-testid={`button-show-more-${order.id}`}
               >
-                +{order.orderItems.length - 3} more items
+                +{order.orderItems.length - 2} more items
               </button>
             )}
           </div>
@@ -281,5 +312,12 @@ function OrderCard({ order }: { order: Order }) {
         )}
       </CardContent>
     </Card>
+    
+    <OrderDetailModal 
+      order={order}
+      isOpen={showDetailModal}
+      onClose={() => setShowDetailModal(false)}
+    />
+    </>
   );
 }

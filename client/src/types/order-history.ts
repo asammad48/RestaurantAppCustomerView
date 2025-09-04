@@ -23,10 +23,22 @@ export interface OrderItem {
   unitPrice: number;
   quantity: number;
   totalPrice: number;
+  discount?: number;
   variantName: string | null;
   personServing: string | null;
   orderItemModifiers: OrderModifier[];
   orderItemCustomizations: OrderCustomization[];
+  subMenuItems?: OrderSubMenuItem[];
+}
+
+export interface OrderSubMenuItem {
+  id: number;
+  subMenuItemId: number;
+  itemName: string;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+  discount?: number;
 }
 
 export interface OrderDeliveryDetails {
@@ -57,24 +69,53 @@ export interface OrderPackage {
   packageName: string;
   price: number;
   quantity: number;
+  discount?: number;
+  menuItems?: OrderPackageItem[];
+  subItems?: OrderPackageSubItem[];
+}
+
+export interface OrderPackageItem {
+  id: number;
+  menuItemId: number;
+  itemName: string;
+  quantity: number;
+  variants?: OrderPackageVariant[];
+  modifiers?: OrderModifier[];
+}
+
+export interface OrderPackageSubItem {
+  id: number;
+  subMenuItemId: number;
+  itemName: string;
+  quantity: number;
+}
+
+export interface OrderPackageVariant {
+  id: number;
+  variantId: number;
+  variantName: string;
+  quantity: number;
 }
 
 export interface Order {
   id: number;
   orderNumber: string;
   branchId: number;
+  branchName: string;
   locationId: number | null;
+  locationName?: string | null;
   userId: number | null;
   username: string;
   deviceInfo: string;
   serviceCharges: number;
   deliveryCharges: number;
   orderAmount: number;
+  discountedAmount: number;
   taxAmount: number;
   tipAmount: number;
   totalAmount: number;
-  orderStatus: number;
-  orderType: number;
+  orderStatus: string;
+  orderType: string;
   createdAt: string;
   orderDeliveryDetails: OrderDeliveryDetails | null;
   orderItems: OrderItem[];
