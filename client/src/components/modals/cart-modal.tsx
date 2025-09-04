@@ -6,12 +6,23 @@ import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
 import { useAuthStore } from "@/lib/auth-store";
 import { useToast } from "@/hooks/use-toast";
+import { getImageUrl } from "@/lib/config";
 
 export default function CartModal() {
   const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem } = useCartStore();
   const { items, updateQuantity, clearCart, total } = useCart();
   const { user, setLoginModalOpen } = useAuthStore();
   const { toast } = useToast();
+
+  // Helper function to get the correct image URL for cart items
+  const getItemImage = (item: any) => {
+    // For API items that have picture property
+    if (item.picture) {
+      return getImageUrl(item.picture);
+    }
+    // For mock items that have image property
+    return item.image || getImageUrl(null);
+  };
 
   const serviceCharge = 500;
   const discount = 500;
@@ -62,7 +73,7 @@ export default function CartModal() {
                 <div className="flex gap-4">
                   {/* Item Image */}
                   <div className="w-20 h-20 flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg border border-gray-200" />
+                    <img src={getItemImage(item)} alt={item.name} className="w-full h-full object-cover rounded-lg border border-gray-200" />
                   </div>
                   
                   {/* Item Details */}
