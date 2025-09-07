@@ -59,7 +59,7 @@ export default function AiEstimatorModal() {
   const apiMenuData = menuData as ApiMenuResponse;
   
   // Debug logging for menu data
-  console.debug('🤖 AI Estimator: Menu data state', {
+  console.log('🤖 AI Estimator: Menu data state', {
     branchId,
     isMenuLoading,
     menuError,
@@ -74,7 +74,7 @@ export default function AiEstimatorModal() {
   const uniqueCategories = categoryList.filter((value, index, self) => self.indexOf(value) === index);
 
   // Debug logging for categories
-  console.debug('🤖 AI Estimator: Categories processed', {
+  console.log('🤖 AI Estimator: Categories processed', {
     categoryList,
     uniqueCategories,
     totalMenuItems: apiMenuData?.menuItems?.length
@@ -94,7 +94,7 @@ export default function AiEstimatorModal() {
     if (!apiMenuData?.menuItems) return [];
 
     const budgetOptions: BudgetOption[] = [];
-    console.debug('🤖 AI Estimator: Generating budget options for', { groupSize, budget, selectedCategories });
+    console.log('🤖 AI Estimator: Generating budget options for', { groupSize, budget, selectedCategories });
 
     // Get available items with their variations
     const availableItems = apiMenuData.menuItems
@@ -215,7 +215,7 @@ export default function AiEstimatorModal() {
       }
     }
 
-    console.debug('🤖 AI Estimator: Generated budget options:', budgetOptions);
+    console.log('🤖 AI Estimator: Generated budget options:', budgetOptions);
     return budgetOptions.filter(option => option.isWithinBudget);
   };
 
@@ -228,7 +228,7 @@ export default function AiEstimatorModal() {
   };
 
   const handleGenerateSuggestions = () => {
-    console.debug('🤖 AI Estimator: Generate suggestions clicked', {
+    console.log('🤖 AI Estimator: Generate suggestions clicked', {
       groupSize,
       budget,
       selectedCategories,
@@ -237,24 +237,25 @@ export default function AiEstimatorModal() {
     });
     
     if (groupSize > 0 && budget > 0) {
-      console.debug('🤖 AI Estimator: Validation passed, switching to suggestions step');
+      console.log('🤖 AI Estimator: Validation passed, switching to suggestions step');
       setStep('suggestions');
     } else {
-      console.error('🤖 AI Estimator: Validation failed', { groupSize, budget });
+      console.log('🤖 AI Estimator: Validation failed', { groupSize, budget });
     }
   };
 
   const handleAddBudgetOptionToCart = (budgetOption: BudgetOption) => {
-    console.debug('🛒 AI ESTIMATOR: Starting to add budget option to cart', {
+    console.log('🛒 AI ESTIMATOR: Starting to add budget option to cart', {
       totalCost: budgetOption.totalCost,
       menuItemsCount: budgetOption.menuItems.length,
       packagesCount: budgetOption.menuPackages.length,
       budgetOption
     });
+    alert('DEBUG: Adding budget option to cart - Check console for details!');
     
     // Add menu items to cart
     budgetOption.menuItems.forEach((budgetItem, index) => {
-      console.debug(`🛒 AI ESTIMATOR: Processing menu item ${index + 1}/${budgetOption.menuItems.length}`, {
+      console.log(`🛒 AI ESTIMATOR: Processing menu item ${index + 1}/${budgetOption.menuItems.length}`, {
         itemName: budgetItem.name,
         menuItemId: budgetItem.menuItemId,
         quantity: budgetItem.quantity,
@@ -265,7 +266,7 @@ export default function AiEstimatorModal() {
       
       const menuItem = apiMenuData?.menuItems.find(m => m.menuItemId === budgetItem.menuItemId);
       if (menuItem) {
-        console.debug('🛒 AI ESTIMATOR: Found matching menu item in API data', {
+        console.log('🛒 AI ESTIMATOR: Found matching menu item in API data', {
           foundItem: menuItem.name,
           hasVariations: !!menuItem.variations,
           variationsCount: menuItem.variations?.length || 0
@@ -274,7 +275,7 @@ export default function AiEstimatorModal() {
         // Find the specific variation
         const selectedVariation = menuItem.variations?.find(v => v.id === budgetItem.selectedVariantId);
         if (selectedVariation) {
-          console.debug('🛒 AI ESTIMATOR: Found matching variation', {
+          console.log('🛒 AI ESTIMATOR: Found matching variation', {
             variationId: selectedVariation.id,
             variationName: selectedVariation.name,
             price: selectedVariation.price
@@ -289,10 +290,10 @@ export default function AiEstimatorModal() {
             menuPicture: budgetItem.menuPicture
           };
           
-          console.debug('🛒 AI ESTIMATOR: Created enhanced menu item', enhancedMenuItem);
+          console.log('🛒 AI ESTIMATOR: Created enhanced menu item', enhancedMenuItem);
           
           for (let i = 0; i < budgetItem.quantity; i++) {
-            console.debug(`🛒 AI ESTIMATOR: Adding menu item ${i + 1}/${budgetItem.quantity} to cart`, {
+            console.log(`🛒 AI ESTIMATOR: Adding menu item ${i + 1}/${budgetItem.quantity} to cart`, {
               itemName: enhancedMenuItem.name,
               variantName: budgetItem.variantName,
               price: budgetItem.variantPrice
@@ -300,13 +301,13 @@ export default function AiEstimatorModal() {
             addItem(enhancedMenuItem, budgetItem.variantName);
           }
         } else {
-          console.error('🛒 AI ESTIMATOR: Variation not found!', {
+          console.log('🛒 AI ESTIMATOR: Variation not found!', {
             lookingFor: budgetItem.selectedVariantId,
             availableVariations: menuItem.variations?.map(v => ({ id: v.id, name: v.name }))
           });
         }
       } else {
-        console.error('🛒 AI ESTIMATOR: Menu item not found!', {
+        console.log('🛒 AI ESTIMATOR: Menu item not found!', {
           lookingFor: budgetItem.menuItemId,
           budgetItem
         });
@@ -315,7 +316,7 @@ export default function AiEstimatorModal() {
     
     // Add packages to cart
     budgetOption.menuPackages.forEach((packageItem, index) => {
-      console.debug(`🛒 AI ESTIMATOR: Processing package ${index + 1}/${budgetOption.menuPackages.length}`, {
+      console.log(`🛒 AI ESTIMATOR: Processing package ${index + 1}/${budgetOption.menuPackages.length}`, {
         packageName: packageItem.name,
         packageId: packageItem.id,
         quantity: packageItem.quantity,
@@ -324,7 +325,7 @@ export default function AiEstimatorModal() {
       
       const dealItem = apiMenuData?.deals?.find(d => d.dealId === packageItem.id);
       if (dealItem) {
-        console.debug('🛒 AI ESTIMATOR: Found matching deal in API data', {
+        console.log('🛒 AI ESTIMATOR: Found matching deal in API data', {
           foundDeal: dealItem.name,
           dealId: dealItem.dealId
         });
@@ -334,23 +335,23 @@ export default function AiEstimatorModal() {
           packagePicture: packageItem.packagePicture
         };
         
-        console.debug('🛒 AI ESTIMATOR: Created enhanced package', enhancedPackage);
+        console.log('🛒 AI ESTIMATOR: Created enhanced package', enhancedPackage);
         
         for (let i = 0; i < packageItem.quantity; i++) {
-          console.debug(`🛒 AI ESTIMATOR: Adding package ${i + 1}/${packageItem.quantity} to cart`, {
+          console.log(`🛒 AI ESTIMATOR: Adding package ${i + 1}/${packageItem.quantity} to cart`, {
             packageName: enhancedPackage.name
           });
           addItem(enhancedPackage);
         }
       } else {
-        console.error('🛒 AI ESTIMATOR: Package not found!', {
+        console.log('🛒 AI ESTIMATOR: Package not found!', {
           lookingFor: packageItem.id,
           packageItem
         });
       }
     });
     
-    console.debug('🛒 AI ESTIMATOR: Finished adding all items, closing modal and opening cart');
+    console.log('🛒 AI ESTIMATOR: Finished adding all items, closing modal and opening cart');
     setAiEstimatorModalOpen(false);
     useCartStore.getState().setCartOpen(true);
   };
