@@ -54,6 +54,39 @@ export default function RestaurantMenuPage() {
 
   const queryClient = useQueryClient();
 
+  // Get URL parameters helper function
+  const getUrlParams = () => {
+    return new URLSearchParams(window.location.search);
+  };
+
+  // Get restaurant ID from URL parameters or store
+  const getRestaurantId = () => {
+    const urlParams = getUrlParams();
+    const urlRestaurantId = urlParams.get('restaurantId');
+    if (urlRestaurantId) {
+      return parseInt(urlRestaurantId, 10);
+    }
+    
+    // Fallback to selected restaurant from store
+    if (selectedRestaurant?.id) {
+      return selectedRestaurant.id;
+    }
+    
+    return null;
+  };
+
+  // Get method type from URL parameters or store
+  const getMethodType = () => {
+    const urlParams = getUrlParams();
+    const urlMethod = urlParams.get('method');
+    if (urlMethod && ['delivery', 'takeaway', 'dine-in', 'qr'].includes(urlMethod)) {
+      return urlMethod;
+    }
+    
+    // Fallback to store serviceType
+    return serviceType || 'delivery';
+  };
+
   // Get branch ID dynamically - can come from:
   // 1. Selected branch (from takeaway/delivery flow)
   // 2. URL parameters (for direct access)
@@ -65,7 +98,7 @@ export default function RestaurantMenuPage() {
     }
     
     // Check URL parameters for branch ID
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = getUrlParams();
     const urlBranchId = urlParams.get('branchId');
     if (urlBranchId) {
       return parseInt(urlBranchId, 10);
@@ -75,7 +108,41 @@ export default function RestaurantMenuPage() {
     return 1;
   };
 
+  const restaurantId = getRestaurantId();
+  const methodType = getMethodType();
   const branchId = getBranchId();
+
+  // Update URL when restaurant/method changes
+  useEffect(() => {
+    const urlParams = getUrlParams();
+    const currentRestaurantId = urlParams.get('restaurantId');
+    const currentMethod = urlParams.get('method');
+    const currentBranchId = urlParams.get('branchId');
+    
+    // Update URL if parameters don't match current values
+    let needsUpdate = false;
+    const newParams = new URLSearchParams(urlParams);
+    
+    if (restaurantId && currentRestaurantId !== restaurantId.toString()) {
+      newParams.set('restaurantId', restaurantId.toString());
+      needsUpdate = true;
+    }
+    
+    if (methodType && currentMethod !== methodType) {
+      newParams.set('method', methodType);
+      needsUpdate = true;
+    }
+    
+    if (branchId && currentBranchId !== branchId.toString()) {
+      newParams.set('branchId', branchId.toString());
+      needsUpdate = true;
+    }
+    
+    if (needsUpdate) {
+      const newUrl = `${window.location.pathname}?${newParams.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [restaurantId, methodType, branchId]);
 
   const { data: menuData, isLoading } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
@@ -90,10 +157,10 @@ export default function RestaurantMenuPage() {
 
   // Handle case where no restaurant is selected for QR code access
   useEffect(() => {
-    if (!selectedRestaurant && !selectedBranch && serviceType !== 'qr') {
+    if (!selectedRestaurant && !selectedBranch && methodType !== 'qr') {
       setLocation('/');
     }
-  }, [selectedRestaurant, selectedBranch, serviceType, setLocation]);
+  }, [selectedRestaurant, selectedBranch, methodType, setLocation]);
 
   // Apply branch primary color when branch is selected
   useEffect(() => {
@@ -129,7 +196,7 @@ export default function RestaurantMenuPage() {
   };
 
   const getServiceBadge = () => {
-    switch (serviceType) {
+    switch (methodType) {
       case 'delivery':
         return <Badge className="configurable-primary text-white">Delivery</Badge>;
       case 'takeaway':
@@ -160,7 +227,7 @@ export default function RestaurantMenuPage() {
     }
 
     if (selectedRestaurant) {
-      switch (serviceType) {
+      switch (methodType) {
         case 'delivery':
           return (
             <div className="space-y-2 text-sm text-gray-600">
@@ -451,22 +518,22 @@ export default function RestaurantMenuPage() {
         </div>
         
         {/* Service Type Indicator - Hidden for delivery */}
-        {serviceType !== 'delivery' && (
+        {methodType !== 'delivery' && (
           <div className="absolute bottom-0 left-0 right-0 configurable-primary text-white py-3">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-              {serviceType === 'takeaway' && (
+              {methodType === 'takeaway' && (
                 <>
                   <Clock className="mr-3" size={20} />
                   <span className="text-lg font-medium">Takeaway Order - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
                 </>
               )}
-              {serviceType === 'qr' && (
+              {methodType === 'qr' && (
                 <>
                   <MapPin className="mr-3" size={20} />
                   <span className="text-lg font-medium">Menu - {selectedBranch?.branchName || 'Restaurant'}</span>
                 </>
               )}
-              {(serviceType === 'dine-in' || !serviceType) && (
+              {(methodType === 'dine-in' || !methodType) && (
                 <>
                   <MapPin className="mr-3" size={20} />
                   <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
@@ -479,7 +546,7 @@ export default function RestaurantMenuPage() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
-        {serviceType !== 'qr' && (
+        {methodType !== 'qr' && (
           <div className="mb-6">
             <Button
               variant="outline"
@@ -488,7 +555,7 @@ export default function RestaurantMenuPage() {
               data-testid="button-back-to-restaurants"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to {serviceType === 'delivery' ? 'Delivery' : serviceType === 'takeaway' ? 'Takeaway' : 'Restaurants'}
+              Back to {methodType === 'delivery' ? 'Delivery' : methodType === 'takeaway' ? 'Takeaway' : 'Restaurants'}
             </Button>
           </div>
         )}
