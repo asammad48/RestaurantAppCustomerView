@@ -94,11 +94,25 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
   };
 
   const handleAddToCart = () => {
+    const selectedVariant = sizes.find(size => size.name === selectedSize);
+    const variation = selectedVariant?.label || 'Medium';
+    
+    // For API menu items, the variant ID is stored in size.name, for others we use a fallback
+    let selectedVariantId: number | undefined = undefined;
+    if (isApiMenuItem(item) && selectedVariant) {
+      selectedVariantId = parseInt(selectedVariant.name);
+    }
+    
     const itemWithVariation = {
       ...item,
       price: totalPrice.toFixed(2),
+      // Add variant information for proper cart handling
+      selectedVariantId,
+      variantName: variation,
+      variantPrice: selectedVariant?.price || totalPrice,
     };
-    const variation = sizes.find(size => size.name === selectedSize)?.label || 'Medium';
+    
+    
     setLastAddedItem(itemWithVariation);
     setAddToCartModalOpen(true);
     // Clear selections after opening modal
