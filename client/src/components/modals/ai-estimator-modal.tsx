@@ -158,7 +158,15 @@ export default function AiEstimatorModal() {
             price: pizzaDeal.price,
             picture: pizzaDeal.picture,
             dealEndDate: pizzaDeal.dealEndDate,
-            menuItems: pizzaDeal.menuItems || [],
+            menuItems: (pizzaDeal.menuItems || []).map((item: any) => ({
+              menuItemId: item.menuItemId || item.id,
+              name: item.name,
+              variantsDetails: item.variantsDetails || item.variations?.map((v: any) => ({
+                menuItemVariantId: v.menuItemVariantId || v.id,
+                name: v.name,
+                quantity: v.quantity || 1
+              })) || []
+            })),
             subMenuItems: pizzaDeal.subMenuItems || []
           }]
         };
