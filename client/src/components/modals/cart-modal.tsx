@@ -115,6 +115,25 @@ export default function CartModal() {
                       </div>
                     )}
                     
+                    {/* Modifiers */}
+                    {item.customization?.selectedModifiers && Object.keys(item.customization.selectedModifiers).length > 0 && (
+                      <div className="mt-2">
+                        <h5 className="text-sm font-medium text-black">Modifiers</h5>
+                        <div className="text-sm text-gray-600">
+                          {Object.entries(item.customization.selectedModifiers).map(([modifierId, qty]) => {
+                            // Find modifier details from the item's modifiers array
+                            const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+                            return modifier && qty > 0 ? (
+                              <p key={modifierId}>
+                                {qty}x {modifier.name} 
+                                <span className="text-xs text-gray-500 ml-1">(+PKR {modifier.price * qty})</span>
+                              </p>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Extra Toppings */}
                     {item.customization?.toppings && Object.keys(item.customization.toppings).length > 0 && (
                       <div className="mt-2">

@@ -290,8 +290,18 @@ export const useCartStore = create<CartStore>()(
   
   getCartTotal: () => {
     return get().items.reduce((total, item) => {
-      const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0;
-      return total + price * item.quantity;
+      const basePrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0;
+      
+      // Calculate modifier price
+      let modifierPrice = 0;
+      if (item.customization?.selectedModifiers && item.modifiers) {
+        modifierPrice = Object.entries(item.customization.selectedModifiers).reduce((modTotal, [modifierId, qty]) => {
+          const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+          return modTotal + (modifier ? modifier.price * qty : 0);
+        }, 0);
+      }
+      
+      return total + (basePrice + modifierPrice) * item.quantity;
     }, 0);
   },
   
