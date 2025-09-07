@@ -219,46 +219,65 @@ export default function RestaurantMenuPage() {
 
   // Add budget items to cart
   const handleAddBudgetOptionToCart = (budgetOption: BudgetOption) => {
-    // Add menu items
+    console.log('🛒 RESTAURANT MENU: Adding budget option to cart', budgetOption);
+    
+    // Add menu items separately
     budgetOption.menuItems.forEach(item => {
+      console.log('🛒 RESTAURANT MENU: Processing menu item', item);
+      
       // Find the menu item to get full details
       const menuItem = apiMenuData?.menuItems?.find(mi => mi.menuItemId === item.menuItemId);
-      if (menuItem) {
-        for (let i = 0; i < item.quantity; i++) {
-          addItem({
-            id: item.menuItemId.toString(),
+      if (menuItem && item.variations && item.variations.length > 0) {
+        const variation = item.variations[0]; // Get the selected variation
+        
+        // Add item for each quantity
+        for (let i = 0; i < variation.quantity; i++) {
+          console.log(`🛒 RESTAURANT MENU: Adding menu item ${i + 1}/${variation.quantity}`, {
             name: item.name,
-            price: Number(item.variantPrice),
-            image: menuItem.picture || '',
-            selectedVariation: item.selectedVariantId.toString(),
-            variations: [],
-            quantity: 1,
-            isRecommended: false,
-            isDeal: false,
-            description: menuItem.description || ''
+            variation: variation.name,
+            price: variation.price
           });
+          
+          // Create enhanced menu item with variant details for cart
+          const enhancedMenuItem = {
+            ...menuItem,
+            selectedVariantId: variation.id,
+            variantName: variation.name,
+            variantPrice: variation.price,
+            menuPicture: item.picture
+          };
+          
+          addItem(enhancedMenuItem, variation.name);
         }
       }
     });
 
-    // Add menu packages
+    // Add menu packages separately
     budgetOption.menuPackages.forEach(pkg => {
-      for (let i = 0; i < pkg.quantity; i++) {
-        addItem({
-          id: pkg.id.toString(),
-          name: pkg.name,
-          price: Number(pkg.price),
-          image: '',
-          selectedVariation: null,
-          variations: [],
-          quantity: 1,
-          isRecommended: false,
-          isDeal: true,
-          description: pkg.description,
-          packageId: pkg.id.toString()
-        });
+      console.log('🛒 RESTAURANT MENU: Processing package', pkg);
+      
+      // Add package (quantity is always 1 for packages in new format)
+      console.log('🛒 RESTAURANT MENU: Adding package to cart', {
+        name: pkg.name,
+        price: pkg.price
+      });
+      
+      // Find the deal in API data to get full details
+      const dealItem = apiMenuData?.deals?.find(d => d.dealId === pkg.dealId);
+      if (dealItem) {
+        const enhancedPackage = {
+          ...dealItem,
+          packagePicture: pkg.picture
+        };
+        
+        addItem(enhancedPackage);
+      } else {
+        // Fallback if deal not found in API data
+        addItem(pkg as any);
       }
     });
+    
+    console.log('🛒 RESTAURANT MENU: Finished adding budget option to cart');
   };
   
   // Filter items by category and search
