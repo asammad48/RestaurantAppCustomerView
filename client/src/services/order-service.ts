@@ -38,11 +38,18 @@ export class OrderService {
         }
       }
 
-      // Add modifiers if exists
-      if (item.modifiers && item.modifiers.length > 0) {
-        orderItem.modifiers = item.modifiers.map(mod => ({
-          modifierId: mod.id
-        }));
+      // Add modifiers if exists and selected with quantity > 0
+      if (item.customization?.selectedModifiers) {
+        const selectedModifiers = Object.entries(item.customization.selectedModifiers)
+          .filter(([modifierId, quantity]) => quantity > 0)
+          .map(([modifierId, quantity]) => ({
+            modifierId: parseInt(modifierId),
+            quantity: quantity
+          }));
+        
+        if (selectedModifiers.length > 0) {
+          orderItem.modifiers = selectedModifiers;
+        }
       }
 
       // Add customizations if exists
