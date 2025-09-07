@@ -82,6 +82,7 @@ export interface BudgetMenuItem {
   variantPrice: number;
   personServing: number;
   quantity: number;
+  menuPicture?: string;
 }
 
 export interface BudgetMenuPackage {
@@ -92,6 +93,7 @@ export interface BudgetMenuPackage {
   personServing: number;
   itemNames: string[];
   quantity: number;
+  packagePicture?: string;
 }
 
 export interface BudgetOption {
