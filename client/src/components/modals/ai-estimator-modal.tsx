@@ -154,7 +154,7 @@ export default function AiEstimatorModal() {
             description: pizzaDeal.description,
             price: pizzaDeal.price,
             personServing: 9,
-            itemNames: [pizzaItem?.name || "Pizza Pepperoni"],
+            itemNames: [pizzaItems[0]?.name || "Pizza Pepperoni"],
             quantity: 1,
             packagePicture: pizzaDeal.picture
           }],

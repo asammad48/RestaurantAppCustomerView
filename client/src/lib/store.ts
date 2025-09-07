@@ -46,6 +46,12 @@ export interface CartItem {
   categoryName?: string;
   image?: string;
   picture?: string;
+  // Variant specific fields for enhanced cart support
+  selectedVariantId?: number;
+  variantName?: string;
+  variantPrice?: number;
+  menuPicture?: string;
+  packagePicture?: string;
   discount?: number | { id: number; name: string; value: number; endDate: string; } | null;
   isRecommended?: boolean;
   isDeal?: boolean;
@@ -159,23 +165,44 @@ export const useCartStore = create<CartStore>()(
     const state = get();
     const itemId = 'id' in item ? item.id : 'menuItemId' in item ? item.menuItemId.toString() : item.dealId.toString();
     
+    console.debug('🛒 Cart Debug: Adding item to cart', {
+      itemName: item.name,
+      itemId,
+      variation,
+      hasVariantInfo: 'selectedVariantId' in item,
+      itemDetails: item
+    });
+    
     // Check if adding item from different restaurant - clear cart if so
     if (state.items.length > 0 && state.selectedBranch && state.cartBranchId !== null) {
       const currentRestaurant = state.selectedBranch.branchId;
       if (state.cartBranchId !== currentRestaurant) {
-        // Clear cart when switching restaurants
+        console.debug('🛒 Cart Debug: Clearing cart - switching restaurants', {
+          oldBranchId: state.cartBranchId,
+          newBranchId: currentRestaurant
+        });
         set({ items: [], cartBranchId: currentRestaurant });
       }
     } else if (state.selectedBranch && state.cartBranchId === null) {
       // Set cart branch ID when adding first item
+      console.debug('🛒 Cart Debug: Setting cart branch ID', state.selectedBranch.branchId);
       set({ cartBranchId: state.selectedBranch.branchId });
     }
     
+    // Create a unique key that includes variant information
+    const itemVariantKey = `${itemId}-${variation || 'default'}`;
     const existingItemIndex = state.items.findIndex(
-      (cartItem) => cartItem.id === itemId && cartItem.variation === variation
+      (cartItem) => {
+        const cartVariantKey = `${cartItem.id}-${cartItem.variation || 'default'}`;
+        return cartVariantKey === itemVariantKey;
+      }
     );
     
     if (existingItemIndex >= 0) {
+      console.debug('🛒 Cart Debug: Item exists, incrementing quantity', {
+        existingIndex: existingItemIndex,
+        currentQuantity: state.items[existingItemIndex].quantity
+      });
       set((state) => ({
         items: state.items.map((cartItem, index) =>
           index === existingItemIndex
@@ -184,16 +211,58 @@ export const useCartStore = create<CartStore>()(
         ),
       }));
     } else {
+      // Create cart item with variant details if available
+      const cartItem: CartItem = {
+        ...item,
+        id: itemId,
+        quantity: 1,
+        variation,
+        // Use variant price if available, otherwise fall back to base price
+        price: ('selectedVariantId' in item && item.variantPrice) 
+          ? item.variantPrice 
+          : 'price' in item ? item.price 
+          : ('variations' in item && item.variations && item.variations.length > 0) 
+            ? item.variations[0].price 
+            : 0,
+        // Include variant details if present
+        ...(('selectedVariantId' in item) && {
+          selectedVariantId: item.selectedVariantId,
+          variantName: item.variantName,
+          variantPrice: item.variantPrice,
+        }),
+        // Include image details
+        ...(('menuPicture' in item) && { menuPicture: item.menuPicture }),
+        ...(('packagePicture' in item) && { packagePicture: item.packagePicture })
+      } as CartItem;
+      
+      console.debug('🛒 Cart Debug: Adding new item to cart', {
+        cartItem: {
+          name: cartItem.name,
+          price: cartItem.price,
+          variantName: cartItem.variantName,
+          variantPrice: cartItem.variantPrice,
+          selectedVariantId: cartItem.selectedVariantId
+        }
+      });
+      
       set((state) => ({
-        items: [...state.items, { 
-          ...item, 
-          id: itemId, 
-          quantity: 1, 
-          variation,
-          price: 'price' in item ? item.price : ('variations' in item && item.variations && item.variations.length > 0) ? item.variations[0].price : 0
-        } as CartItem],
+        items: [...state.items, cartItem],
       }));
     }
+    
+    // Debug current cart state after adding
+    const newState = get();
+    console.debug('🛒 Cart Debug: Cart state after adding item', {
+      totalItems: newState.items.length,
+      totalCost: newState.getCartTotal(),
+      items: newState.items.map(i => ({ 
+        name: i.name, 
+        quantity: i.quantity, 
+        price: i.price,
+        variation: i.variation,
+        variantName: i.variantName
+      }))
+    });
   },
   
   removeItem: (itemId: string) => {
