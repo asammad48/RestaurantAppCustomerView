@@ -218,14 +218,14 @@ export const useCartStore = create<CartStore>()(
         quantity: 1,
         variation,
         // Use variant price if available, otherwise fall back to base price
-        price: ('selectedVariantId' in item && item.variantPrice) 
+        price: ('selectedVariantId' in item && 'variantPrice' in item && item.variantPrice) 
           ? item.variantPrice 
           : 'price' in item ? item.price 
           : ('variations' in item && item.variations && item.variations.length > 0) 
             ? item.variations[0].price 
             : 0,
         // Include variant details if present
-        ...(('selectedVariantId' in item) && {
+        ...(('selectedVariantId' in item && 'variantName' in item && 'variantPrice' in item) && {
           selectedVariantId: item.selectedVariantId,
           variantName: item.variantName,
           variantPrice: item.variantPrice,

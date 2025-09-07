@@ -16,7 +16,13 @@ export default function CartModal() {
 
   // Helper function to get the correct image URL for cart items
   const getItemImage = (item: any) => {
-    // For API items that have picture property
+    // Priority order: menuPicture, packagePicture, picture, image
+    if (item.menuPicture) {
+      return getImageUrl(item.menuPicture);
+    }
+    if (item.packagePicture) {
+      return getImageUrl(item.packagePicture);
+    }
     if (item.picture) {
       return getImageUrl(item.picture);
     }
@@ -82,10 +88,13 @@ export default function CartModal() {
                     <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
                     
                     {/* Variation */}
-                    {item.variation && (
+                    {(item.variation || item.variantName) && (
                       <div className="mt-2">
                         <h5 className="text-sm font-medium text-black">Variation</h5>
-                        <p className="text-sm text-gray-600">{item.variation}</p>
+                        <p className="text-sm text-gray-600">{item.variantName || item.variation}</p>
+                        {item.variantPrice && (
+                          <p className="text-xs text-gray-500">PKR {item.variantPrice} each</p>
+                        )}
                       </div>
                     )}
                     
