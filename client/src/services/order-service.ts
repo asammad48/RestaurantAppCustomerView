@@ -52,21 +52,17 @@ export class OrderService {
         }
       }
 
-      // Add customizations if exists
-      if (item.customizations && item.customizations.length > 0 && item.customization?.selectedCustomizations) {
-        orderItem.customizations = [];
-        item.customizations.forEach(custom => {
-          const selectedOption = item.customization?.selectedCustomizations?.[custom.name];
-          if (selectedOption) {
-            const option = custom.options.find(opt => opt.name === selectedOption);
-            if (option) {
-              orderItem.customizations.push({
-                customizationId: custom.id,
-                optionId: option.id
-              });
-            }
-          }
-        });
+      // Add customizations if exists and selected
+      if (item.customization?.selectedCustomizations) {
+        const selectedCustomizations = Object.entries(item.customization.selectedCustomizations)
+          .map(([customizationId, optionId]) => ({
+            customizationId: parseInt(customizationId),
+            optionId: parseInt(optionId)
+          }));
+        
+        if (selectedCustomizations.length > 0) {
+          orderItem.customizations = selectedCustomizations;
+        }
       }
 
       return orderItem;
