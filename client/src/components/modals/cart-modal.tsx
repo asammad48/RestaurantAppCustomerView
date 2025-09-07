@@ -149,7 +149,20 @@ export default function CartModal() {
                   
                   {/* Price */}
                   <div className="text-right">
-                    <div className="text-lg font-bold text-black">Rs. {(parseFloat(item.price.toString()) * item.quantity).toFixed(2)}</div>
+                    <div className="text-lg font-bold text-black">Rs. {(() => {
+                      const basePrice = parseFloat(item.price.toString());
+                      
+                      // Calculate modifier price for this item
+                      let modifierPrice = 0;
+                      if (item.customization?.selectedModifiers && item.modifiers) {
+                        modifierPrice = Object.entries(item.customization.selectedModifiers).reduce((modTotal, [modifierId, qty]) => {
+                          const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+                          return modTotal + (modifier ? modifier.price * qty : 0);
+                        }, 0);
+                      }
+                      
+                      return ((basePrice + modifierPrice) * item.quantity).toFixed(2);
+                    })()}</div>
                   </div>
                 </div>
                 
