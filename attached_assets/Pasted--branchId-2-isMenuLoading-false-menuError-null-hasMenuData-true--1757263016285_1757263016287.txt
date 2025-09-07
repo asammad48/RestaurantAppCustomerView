@@ -1,0 +1,208 @@
+{
+    "branchId": 2,
+    "isMenuLoading": false,
+    "menuError": null,
+    "hasMenuData": true,
+    "menuItemsCount": 2,
+    "dealsCount": 1,
+    "menuData": {
+        "currency": null,
+        "timeZone": null,
+        "menuItems": [
+            {
+                "menuItemId": 6,
+                "name": "Pizza Peperonni",
+                "description": "Pizza Peperonni Description",
+                "categoryName": "Pizza",
+                "picture": "uploads/menu-items/ac1fa189-51aa-499d-9dbb-4d4b07775844.jpg",
+                "variations": [
+                    {
+                        "id": 5,
+                        "name": "Small",
+                        "price": 620
+                    },
+                    {
+                        "id": 6,
+                        "name": "Medium",
+                        "price": 884
+                    },
+                    {
+                        "id": 7,
+                        "name": "Large",
+                        "price": 1200
+                    }
+                ],
+                "modifiers": [
+                    {
+                        "id": 11,
+                        "name": "Pepsi",
+                        "price": 100
+                    }
+                ],
+                "customizations": [
+                    {
+                        "id": 7,
+                        "name": "Peperonni Configuration",
+                        "options": [
+                            {
+                                "id": 5,
+                                "name": "Less Peperonni",
+                                "price": 0
+                            },
+                            {
+                                "id": 6,
+                                "name": "Extra Peperonni",
+                                "price": 0
+                            }
+                        ]
+                    }
+                ],
+                "discount": {
+                    "id": 6,
+                    "name": "Flat 10%",
+                    "value": 10,
+                    "endDate": "2025-09-06T00:00:00"
+                }
+            },
+            {
+                "menuItemId": 7,
+                "name": "Pizza Fajita",
+                "description": "Pizza Fajita Desc",
+                "categoryName": "Pizza",
+                "picture": "uploads/menu-items/fc3d8ac6-67fe-43b0-8e47-37ec2323fb71.jpg",
+                "variations": [
+                    {
+                        "id": 10,
+                        "name": "Small",
+                        "price": 1200
+                    }
+                ],
+                "modifiers": [
+                    {
+                        "id": 14,
+                        "name": "Pepsi",
+                        "price": 100
+                    }
+                ],
+                "customizations": [],
+                "discount": {
+                    "id": 7,
+                    "name": "Flat 30%",
+                    "value": 30,
+                    "endDate": "2025-09-30T00:00:00"
+                }
+            }
+        ],
+        "deals": [
+            {
+                "dealId": 6,
+                "name": "Pizza Deal",
+                "description": "Pizza Deal Description",
+                "price": 1700,
+                "picture": "uploads/deals/469b13d2-d156-41d5-b27d-ab4cf667d498.bin",
+                "dealEndDate": "2025-09-08T20:58:14.863",
+                "discount": {
+                    "id": 6,
+                    "name": "Flat 10%",
+                    "value": 10,
+                    "endDate": "2025-09-06T00:00:00"
+                },
+                "menuItems": [
+                    {
+                        "menuItemId": 6,
+                        "name": "Pizza Peperonni",
+                        "variantsDetails": [
+                            {
+                                "menuItemVariantId": 8,
+                                "name": "Small",
+                                "quantity": 3
+                            },
+                            {
+                                "menuItemVariantId": 9,
+                                "name": "Medium",
+                                "quantity": 2
+                            },
+                            {
+                                "menuItemVariantId": 10,
+                                "name": "Large",
+                                "quantity": 1
+                            }
+                        ]
+                    }
+                ],
+                "subMenuItems": [
+                    {
+                        "subMenuItemId": 4,
+                        "name": "Pepsi",
+                        "quantity": 4
+                    }
+                ]
+            }
+        ],
+        "subMenuItems": [
+            {
+                "subMenuItemId": 4,
+                "name": "Pepsi",
+                "price": 100,
+                "picture": ""
+            }
+        ],
+        "recommendedForYou": [
+            {
+                "menuItemId": 6,
+                "name": "Pizza Peperonni",
+                "description": "Pizza Peperonni Description",
+                "categoryName": "Pizza",
+                "picture": "uploads/menu-items/ac1fa189-51aa-499d-9dbb-4d4b07775844.jpg",
+                "variations": [
+                    {
+                        "id": 5,
+                        "name": "Small",
+                        "price": 620
+                    },
+                    {
+                        "id": 6,
+                        "name": "Medium",
+                        "price": 884
+                    },
+                    {
+                        "id": 7,
+                        "name": "Large",
+                        "price": 1200
+                    }
+                ],
+                "modifiers": [
+                    {
+                        "id": 11,
+                        "name": "Pepsi",
+                        "price": 100
+                    }
+                ],
+                "customizations": [
+                    {
+                        "id": 7,
+                        "name": "Peperonni Configuration",
+                        "options": [
+                            {
+                                "id": 5,
+                                "name": "Less Peperonni",
+                                "price": 0
+                            },
+                            {
+                                "id": 6,
+                                "name": "Extra Peperonni",
+                                "price": 0
+                            }
+                        ]
+                    }
+                ],
+                "discount": {
+                    "id": 6,
+                    "name": "Flat 10%",
+                    "value": 10,
+                    "endDate": "2025-09-06T00:00:00"
+                }
+            }
+        ]
+    }
+}
