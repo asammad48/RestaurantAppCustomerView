@@ -95,6 +95,17 @@ export default function AiEstimatorModal() {
 
     const budgetOptions: BudgetOption[] = [];
     console.log('🤖 AI Estimator: Generating budget options for', { groupSize, budget, selectedCategories });
+    console.log('🤖 AI ESTIMATOR: Full API Menu Data Structure', {
+      hasMenuData: !!apiMenuData,
+      menuItemsCount: apiMenuData?.menuItems?.length || 0,
+      dealsCount: apiMenuData?.deals?.length || 0,
+      menuItems: apiMenuData?.menuItems?.map(item => ({
+        menuItemId: item.menuItemId,
+        name: item.name,
+        variationsCount: item.variations?.length || 0,
+        variations: item.variations?.map(v => ({ id: v.id, name: v.name, price: v.price }))
+      })) || []
+    });
 
     // Get available items with their variations
     const availableItems = apiMenuData.menuItems
@@ -111,9 +122,20 @@ export default function AiEstimatorModal() {
     
     if (pizzaItems.length > 0) {
       const pizzaItem = pizzaItems[0];
+      console.log('🤖 AI ESTIMATOR: Selected pizza item for budget options', {
+        menuItemId: pizzaItem.menuItemId,
+        name: pizzaItem.name,
+        availableVariations: pizzaItem.variations?.map(v => ({ id: v.id, name: v.name, price: v.price }))
+      });
+      
       const smallVariation = pizzaItem.variations?.find(v => 
         v.name.toLowerCase().includes('small') || v.name.toLowerCase().includes('regular')
       ) || pizzaItem.variations[0];
+      
+      console.log('🤖 AI ESTIMATOR: Selected variation for budget option', {
+        variationFound: !!smallVariation,
+        variation: smallVariation ? { id: smallVariation.id, name: smallVariation.name, price: smallVariation.price } : null
+      });
 
       // Single pizza for 3 people
       const singlePizzaOption: BudgetOption = {
@@ -132,6 +154,13 @@ export default function AiEstimatorModal() {
           menuPicture: pizzaItem.picture
         }]
       };
+      
+      console.log('🤖 AI ESTIMATOR: Created single pizza budget option', {
+        menuItem: singlePizzaOption.menuItems[0],
+        hasSelectedVariantId: !!singlePizzaOption.menuItems[0].selectedVariantId,
+        hasVariantName: !!singlePizzaOption.menuItems[0].variantName,
+        hasVariantPrice: !!singlePizzaOption.menuItems[0].variantPrice
+      });
 
       // Double pizza for 6 people
       const doublePizzaOption: BudgetOption = {
@@ -291,12 +320,38 @@ export default function AiEstimatorModal() {
           };
           
           console.log('🛒 AI ESTIMATOR: Created enhanced menu item', enhancedMenuItem);
+          console.log('🛒 AI ESTIMATOR: Variant Details Comparison', {
+            budgetItemVariant: {
+              selectedVariantId: budgetItem.selectedVariantId,
+              variantName: budgetItem.variantName,
+              variantPrice: budgetItem.variantPrice
+            },
+            foundVariation: {
+              id: selectedVariation.id,
+              name: selectedVariation.name,
+              price: selectedVariation.price
+            },
+            enhancedItemVariant: {
+              selectedVariantId: enhancedMenuItem.selectedVariantId,
+              variantName: enhancedMenuItem.variantName,
+              variantPrice: enhancedMenuItem.variantPrice
+            }
+          });
           
           for (let i = 0; i < budgetItem.quantity; i++) {
             console.log(`🛒 AI ESTIMATOR: Adding menu item ${i + 1}/${budgetItem.quantity} to cart`, {
               itemName: enhancedMenuItem.name,
               variantName: budgetItem.variantName,
               price: budgetItem.variantPrice
+            });
+            console.log('🛒 AI ESTIMATOR: About to call addItem with:', {
+              item: {
+                name: enhancedMenuItem.name,
+                id: enhancedMenuItem.menuItemId,
+                selectedVariantId: enhancedMenuItem.selectedVariantId,
+                variantPrice: enhancedMenuItem.variantPrice
+              },
+              variation: budgetItem.variantName
             });
             addItem(enhancedMenuItem, budgetItem.variantName);
           }
