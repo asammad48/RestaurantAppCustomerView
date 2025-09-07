@@ -13,6 +13,7 @@ import { Users, DollarSign, Pizza, Sandwich, Coffee, ChefHat, Cake, Plus, Bot, S
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
+import { BudgetOption, BudgetMenuItem, BudgetMenuPackage, BudgetEstimateResponse } from "@/lib/api-client";
 
 interface AiEstimatorModalProps {}
 
@@ -70,99 +71,134 @@ export default function AiEstimatorModal() {
     return <ChefHat className="w-5 h-5" />;
   };
 
-  // AI Logic to generate category-wise suggestions
-  const generateAiSuggestions = (): CategoryCombo[] => {
+  // AI Logic to generate budget options in the new format
+  const generateBudgetOptions = (): BudgetOption[] => {
     if (!apiMenuData?.menuItems) return [];
 
-    const categoriesData = selectedCategories.length > 0 ? selectedCategories : uniqueCategories;
-    const budgetPerCategory = Math.floor(budget / categoriesData.length);
-    const budgetPerPerson = budget / groupSize;
+    const budgetOptions: BudgetOption[] = [];
+    console.debug('🤖 AI Estimator: Generating budget options for', { groupSize, budget, selectedCategories });
 
-    const suggestions: CategoryCombo[] = [];
+    // Get available items with their variations
+    const availableItems = apiMenuData.menuItems
+      .filter(item => item.variations && item.variations.length > 0)
+      .filter(item => selectedCategories.length === 0 || selectedCategories.includes(item.categoryName));
 
-    categoriesData.forEach(categoryName => {
-      const categoryItems = apiMenuData.menuItems.filter(item => 
-        item.categoryName === categoryName
-      );
+    if (availableItems.length === 0) return budgetOptions;
 
-      if (categoryItems.length === 0) return;
+    // Option 1: Single item suggestion (like the Pizza Pepperoni example)
+    const pizzaItems = availableItems.filter(item => 
+      item.name.toLowerCase().includes('pizza') || 
+      item.categoryName.toLowerCase().includes('pizza')
+    );
+    
+    if (pizzaItems.length > 0) {
+      const pizzaItem = pizzaItems[0];
+      const smallVariation = pizzaItem.variations?.find(v => 
+        v.name.toLowerCase().includes('small') || v.name.toLowerCase().includes('regular')
+      ) || pizzaItem.variations[0];
 
-      // Sort by price to optimize budget distribution
-      const sortedItems = categoryItems.sort((a, b) => {
-        const priceA = a.variations?.[0]?.price || 0;
-        const priceB = b.variations?.[0]?.price || 0;
-        return priceA - priceB;
-      });
-
-      const combo: CategoryCombo = {
-        categoryName,
-        icon: getCategoryIcon(categoryName),
-        items: [],
-        totalPrice: 0
+      // Single pizza for 3 people
+      const singlePizzaOption: BudgetOption = {
+        totalCost: smallVariation.price,
+        totalPeopleServed: 3,
+        isWithinBudget: smallVariation.price <= budget,
+        menuPackages: [],
+        menuItems: [{
+          menuItemId: pizzaItem.menuItemId,
+          name: pizzaItem.name,
+          selectedVariantId: smallVariation.id,
+          variantName: smallVariation.name,
+          variantPrice: smallVariation.price,
+          personServing: 3,
+          quantity: 1,
+          menuPicture: pizzaItem.picture
+        }]
       };
 
-      let remainingBudget = budgetPerCategory;
-      let currentIndex = 0;
+      // Double pizza for 6 people
+      const doublePizzaOption: BudgetOption = {
+        totalCost: smallVariation.price * 2,
+        totalPeopleServed: 6,
+        isWithinBudget: (smallVariation.price * 2) <= budget,
+        menuPackages: [],
+        menuItems: [{
+          menuItemId: pizzaItem.menuItemId,
+          name: pizzaItem.name,
+          selectedVariantId: smallVariation.id,
+          variantName: smallVariation.name,
+          variantPrice: smallVariation.price,
+          personServing: 3,
+          quantity: 2,
+          menuPicture: pizzaItem.picture
+        }]
+      };
 
-      // Try to get at least one item per person for main categories
-      const isMainCategory = !categoryName.toLowerCase().includes('drink') && 
-                           !categoryName.toLowerCase().includes('dessert') &&
-                           !categoryName.toLowerCase().includes('side');
+      budgetOptions.push(singlePizzaOption, doublePizzaOption);
+    }
 
-      if (isMainCategory) {
-        // Prioritize getting one item per person
-        for (let person = 0; person < groupSize && currentIndex < sortedItems.length; person++) {
-          const item = sortedItems[currentIndex];
-          const itemPrice = item.variations?.[0]?.price || 0;
+    // Option 2: Create a package deal from available deals
+    if (apiMenuData.deals && apiMenuData.deals.length > 0) {
+      const pizzaDeal = apiMenuData.deals.find(deal => 
+        deal.name.toLowerCase().includes('pizza') ||
+        deal.description.toLowerCase().includes('pizza')
+      );
+
+      if (pizzaDeal) {
+        const packageOption: BudgetOption = {
+          totalCost: pizzaDeal.price,
+          totalPeopleServed: 9,
+          isWithinBudget: pizzaDeal.price <= budget,
+          menuPackages: [{
+            id: pizzaDeal.dealId,
+            name: pizzaDeal.name,
+            description: pizzaDeal.description,
+            price: pizzaDeal.price,
+            personServing: 9,
+            itemNames: [pizzaItem?.name || "Pizza Pepperoni"],
+            quantity: 1,
+            packagePicture: pizzaDeal.picture
+          }],
+          menuItems: []
+        };
+        budgetOptions.push(packageOption);
+      }
+    }
+
+    // Add more variety if we have budget left
+    if (budgetOptions.length > 0) {
+      const remainingBudget = budget - Math.min(...budgetOptions.map(opt => opt.totalCost));
+      if (remainingBudget > 0) {
+        // Try to add complementary items
+        const drinkItems = availableItems.filter(item => 
+          item.categoryName.toLowerCase().includes('drink') ||
+          item.categoryName.toLowerCase().includes('beverage')
+        );
+
+        if (drinkItems.length > 0) {
+          const drink = drinkItems[0];
+          const drinkVariation = drink.variations[0];
           
-          if (itemPrice <= remainingBudget) {
-            const existingItem = combo.items.find(i => i.menuItemId === item.menuItemId);
-            if (existingItem) {
-              existingItem.quantity++;
-            } else {
-              combo.items.push({
-                name: item.name,
-                quantity: 1,
-                price: itemPrice,
-                menuItemId: item.menuItemId
-              });
-            }
-            combo.totalPrice += itemPrice;
-            remainingBudget -= itemPrice;
-          }
-        }
-      }
-
-      // Fill remaining budget with additional items
-      while (remainingBudget > 0 && currentIndex < sortedItems.length) {
-        const item = sortedItems[currentIndex];
-        const itemPrice = item.variations?.[0]?.price || 0;
-        
-        if (itemPrice <= remainingBudget) {
-          const existingItem = combo.items.find(i => i.menuItemId === item.menuItemId);
-          if (existingItem) {
-            existingItem.quantity++;
-          } else {
-            combo.items.push({
-              name: item.name,
-              quantity: 1,
-              price: itemPrice,
-              menuItemId: item.menuItemId
+          // Add drinks to the first option if budget allows
+          if (budgetOptions[0] && (budgetOptions[0].totalCost + drinkVariation.price * groupSize) <= budget) {
+            budgetOptions[0].menuItems.push({
+              menuItemId: drink.menuItemId,
+              name: drink.name,
+              selectedVariantId: drinkVariation.id,
+              variantName: drinkVariation.name,
+              variantPrice: drinkVariation.price,
+              personServing: 1,
+              quantity: groupSize,
+              menuPicture: drink.picture
             });
+            budgetOptions[0].totalCost += drinkVariation.price * groupSize;
+            budgetOptions[0].totalPeopleServed = groupSize;
           }
-          combo.totalPrice += itemPrice;
-          remainingBudget -= itemPrice;
-        } else {
-          currentIndex++;
         }
       }
+    }
 
-      if (combo.items.length > 0) {
-        suggestions.push(combo);
-      }
-    });
-
-    return suggestions;
+    console.debug('🤖 AI Estimator: Generated budget options:', budgetOptions);
+    return budgetOptions.filter(option => option.isWithinBudget);
   };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
@@ -179,22 +215,55 @@ export default function AiEstimatorModal() {
     }
   };
 
-  const handleAddComboToCart = (combo: CategoryCombo) => {
-    // Add each item in the combo to cart
-    combo.items.forEach(item => {
-      const menuItem = apiMenuData?.menuItems.find(m => m.menuItemId === item.menuItemId);
+  const handleAddBudgetOptionToCart = (budgetOption: BudgetOption) => {
+    console.debug('🛒 Adding budget option to cart:', budgetOption);
+    
+    // Add menu items to cart
+    budgetOption.menuItems.forEach(budgetItem => {
+      const menuItem = apiMenuData?.menuItems.find(m => m.menuItemId === budgetItem.menuItemId);
       if (menuItem) {
-        for (let i = 0; i < item.quantity; i++) {
-          addItem(menuItem);
+        // Find the specific variation
+        const selectedVariation = menuItem.variations?.find(v => v.id === budgetItem.selectedVariantId);
+        if (selectedVariation) {
+          // Create enhanced menu item with variant details
+          const enhancedMenuItem = {
+            ...menuItem,
+            selectedVariantId: budgetItem.selectedVariantId,
+            variantName: budgetItem.variantName,
+            variantPrice: budgetItem.variantPrice,
+            menuPicture: budgetItem.menuPicture
+          };
+          
+          for (let i = 0; i < budgetItem.quantity; i++) {
+            console.debug('🛒 Adding menu item:', enhancedMenuItem.name, 'Variant:', budgetItem.variantName);
+            addItem(enhancedMenuItem, budgetItem.variantName);
+          }
         }
       }
     });
+    
+    // Add packages to cart
+    budgetOption.menuPackages.forEach(packageItem => {
+      const dealItem = apiMenuData?.deals?.find(d => d.dealId === packageItem.id);
+      if (dealItem) {
+        const enhancedPackage = {
+          ...dealItem,
+          packagePicture: packageItem.packagePicture
+        };
+        
+        for (let i = 0; i < packageItem.quantity; i++) {
+          console.debug('🛒 Adding package:', enhancedPackage.name);
+          addItem(enhancedPackage);
+        }
+      }
+    });
+    
     setAiEstimatorModalOpen(false);
     useCartStore.getState().setCartOpen(true);
   };
 
-  const suggestions = step === 'suggestions' ? generateAiSuggestions() : [];
-  const totalSuggestedCost = suggestions.reduce((sum, combo) => sum + combo.totalPrice, 0);
+  const budgetOptions = step === 'suggestions' ? generateBudgetOptions() : [];
+  const totalSuggestedCost = budgetOptions.reduce((sum, option) => sum + option.totalCost, 0);
 
   return (
     <Dialog open={isAiEstimatorModalOpen} onOpenChange={setAiEstimatorModalOpen}>
@@ -415,16 +484,16 @@ export default function AiEstimatorModal() {
               </div>
             </div>
 
-            {/* AI Suggestions */}
+            {/* Budget Options */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold">AI Recommendations</h3>
+                <h3 className="text-lg font-bold">Budget Options</h3>
                 <Badge className="configurable-primary text-white">
-                  Total: PKR {totalSuggestedCost}
+                  {budgetOptions.length} Options Found
                 </Badge>
               </div>
 
-              {suggestions.length === 0 ? (
+              {budgetOptions.length === 0 ? (
                 <Card>
                   <CardContent className="p-6 text-center">
                     <p className="text-gray-600">No suitable combinations found within your budget. Try increasing your budget or adjusting preferences.</p>
@@ -432,35 +501,74 @@ export default function AiEstimatorModal() {
                 </Card>
               ) : (
                 <div className="grid gap-4">
-                  {suggestions.map((combo, index) => (
+                  {budgetOptions.map((option, index) => (
                     <Card key={index} className="border-2 hover:border-gray-300 transition-colors">
                       <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2 text-lg">
-                          {combo.icon}
-                          {combo.categoryName} Combo
-                          <Badge variant="outline">PKR {combo.totalPrice}</Badge>
+                          <ChefHat className="w-5 h-5" />
+                          Option {index + 1}
+                          <Badge variant="outline" className={option.isWithinBudget ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}>
+                            PKR {option.totalCost}
+                          </Badge>
                         </CardTitle>
+                        <div className="text-sm text-gray-600">
+                          Serves {option.totalPeopleServed} people • PKR {Math.round(option.totalCost / option.totalPeopleServed)} per person
+                        </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="space-y-2 mb-4">
-                          {combo.items.map((item, itemIndex) => (
-                            <div key={itemIndex} className="flex justify-between text-sm">
-                              <span>{item.quantity}x {item.name}</span>
-                              <span className="font-medium">PKR {item.price * item.quantity}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <div className="text-sm text-gray-600">
-                            {Math.floor(combo.items.reduce((sum, item) => sum + item.quantity, 0) / groupSize)} items per person
+                        {/* Menu Items */}
+                        {option.menuItems.length > 0 && (
+                          <div className="space-y-2 mb-4">
+                            <h4 className="text-sm font-medium text-gray-700">Menu Items:</h4>
+                            {option.menuItems.map((item, itemIndex) => (
+                              <div key={itemIndex} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                                <div>
+                                  <span className="font-medium">{item.quantity}x {item.name}</span>
+                                  <div className="text-xs text-gray-500">
+                                    {item.variantName} • Serves {item.personServing}
+                                  </div>
+                                </div>
+                                <span className="font-medium">PKR {item.variantPrice * item.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Menu Packages */}
+                        {option.menuPackages.length > 0 && (
+                          <div className="space-y-2 mb-4">
+                            <h4 className="text-sm font-medium text-gray-700">Package Deals:</h4>
+                            {option.menuPackages.map((packageItem, packageIndex) => (
+                              <div key={packageIndex} className="flex justify-between text-sm bg-blue-50 p-2 rounded">
+                                <div>
+                                  <span className="font-medium">{packageItem.quantity}x {packageItem.name}</span>
+                                  <div className="text-xs text-gray-500">
+                                    {packageItem.description} • Serves {packageItem.personServing}
+                                  </div>
+                                  <div className="text-xs text-blue-600">
+                                    Includes: {packageItem.itemNames.join(', ')}
+                                  </div>
+                                </div>
+                                <span className="font-medium">PKR {packageItem.price * packageItem.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <div className="text-sm">
+                            <span className={`font-medium ${option.isWithinBudget ? 'text-green-600' : 'text-red-600'}`}>
+                              {option.isWithinBudget ? '✓ Within Budget' : '✗ Over Budget'}
+                            </span>
                           </div>
                           <Button
-                            onClick={() => handleAddComboToCart(combo)}
+                            onClick={() => handleAddBudgetOptionToCart(option)}
                             className="configurable-primary hover:configurable-primary-hover text-white"
-                            data-testid={`button-add-combo-${index}`}
+                            disabled={!option.isWithinBudget}
+                            data-testid={`button-add-option-${index}`}
                           >
                             <Plus className="w-4 h-4 mr-1" />
-                            Add Combo
+                            Add to Cart
                           </Button>
                         </div>
                       </CardContent>
@@ -469,18 +577,19 @@ export default function AiEstimatorModal() {
                 </div>
               )}
 
-              {/* Budget remaining */}
-              {totalSuggestedCost < budget && (
-                <Card className="bg-green-50 border-green-200">
+              {/* Budget Summary */}
+              {budgetOptions.length > 0 && (
+                <Card className="bg-blue-50 border-blue-200">
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="font-medium text-green-800">Budget Remaining</p>
-                        <p className="text-sm text-green-600">You have PKR {budget - totalSuggestedCost} left for extras!</p>
+                        <p className="font-medium text-blue-800">Your Budget</p>
+                        <p className="text-blue-600">PKR {budget}</p>
                       </div>
-                      <Badge className="bg-green-600 text-white">
-                        PKR {budget - totalSuggestedCost}
-                      </Badge>
+                      <div>
+                        <p className="font-medium text-blue-800">Best Option</p>
+                        <p className="text-blue-600">PKR {Math.min(...budgetOptions.map(o => o.totalCost))}</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
