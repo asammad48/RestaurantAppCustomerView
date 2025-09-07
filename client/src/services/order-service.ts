@@ -16,9 +16,12 @@ export class OrderService {
     }
   }
 
-  // Convert cart items to order items format
+  // Convert cart items to order items format (only regular menu items)
   private convertCartItemsToOrderItems(cartItems: CartItem[]): any[] {
-    return cartItems.map(item => {
+    // Filter out deals and packages - only process regular menu items
+    const regularItems = cartItems.filter(item => !item.dealId && !item.isDeal);
+    
+    return regularItems.map(item => {
       const orderItem: any = {
         menuItemId: parseInt(item.menuItemId?.toString() || item.id),
         quantity: item.quantity,
@@ -60,6 +63,21 @@ export class OrderService {
       }
 
       return orderItem;
+    });
+  }
+
+  // Convert cart items to order packages format (only deals and menu packages)
+  private convertCartItemsToOrderPackages(cartItems: CartItem[]): any[] {
+    // Filter to only get deals and packages
+    const dealItems = cartItems.filter(item => item.dealId || item.isDeal);
+    
+    return dealItems.map(item => {
+      const orderPackage: any = {
+        menuPackageId: parseInt(item.dealId?.toString() || item.id),
+        quantity: item.quantity,
+      };
+
+      return orderPackage;
     });
   }
 
@@ -113,7 +131,7 @@ export class OrderService {
       username,
       orderType: this.getOrderType(serviceType),
       orderItems: this.convertCartItemsToOrderItems(cartItems),
-      orderPackages: [], // Can be extended for deal packages
+      orderPackages: this.convertCartItemsToOrderPackages(cartItems),
       deliveryDetails: serviceType === 'delivery' ? this.convertDeliveryDetails(deliveryDetails) : null,
       splitBills: splitBills || null
     };
