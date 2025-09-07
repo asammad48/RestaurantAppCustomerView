@@ -77,23 +77,34 @@ export interface BudgetEstimateRequest {
 export interface BudgetMenuItem {
   menuItemId: number;
   name: string;
-  selectedVariantId: number;
-  variantName: string;
-  variantPrice: number;
-  personServing: number;
-  quantity: number;
-  menuPicture?: string;
+  description: string;
+  categoryName: string;
+  picture: string;
+  variations: {
+    id: number;
+    name: string;
+    price: number;
+    quantity: number;
+  }[];
 }
 
 export interface BudgetMenuPackage {
-  id: number;
+  dealId: number;
   name: string;
   description: string;
   price: number;
-  personServing: number;
-  itemNames: string[];
-  quantity: number;
-  packagePicture?: string;
+  picture: string;
+  dealEndDate: string;
+  menuItems: {
+    menuItemId: number;
+    name: string;
+    variantsDetails: {
+      menuItemVariantId: number;
+      name: string;
+      quantity: number;
+    }[];
+  }[];
+  subMenuItems: any[];
 }
 
 export interface BudgetOption {
