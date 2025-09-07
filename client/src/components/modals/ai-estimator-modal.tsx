@@ -95,17 +95,6 @@ export default function AiEstimatorModal() {
 
     const budgetOptions: BudgetOption[] = [];
     console.log('🤖 AI Estimator: Generating budget options for', { groupSize, budget, selectedCategories });
-    console.log('🤖 AI ESTIMATOR: Full API Menu Data Structure', {
-      hasMenuData: !!apiMenuData,
-      menuItemsCount: apiMenuData?.menuItems?.length || 0,
-      dealsCount: apiMenuData?.deals?.length || 0,
-      menuItems: apiMenuData?.menuItems?.map(item => ({
-        menuItemId: item.menuItemId,
-        name: item.name,
-        variationsCount: item.variations?.length || 0,
-        variations: item.variations?.map(v => ({ id: v.id, name: v.name, price: v.price }))
-      })) || []
-    });
 
     // Get available items with their variations
     const availableItems = apiMenuData.menuItems
@@ -114,7 +103,7 @@ export default function AiEstimatorModal() {
 
     if (availableItems.length === 0) return budgetOptions;
 
-    // Option 1: Single item suggestion (like the Pizza Pepperoni example)
+    // Create budget options for each pizza variation
     const pizzaItems = availableItems.filter(item => 
       item.name.toLowerCase().includes('pizza') || 
       item.categoryName.toLowerCase().includes('pizza')
@@ -122,68 +111,34 @@ export default function AiEstimatorModal() {
     
     if (pizzaItems.length > 0) {
       const pizzaItem = pizzaItems[0];
-      console.log('🤖 AI ESTIMATOR: Selected pizza item for budget options', {
-        menuItemId: pizzaItem.menuItemId,
-        name: pizzaItem.name,
-        availableVariations: pizzaItem.variations?.map(v => ({ id: v.id, name: v.name, price: v.price }))
-      });
       
-      const smallVariation = pizzaItem.variations?.find(v => 
-        v.name.toLowerCase().includes('small') || v.name.toLowerCase().includes('regular')
-      ) || pizzaItem.variations[0];
-      
-      console.log('🤖 AI ESTIMATOR: Selected variation for budget option', {
-        variationFound: !!smallVariation,
-        variation: smallVariation ? { id: smallVariation.id, name: smallVariation.name, price: smallVariation.price } : null
+      // Create separate budget option for each variation
+      pizzaItem.variations?.forEach(variation => {
+        const budgetOption: BudgetOption = {
+          totalCost: variation.price,
+          totalPeopleServed: 3,
+          isWithinBudget: variation.price <= budget,
+          menuPackages: [],
+          menuItems: [{
+            menuItemId: pizzaItem.menuItemId,
+            name: pizzaItem.name,
+            description: pizzaItem.description,
+            categoryName: pizzaItem.categoryName,
+            picture: pizzaItem.picture,
+            variations: [{
+              id: variation.id,
+              name: variation.name,
+              price: variation.price,
+              quantity: 1
+            }]
+          }]
+        };
+        
+        budgetOptions.push(budgetOption);
       });
-
-      // Single pizza for 3 people
-      const singlePizzaOption: BudgetOption = {
-        totalCost: smallVariation.price,
-        totalPeopleServed: 3,
-        isWithinBudget: smallVariation.price <= budget,
-        menuPackages: [],
-        menuItems: [{
-          menuItemId: pizzaItem.menuItemId,
-          name: pizzaItem.name,
-          selectedVariantId: smallVariation.id,
-          variantName: smallVariation.name,
-          variantPrice: smallVariation.price,
-          personServing: 3,
-          quantity: 1,
-          menuPicture: pizzaItem.picture
-        }]
-      };
-      
-      console.log('🤖 AI ESTIMATOR: Created single pizza budget option', {
-        menuItem: singlePizzaOption.menuItems[0],
-        hasSelectedVariantId: !!singlePizzaOption.menuItems[0].selectedVariantId,
-        hasVariantName: !!singlePizzaOption.menuItems[0].variantName,
-        hasVariantPrice: !!singlePizzaOption.menuItems[0].variantPrice
-      });
-
-      // Double pizza for 6 people
-      const doublePizzaOption: BudgetOption = {
-        totalCost: smallVariation.price * 2,
-        totalPeopleServed: 6,
-        isWithinBudget: (smallVariation.price * 2) <= budget,
-        menuPackages: [],
-        menuItems: [{
-          menuItemId: pizzaItem.menuItemId,
-          name: pizzaItem.name,
-          selectedVariantId: smallVariation.id,
-          variantName: smallVariation.name,
-          variantPrice: smallVariation.price,
-          personServing: 3,
-          quantity: 2,
-          menuPicture: pizzaItem.picture
-        }]
-      };
-
-      budgetOptions.push(singlePizzaOption, doublePizzaOption);
     }
 
-    // Option 2: Create a package deal from available deals
+    // Add package deals
     if (apiMenuData.deals && apiMenuData.deals.length > 0) {
       const pizzaDeal = apiMenuData.deals.find(deal => 
         deal.name.toLowerCase().includes('pizza') ||
@@ -195,52 +150,19 @@ export default function AiEstimatorModal() {
           totalCost: pizzaDeal.price,
           totalPeopleServed: 9,
           isWithinBudget: pizzaDeal.price <= budget,
+          menuItems: [],
           menuPackages: [{
-            id: pizzaDeal.dealId,
+            dealId: pizzaDeal.dealId,
             name: pizzaDeal.name,
             description: pizzaDeal.description,
             price: pizzaDeal.price,
-            personServing: 9,
-            itemNames: [pizzaItems[0]?.name || "Pizza Pepperoni"],
-            quantity: 1,
-            packagePicture: pizzaDeal.picture
-          }],
-          menuItems: []
+            picture: pizzaDeal.picture,
+            dealEndDate: pizzaDeal.dealEndDate,
+            menuItems: pizzaDeal.menuItems || [],
+            subMenuItems: pizzaDeal.subMenuItems || []
+          }]
         };
         budgetOptions.push(packageOption);
-      }
-    }
-
-    // Add more variety if we have budget left
-    if (budgetOptions.length > 0) {
-      const remainingBudget = budget - Math.min(...budgetOptions.map(opt => opt.totalCost));
-      if (remainingBudget > 0) {
-        // Try to add complementary items
-        const drinkItems = availableItems.filter(item => 
-          item.categoryName.toLowerCase().includes('drink') ||
-          item.categoryName.toLowerCase().includes('beverage')
-        );
-
-        if (drinkItems.length > 0) {
-          const drink = drinkItems[0];
-          const drinkVariation = drink.variations[0];
-          
-          // Add drinks to the first option if budget allows
-          if (budgetOptions[0] && (budgetOptions[0].totalCost + drinkVariation.price * groupSize) <= budget) {
-            budgetOptions[0].menuItems.push({
-              menuItemId: drink.menuItemId,
-              name: drink.name,
-              selectedVariantId: drinkVariation.id,
-              variantName: drinkVariation.name,
-              variantPrice: drinkVariation.price,
-              personServing: 1,
-              quantity: groupSize,
-              menuPicture: drink.picture
-            });
-            budgetOptions[0].totalCost += drinkVariation.price * groupSize;
-            budgetOptions[0].totalPeopleServed = groupSize;
-          }
-        }
       }
     }
 
@@ -551,12 +473,12 @@ export default function AiEstimatorModal() {
                             {option.menuItems.map((item, itemIndex) => (
                               <div key={itemIndex} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
                                 <div>
-                                  <span className="font-medium">{item.quantity}x {item.name}</span>
+                                  <span className="font-medium">{item.variations[0]?.quantity}x {item.name}</span>
                                   <div className="text-xs text-gray-500">
-                                    {item.variantName} • Serves {item.personServing}
+                                    {item.variations[0]?.name} • {item.categoryName}
                                   </div>
                                 </div>
-                                <span className="font-medium">PKR {item.variantPrice * item.quantity}</span>
+                                <span className="font-medium">PKR {item.variations[0]?.price * item.variations[0]?.quantity}</span>
                               </div>
                             ))}
                           </div>
@@ -569,15 +491,15 @@ export default function AiEstimatorModal() {
                             {option.menuPackages.map((packageItem, packageIndex) => (
                               <div key={packageIndex} className="flex justify-between text-sm bg-blue-50 p-2 rounded">
                                 <div>
-                                  <span className="font-medium">{packageItem.quantity}x {packageItem.name}</span>
+                                  <span className="font-medium">1x {packageItem.name}</span>
                                   <div className="text-xs text-gray-500">
-                                    {packageItem.description} • Serves {packageItem.personServing}
+                                    {packageItem.description}
                                   </div>
                                   <div className="text-xs text-blue-600">
-                                    Includes: {packageItem.itemNames.join(', ')}
+                                    Deal includes multiple items
                                   </div>
                                 </div>
-                                <span className="font-medium">PKR {packageItem.price * packageItem.quantity}</span>
+                                <span className="font-medium">PKR {packageItem.price}</span>
                               </div>
                             ))}
                           </div>
@@ -589,15 +511,7 @@ export default function AiEstimatorModal() {
                               {option.isWithinBudget ? '✓ Within Budget' : '✗ Over Budget'}
                             </span>
                           </div>
-                          <Button
-                            onClick={() => handleAddBudgetOptionToCart(option)}
-                            className="configurable-primary hover:configurable-primary-hover text-white"
-                            disabled={!option.isWithinBudget}
-                            data-testid={`button-add-option-${index}`}
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add to Cart
-                          </Button>
+                          {/* Add to Cart functionality removed as requested */}
                         </div>
                       </CardContent>
                     </Card>
