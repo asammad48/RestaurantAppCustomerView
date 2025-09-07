@@ -857,12 +857,12 @@ export default function RestaurantMenuPage() {
                                   <div key={itemIndex} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                                     <div>
                                       <span className="font-medium">{item.name}</span>
-                                      <span className="text-sm text-gray-500 ml-2">({item.variantName})</span>
+                                      <span className="text-sm text-gray-500 ml-2">({item.variations[0]?.name})</span>
                                       <div className="text-sm text-gray-600">
-                                        Qty: {item.quantity} • Serves: {item.personServing}
+                                        Qty: {item.variations[0]?.quantity} • {item.categoryName}
                                       </div>
                                     </div>
-                                    <span className="font-semibold">PKR {item.variantPrice}</span>
+                                    <span className="font-semibold">PKR {item.variations[0]?.price}</span>
                                   </div>
                                 ))}
                               </div>
@@ -879,10 +879,10 @@ export default function RestaurantMenuPage() {
                                     <div>
                                       <span className="font-medium">{pkg.name}</span>
                                       <div className="text-sm text-gray-600">
-                                        {pkg.description} • Serves: {pkg.personServing} • Qty: {pkg.quantity}
+                                        {pkg.description}
                                       </div>
                                       <div className="text-xs text-gray-500">
-                                        Includes: {pkg.itemNames.join(', ')}
+                                        Deal includes multiple items
                                       </div>
                                     </div>
                                     <span className="font-semibold">PKR {pkg.price}</span>
