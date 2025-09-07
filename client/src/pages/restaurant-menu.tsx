@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal, ApiMenuResponse } from "@/lib/mock-data";
+import { apiClient, BudgetEstimateRequest, BudgetEstimateResponse, BudgetOption } from "@/lib/api-client";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,7 +38,8 @@ export default function RestaurantMenuPage() {
     getCartCount, 
     setLastAddedItem, 
     setAddToCartModalOpen,
-    setAiEstimatorModalOpen
+    setAiEstimatorModalOpen,
+    addItem
   } = useCartStore();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -45,11 +47,15 @@ export default function RestaurantMenuPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedVariations, setSelectedVariations] = useState<{[key: number]: number}>({});
   
+  // View toggle state
+  const [viewMode, setViewMode] = useState<'menu' | 'ai-budget'>('menu');
+  
   // AI Estimator state
   const [aiStep, setAiStep] = useState<'input' | 'suggestions'>('input');
   const [aiGroupSize, setAiGroupSize] = useState<number>(2);
   const [aiBudget, setAiBudget] = useState<number>(5000);
   const [aiSelectedCategories, setAiSelectedCategories] = useState<string[]>([]);
+  const [budgetEstimateData, setBudgetEstimateData] = useState<BudgetEstimateRequest | null>(null);
   const itemsPerPage = 10;
 
   const queryClient = useQueryClient();
@@ -153,6 +159,17 @@ export default function RestaurantMenuPage() {
     refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
+  // AI Budget Estimate Query
+  const { data: budgetData, isLoading: isBudgetLoading, refetch: refetchBudgetEstimate } = useQuery({
+    queryKey: ['budget-estimate', budgetEstimateData],
+    queryFn: async () => {
+      if (!budgetEstimateData) return null;
+      const response = await apiClient.getBudgetEstimate(budgetEstimateData);
+      return response.data;
+    },
+    enabled: false, // Only run when manually triggered
+  });
+
   const apiMenuData = menuData as ApiMenuResponse;
 
   // Handle case where no restaurant is selected for QR code access
@@ -173,6 +190,76 @@ export default function RestaurantMenuPage() {
   const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
   const uniqueCategories = categoryList.filter((value, index, self) => self.indexOf(value) === index);
   const categories = ["all", ...uniqueCategories];
+
+  // AI Budget Estimation handlers
+  const handleGenerateBudgetEstimate = async () => {
+    const estimateRequest: BudgetEstimateRequest = {
+      branchId,
+      groupSize: aiGroupSize,
+      maxPrice: aiBudget,
+      categories: aiSelectedCategories
+    };
+    
+    setBudgetEstimateData(estimateRequest);
+    setViewMode('ai-budget');
+    await refetchBudgetEstimate();
+  };
+
+  const handleSwitchToMenu = () => {
+    setViewMode('menu');
+  };
+
+  const handleSwitchToAI = () => {
+    if (budgetData) {
+      setViewMode('ai-budget');
+    } else {
+      handleGenerateBudgetEstimate();
+    }
+  };
+
+  // Add budget items to cart
+  const handleAddBudgetOptionToCart = (budgetOption: BudgetOption) => {
+    // Add menu items
+    budgetOption.menuItems.forEach(item => {
+      // Find the menu item to get full details
+      const menuItem = apiMenuData?.menuItems?.find(mi => mi.menuItemId === item.menuItemId);
+      if (menuItem) {
+        for (let i = 0; i < item.quantity; i++) {
+          addItem({
+            id: item.menuItemId.toString(),
+            name: item.name,
+            price: Number(item.variantPrice),
+            image: menuItem.picture || '',
+            selectedVariation: item.selectedVariantId.toString(),
+            variations: [],
+            quantity: 1,
+            isRecommended: false,
+            isDeal: false,
+            description: menuItem.description || ''
+          });
+        }
+      }
+    });
+
+    // Add menu packages
+    budgetOption.menuPackages.forEach(pkg => {
+      for (let i = 0; i < pkg.quantity; i++) {
+        addItem({
+          id: pkg.id.toString(),
+          name: pkg.name,
+          price: Number(pkg.price),
+          image: '',
+          selectedVariation: null,
+          variations: [],
+          quantity: 1,
+          isRecommended: false,
+          isDeal: true,
+          description: pkg.description,
+          packageId: pkg.id.toString()
+        });
+      }
+    });
+  };
   
   // Filter items by category and search
   const filteredItems = apiMenuData?.menuItems?.filter((item: ApiMenuItem) => {
@@ -649,7 +736,33 @@ export default function RestaurantMenuPage() {
           <div className="flex-1">
             <section>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold configurable-text-primary">Menu Items</h2>
+                <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-bold configurable-text-primary">
+                    {viewMode === 'menu' ? 'Menu Items' : 'AI Budget Suggestions'}
+                  </h2>
+                  {/* View Toggle Buttons */}
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                    <Button
+                      variant={viewMode === 'menu' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={handleSwitchToMenu}
+                      className={viewMode === 'menu' ? 'configurable-primary text-white' : ''}
+                      data-testid="button-switch-to-menu"
+                    >
+                      Menu
+                    </Button>
+                    <Button
+                      variant={viewMode === 'ai-budget' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={handleSwitchToAI}
+                      className={viewMode === 'ai-budget' ? 'configurable-primary text-white' : ''}
+                      data-testid="button-switch-to-ai"
+                    >
+                      <Bot className="w-4 h-4 mr-1" />
+                      AI Budget
+                    </Button>
+                  </div>
+                </div>
                 {/* Mobile AI Estimator Button */}
                 <div className="lg:hidden">
                   <Button
@@ -663,34 +776,139 @@ export default function RestaurantMenuPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                {isLoading ? (
-                  Array.from({ length: itemsPerPage }, (_, i) => (
-                    <Card key={i} className="animate-pulse">
-                      <CardContent className="p-3">
-                        <div className="flex">
-                          <div className="w-20 h-20 bg-gray-200 rounded-lg mr-3"></div>
-                          <div className="flex-1">
-                            <div className="h-3 bg-gray-200 rounded mb-2"></div>
-                            <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              {/* Conditional rendering based on view mode */}
+              {viewMode === 'menu' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  {isLoading ? (
+                    Array.from({ length: itemsPerPage }, (_, i) => (
+                      <Card key={i} className="animate-pulse">
+                        <CardContent className="p-3">
+                          <div className="flex">
+                            <div className="w-20 h-20 bg-gray-200 rounded-lg mr-3"></div>
+                            <div className="flex-1">
+                              <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  paginatedItems.map((item: ApiMenuItem) => (
-                    <div key={item.menuItemId} className="h-full">
-                      <FoodCard 
-                        item={item} 
-                        variant="compact"
-                        className="h-full"
-                      />
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    paginatedItems.map((item: ApiMenuItem) => (
+                      <div key={item.menuItemId} className="h-full">
+                        <FoodCard 
+                          item={item} 
+                          variant="compact"
+                          className="h-full"
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : (
+                /* AI Budget Options Display */
+                <div className="space-y-4 mb-6">
+                  {isBudgetLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <span className="ml-2">Generating budget suggestions...</span>
                     </div>
-                  ))
-                )}
-              </div>
+                  ) : budgetData?.budgetOptions && budgetData.budgetOptions.length > 0 ? (
+                    budgetData.budgetOptions.map((option, index) => (
+                      <Card key={index} className="border-2 hover:border-primary/50 transition-colors">
+                        <CardContent className="p-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="text-lg font-semibold">Budget Option {index + 1}</h3>
+                              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                                <span className="flex items-center">
+                                  <DollarSign className="w-4 h-4 mr-1" />
+                                  PKR {option.totalCost}
+                                </span>
+                                <span className="flex items-center">
+                                  <Users className="w-4 h-4 mr-1" />
+                                  Serves {option.totalPeopleServed}
+                                </span>
+                                <Badge variant={option.isWithinBudget ? "default" : "destructive"}>
+                                  {option.isWithinBudget ? "Within Budget" : "Over Budget"}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => handleAddBudgetOptionToCart(option)}
+                              className="configurable-primary hover:configurable-primary-hover text-white"
+                              data-testid={`button-add-budget-option-${index}`}
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Add to Cart
+                            </Button>
+                          </div>
+                          
+                          {/* Menu Items in this option */}
+                          {option.menuItems.length > 0 && (
+                            <div className="mb-4">
+                              <h4 className="font-medium text-sm text-gray-700 mb-2">Menu Items:</h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {option.menuItems.map((item, itemIndex) => (
+                                  <div key={itemIndex} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                    <div>
+                                      <span className="font-medium">{item.name}</span>
+                                      <span className="text-sm text-gray-500 ml-2">({item.variantName})</span>
+                                      <div className="text-sm text-gray-600">
+                                        Qty: {item.quantity} • Serves: {item.personServing}
+                                      </div>
+                                    </div>
+                                    <span className="font-semibold">PKR {item.variantPrice}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Menu Packages in this option */}
+                          {option.menuPackages.length > 0 && (
+                            <div>
+                              <h4 className="font-medium text-sm text-gray-700 mb-2">Deals & Packages:</h4>
+                              <div className="grid grid-cols-1 gap-2">
+                                {option.menuPackages.map((pkg, pkgIndex) => (
+                                  <div key={pkgIndex} className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                                    <div>
+                                      <span className="font-medium">{pkg.name}</span>
+                                      <div className="text-sm text-gray-600">
+                                        {pkg.description} • Serves: {pkg.personServing} • Qty: {pkg.quantity}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        Includes: {pkg.itemNames.join(', ')}
+                                      </div>
+                                    </div>
+                                    <span className="font-semibold">PKR {pkg.price}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Bot className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-600 mb-2">No Budget Suggestions Available</h3>
+                      <p className="text-gray-500 mb-4">
+                        Try adjusting your budget or group size in the AI Estimator to generate suggestions.
+                      </p>
+                      <Button
+                        onClick={() => setAiEstimatorModalOpen(true)}
+                        className="configurable-primary hover:configurable-primary-hover text-white"
+                      >
+                        <Bot className="w-4 h-4 mr-2" />
+                        Open AI Estimator
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
               
               {/* Pagination */}
               {totalPages > 1 && (

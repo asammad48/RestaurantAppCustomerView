@@ -66,6 +66,46 @@ export interface OrderResponse {
   tipAmount: number;
 }
 
+// AI Budget Estimator Types
+export interface BudgetEstimateRequest {
+  branchId: number;
+  groupSize: number;
+  maxPrice: number;
+  categories: string[];
+}
+
+export interface BudgetMenuItem {
+  menuItemId: number;
+  name: string;
+  selectedVariantId: number;
+  variantName: string;
+  variantPrice: number;
+  personServing: number;
+  quantity: number;
+}
+
+export interface BudgetMenuPackage {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  personServing: number;
+  itemNames: string[];
+  quantity: number;
+}
+
+export interface BudgetOption {
+  totalCost: number;
+  totalPeopleServed: number;
+  isWithinBudget: boolean;
+  menuPackages: BudgetMenuPackage[];
+  menuItems: BudgetMenuItem[];
+}
+
+export interface BudgetEstimateResponse {
+  budgetOptions: BudgetOption[];
+}
+
 export interface ApiResponse<T = any> {
   data: T;
   status: number;
@@ -222,6 +262,11 @@ class ApiClient {
   // Order API methods
   async createOrder(orderData: OrderRequest): Promise<ApiResponse<OrderResponse>> {
     return this.post<OrderResponse>('/api/Order', orderData);
+  }
+
+  // AI Budget Estimator API method
+  async getBudgetEstimate(estimateData: BudgetEstimateRequest): Promise<ApiResponse<BudgetEstimateResponse>> {
+    return this.post<BudgetEstimateResponse>('/api/customer-search/estimate', estimateData);
   }
 }
 
