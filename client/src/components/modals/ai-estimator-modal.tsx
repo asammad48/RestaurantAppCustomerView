@@ -245,15 +245,41 @@ export default function AiEstimatorModal() {
   };
 
   const handleAddBudgetOptionToCart = (budgetOption: BudgetOption) => {
-    console.debug('🛒 Adding budget option to cart:', budgetOption);
+    console.debug('🛒 AI ESTIMATOR: Starting to add budget option to cart', {
+      totalCost: budgetOption.totalCost,
+      menuItemsCount: budgetOption.menuItems.length,
+      packagesCount: budgetOption.menuPackages.length,
+      budgetOption
+    });
     
     // Add menu items to cart
-    budgetOption.menuItems.forEach(budgetItem => {
+    budgetOption.menuItems.forEach((budgetItem, index) => {
+      console.debug(`🛒 AI ESTIMATOR: Processing menu item ${index + 1}/${budgetOption.menuItems.length}`, {
+        itemName: budgetItem.name,
+        menuItemId: budgetItem.menuItemId,
+        quantity: budgetItem.quantity,
+        selectedVariantId: budgetItem.selectedVariantId,
+        variantName: budgetItem.variantName,
+        variantPrice: budgetItem.variantPrice
+      });
+      
       const menuItem = apiMenuData?.menuItems.find(m => m.menuItemId === budgetItem.menuItemId);
       if (menuItem) {
+        console.debug('🛒 AI ESTIMATOR: Found matching menu item in API data', {
+          foundItem: menuItem.name,
+          hasVariations: !!menuItem.variations,
+          variationsCount: menuItem.variations?.length || 0
+        });
+        
         // Find the specific variation
         const selectedVariation = menuItem.variations?.find(v => v.id === budgetItem.selectedVariantId);
         if (selectedVariation) {
+          console.debug('🛒 AI ESTIMATOR: Found matching variation', {
+            variationId: selectedVariation.id,
+            variationName: selectedVariation.name,
+            price: selectedVariation.price
+          });
+          
           // Create enhanced menu item with variant details
           const enhancedMenuItem = {
             ...menuItem,
@@ -263,30 +289,68 @@ export default function AiEstimatorModal() {
             menuPicture: budgetItem.menuPicture
           };
           
+          console.debug('🛒 AI ESTIMATOR: Created enhanced menu item', enhancedMenuItem);
+          
           for (let i = 0; i < budgetItem.quantity; i++) {
-            console.debug('🛒 Adding menu item:', enhancedMenuItem.name, 'Variant:', budgetItem.variantName);
+            console.debug(`🛒 AI ESTIMATOR: Adding menu item ${i + 1}/${budgetItem.quantity} to cart`, {
+              itemName: enhancedMenuItem.name,
+              variantName: budgetItem.variantName,
+              price: budgetItem.variantPrice
+            });
             addItem(enhancedMenuItem, budgetItem.variantName);
           }
+        } else {
+          console.error('🛒 AI ESTIMATOR: Variation not found!', {
+            lookingFor: budgetItem.selectedVariantId,
+            availableVariations: menuItem.variations?.map(v => ({ id: v.id, name: v.name }))
+          });
         }
+      } else {
+        console.error('🛒 AI ESTIMATOR: Menu item not found!', {
+          lookingFor: budgetItem.menuItemId,
+          budgetItem
+        });
       }
     });
     
     // Add packages to cart
-    budgetOption.menuPackages.forEach(packageItem => {
+    budgetOption.menuPackages.forEach((packageItem, index) => {
+      console.debug(`🛒 AI ESTIMATOR: Processing package ${index + 1}/${budgetOption.menuPackages.length}`, {
+        packageName: packageItem.name,
+        packageId: packageItem.id,
+        quantity: packageItem.quantity,
+        price: packageItem.price
+      });
+      
       const dealItem = apiMenuData?.deals?.find(d => d.dealId === packageItem.id);
       if (dealItem) {
+        console.debug('🛒 AI ESTIMATOR: Found matching deal in API data', {
+          foundDeal: dealItem.name,
+          dealId: dealItem.dealId
+        });
+        
         const enhancedPackage = {
           ...dealItem,
           packagePicture: packageItem.packagePicture
         };
         
+        console.debug('🛒 AI ESTIMATOR: Created enhanced package', enhancedPackage);
+        
         for (let i = 0; i < packageItem.quantity; i++) {
-          console.debug('🛒 Adding package:', enhancedPackage.name);
+          console.debug(`🛒 AI ESTIMATOR: Adding package ${i + 1}/${packageItem.quantity} to cart`, {
+            packageName: enhancedPackage.name
+          });
           addItem(enhancedPackage);
         }
+      } else {
+        console.error('🛒 AI ESTIMATOR: Package not found!', {
+          lookingFor: packageItem.id,
+          packageItem
+        });
       }
     });
     
+    console.debug('🛒 AI ESTIMATOR: Finished adding all items, closing modal and opening cart');
     setAiEstimatorModalOpen(false);
     useCartStore.getState().setCartOpen(true);
   };
