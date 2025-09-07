@@ -663,7 +663,7 @@ export default function RestaurantMenuPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 {isLoading ? (
                   Array.from({ length: itemsPerPage }, (_, i) => (
                     <Card key={i} className="animate-pulse">
