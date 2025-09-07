@@ -24,8 +24,11 @@ export class OrderService {
         quantity: item.quantity,
       };
 
-      // Add variant ID if exists
-      if (item.variations && item.variations.length > 0 && item.variation) {
+      // Add variant ID if exists - prefer stored selectedVariantId
+      if (item.selectedVariantId) {
+        orderItem.variantId = item.selectedVariantId;
+      } else if (item.variations && item.variations.length > 0 && item.variation) {
+        // Fallback to lookup by name if selectedVariantId is not available
         const selectedVariation = item.variations.find(v => v.name === item.variation);
         if (selectedVariation) {
           orderItem.variantId = selectedVariation.id;
