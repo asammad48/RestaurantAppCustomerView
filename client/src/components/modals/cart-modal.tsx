@@ -14,6 +14,23 @@ export default function CartModal() {
   const { user, setLoginModalOpen } = useAuthStore();
   const { toast } = useToast();
 
+  // Debug logging for cart modal
+  console.debug('🛒 Cart Modal: Rendering', {
+    isCartOpen,
+    itemCount: items.length,
+    total,
+    serviceType,
+    items: items.map(item => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      variantName: item.variantName,
+      variantPrice: item.variantPrice,
+      variation: item.variation
+    }))
+  });
+
   // Helper function to get the correct image URL for cart items
   const getItemImage = (item: any) => {
     // Priority order: menuPicture, packagePicture, picture, image
@@ -113,7 +130,7 @@ export default function CartModal() {
                   
                   {/* Price */}
                   <div className="text-right">
-                    <div className="text-lg font-bold text-black">Rs. {(parseFloat(item.price) * item.quantity).toFixed(2)}</div>
+                    <div className="text-lg font-bold text-black">Rs. {(parseFloat(item.price.toString()) * item.quantity).toFixed(2)}</div>
                   </div>
                 </div>
                 
@@ -121,14 +138,14 @@ export default function CartModal() {
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => updateQuantity(String(item.id), item.quantity - 1)}
+                      onClick={() => updateQuantity(item.id.toString(), item.quantity - 1)}
                       className="w-8 h-8 configurable-primary text-white rounded flex items-center justify-center hover:configurable-primary-hover"
                     >
                       <Minus size={14} />
                     </button>
                     <span className="w-12 text-center font-medium text-black">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(String(item.id), item.quantity + 1)}
+                      onClick={() => updateQuantity(item.id.toString(), item.quantity + 1)}
                       className="w-8 h-8 configurable-primary text-white rounded flex items-center justify-center hover:configurable-primary-hover"
                     >
                       <Plus size={14} />
@@ -136,7 +153,7 @@ export default function CartModal() {
                   </div>
                   
                   <button
-                    onClick={() => removeItem(String(item.id))}
+                    onClick={() => removeItem(item.id.toString())}
                     className="p-2 text-red-500 hover:text-red-700"
                   >
                     <Trash2 size={18} />

@@ -766,7 +766,10 @@ export default function RestaurantMenuPage() {
                 {/* Mobile AI Estimator Button */}
                 <div className="lg:hidden">
                   <Button
-                    onClick={() => setAiEstimatorModalOpen(true)}
+                    onClick={() => {
+                      console.debug('🤖 Opening AI Estimator Modal from restaurant menu');
+                      setAiEstimatorModalOpen(true);
+                    }}
                     className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2"
                     data-testid="button-open-ai-estimator-mobile"
                   >

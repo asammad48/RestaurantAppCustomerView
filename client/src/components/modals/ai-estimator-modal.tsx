@@ -50,17 +50,35 @@ export default function AiEstimatorModal() {
 
   const branchId = getBranchId();
 
-  const { data: menuData } = useQuery({
+  const { data: menuData, isLoading: isMenuLoading, error: menuError } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
   });
 
   const apiMenuData = menuData as ApiMenuResponse;
+  
+  // Debug logging for menu data
+  console.debug('🤖 AI Estimator: Menu data state', {
+    branchId,
+    isMenuLoading,
+    menuError,
+    hasMenuData: !!menuData,
+    menuItemsCount: apiMenuData?.menuItems?.length || 0,
+    dealsCount: apiMenuData?.deals?.length || 0,
+    menuData: apiMenuData
+  });
 
   // Get unique categories
   const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
   const uniqueCategories = categoryList.filter((value, index, self) => self.indexOf(value) === index);
+
+  // Debug logging for categories
+  console.debug('🤖 AI Estimator: Categories processed', {
+    categoryList,
+    uniqueCategories,
+    totalMenuItems: apiMenuData?.menuItems?.length
+  });
 
   const getCategoryIcon = (categoryName: string) => {
     const name = categoryName.toLowerCase();
@@ -210,8 +228,19 @@ export default function AiEstimatorModal() {
   };
 
   const handleGenerateSuggestions = () => {
+    console.debug('🤖 AI Estimator: Generate suggestions clicked', {
+      groupSize,
+      budget,
+      selectedCategories,
+      mealType,
+      dietaryPrefs
+    });
+    
     if (groupSize > 0 && budget > 0) {
+      console.debug('🤖 AI Estimator: Validation passed, switching to suggestions step');
       setStep('suggestions');
+    } else {
+      console.error('🤖 AI Estimator: Validation failed', { groupSize, budget });
     }
   };
 
@@ -488,9 +517,24 @@ export default function AiEstimatorModal() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold">Budget Options</h3>
-                <Badge className="configurable-primary text-white">
-                  {budgetOptions.length} Options Found
-                </Badge>
+                <div className="flex gap-2">
+                  <Badge className="configurable-primary text-white">
+                    {budgetOptions.length} Options Found
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Step: {step}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Debug Info Panel */}
+              <div className="bg-gray-50 p-3 rounded text-xs">
+                <p><strong>Debug Info:</strong></p>
+                <p>Branch ID: {branchId}</p>
+                <p>Menu Items: {apiMenuData?.menuItems?.length || 0}</p>
+                <p>Deals: {apiMenuData?.deals?.length || 0}</p>
+                <p>Budget: PKR {budget}, Group: {groupSize}</p>
+                <p>Categories: {selectedCategories.length > 0 ? selectedCategories.join(', ') : 'All'}</p>
               </div>
 
               {budgetOptions.length === 0 ? (
