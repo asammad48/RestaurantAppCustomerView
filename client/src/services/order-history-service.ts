@@ -111,9 +111,10 @@ export function getOrderTypeText(type: string | number): string {
  * Helper function to format currency
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'PKR',
+  // Simple PKR formatting to avoid any dollar sign issues
+  const formattedAmount = (amount / 100).toLocaleString('en-US', {
     minimumFractionDigits: 0,
-  }).format(amount / 100); // Assuming the API returns amounts in cents
+    maximumFractionDigits: 0,
+  });
+  return `PKR ${formattedAmount}`;
 }

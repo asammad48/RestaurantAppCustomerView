@@ -845,7 +845,6 @@ export default function RestaurantMenuPage() {
                               <h3 className="text-lg font-semibold">Budget Option {index + 1}</h3>
                               <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                                 <span className="flex items-center">
-                                  <DollarSign className="w-4 h-4 mr-1" />
                                   PKR {option.totalCost}
                                 </span>
                                 <span className="flex items-center">
