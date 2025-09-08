@@ -63,9 +63,15 @@ export default function AddToCartModal() {
       const menuItem = lastAddedItem as ApiMenuItem;
       if (selectedVariation && menuItem.variations) {
         const variation = menuItem.variations.find(v => v.id === selectedVariation);
-        basePrice = variation?.price || 0;
+        // Use discounted price if available, otherwise use regular price
+        basePrice = variation?.discountedPrice && variation.discountedPrice < variation.price 
+          ? variation.discountedPrice 
+          : variation?.price || 0;
       } else if (menuItem.variations && menuItem.variations.length > 0) {
-        basePrice = menuItem.variations[0].price;
+        const firstVariation = menuItem.variations[0];
+        basePrice = firstVariation.discountedPrice && firstVariation.discountedPrice < firstVariation.price
+          ? firstVariation.discountedPrice
+          : firstVariation.price;
       }
       
       // Add modifiers price
@@ -83,18 +89,26 @@ export default function AddToCartModal() {
       
       basePrice += modifiersPrice + customizationsPrice;
       
-      // Apply discount if available
+      // Apply discount if no discounted price is already applied and discount exists
       if (menuItem.discount && menuItem.discount.value > 0) {
-        basePrice = basePrice - (basePrice * menuItem.discount.value / 100);
+        const selectedVar = menuItem.variations?.find(v => v.id === selectedVariation) || menuItem.variations?.[0];
+        if (!selectedVar?.discountedPrice || selectedVar.discountedPrice >= selectedVar.price) {
+          basePrice = basePrice - (basePrice * menuItem.discount.value / 100);
+        }
       }
     } else if ('dealId' in lastAddedItem) {
       // For deals
       const deal = lastAddedItem as ApiDeal;
-      basePrice = deal.price;
+      // Use discounted price if available, otherwise use regular price
+      basePrice = deal.discountedPrice && deal.discountedPrice < deal.price 
+        ? deal.discountedPrice 
+        : deal.price;
       
-      // Apply discount if available
+      // Apply discount if no discounted price is already applied and discount exists
       if (deal.discount && deal.discount.value > 0) {
-        basePrice = basePrice - (basePrice * deal.discount.value / 100);
+        if (!deal.discountedPrice || deal.discountedPrice >= deal.price) {
+          basePrice = basePrice - (basePrice * deal.discount.value / 100);
+        }
       }
     }
     
@@ -150,6 +164,15 @@ export default function AddToCartModal() {
   const renderDealContent = (deal: ApiDeal) => {
     return (
       <div className="space-y-4">
+        {/* Max Allowed Amount Note */}
+        {deal.maxAllowedAmount && deal.maxAllowedAmount > 0 && (
+          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+            <p className="text-sm font-medium text-blue-800">
+              Max Allowed discount for the Order is PKR {deal.maxAllowedAmount.toFixed(2)}
+            </p>
+          </div>
+        )}
+
         <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
           <h3 className="font-semibold text-lg configurable-text-primary mb-3">Deal Includes:</h3>
           
@@ -216,7 +239,16 @@ export default function AddToCartModal() {
           <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
             <div className="flex justify-between items-center">
               <span className="font-medium configurable-text-primary">Standard Deal</span>
-              <span className="text-sm font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
+              <div className="text-sm">
+                {deal.discountedPrice && deal.discountedPrice < deal.price ? (
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-green-600">PKR {deal.discountedPrice.toFixed(2)}</span>
+                    <span className="text-gray-500 line-through text-xs">PKR {deal.price.toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <span className="font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
+                )}
+              </div>
             </div>
             {deal.discount && deal.discount.value > 0 && (
               <div className="mt-2 p-2 rounded bg-green-50">
@@ -234,6 +266,15 @@ export default function AddToCartModal() {
   const renderMenuItemContent = (menuItem: ApiMenuItem) => {
     return (
       <div className="space-y-4">
+        {/* Max Allowed Amount Note */}
+        {menuItem.maxAllowedAmount && menuItem.maxAllowedAmount > 0 && (
+          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+            <p className="text-sm font-medium text-blue-800">
+              Max Allowed discount for the Order is PKR {menuItem.maxAllowedAmount.toFixed(2)}
+            </p>
+          </div>
+        )}
+
         {/* Variations */}
         {menuItem.variations && menuItem.variations.length > 0 && (
           <div>
@@ -252,7 +293,16 @@ export default function AddToCartModal() {
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{variation.name}</span>
-                    <span className="text-sm font-bold">PKR {variation.price.toFixed(2)}</span>
+                    <div className="text-sm">
+                      {variation.discountedPrice && variation.discountedPrice < variation.price ? (
+                        <div className="flex items-center space-x-2">
+                          <span className="font-bold text-green-600">PKR {variation.discountedPrice.toFixed(2)}</span>
+                          <span className="text-gray-500 line-through text-xs">PKR {variation.price.toFixed(2)}</span>
+                        </div>
+                      ) : (
+                        <span className="font-bold">PKR {variation.price.toFixed(2)}</span>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}

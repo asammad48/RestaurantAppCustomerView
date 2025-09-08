@@ -20,10 +20,12 @@ export interface ApiMenuItem {
   description: string;
   categoryName: string;
   picture: string;
+  maxAllowedAmount?: number;
   variations: {
     id: number;
     name: string;
     price: number;
+    discountedPrice?: number;
   }[];
   modifiers: {
     id: number;
@@ -52,8 +54,10 @@ export interface ApiDeal {
   name: string;
   description: string;
   price: number;
+  discountedPrice?: number;
   picture: string;
   dealEndDate: string;
+  maxAllowedAmount?: number;
   discount?: {
     id: number;
     name: string;
