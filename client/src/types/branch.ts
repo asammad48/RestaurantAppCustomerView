@@ -20,6 +20,13 @@ export interface Branch {
   branchLogo: string;
   banner: string;
   distanceFromMyLocation: number;
+  // Pricing and charges (formatted to 2 decimal places)
+  deliveryCharges: number;
+  minDeliveryAmount: number;
+  serviceCharges: number;
+  taxPercentage: number;
+  maxDiscountAmount: number;
+  taxAppliedType: string;
   // Reservation-specific fields (optional)
   minNoticeMinute?: number;
   maxGuestsPerReservation?: number;
