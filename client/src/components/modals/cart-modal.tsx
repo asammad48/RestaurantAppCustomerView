@@ -104,7 +104,14 @@ export default function CartModal() {
     return totalDiscountAmount;
   };
   
-  const discountAmount = calculateMaxDiscount();
+  const calculatedDiscount = calculateMaxDiscount();
+  
+  // Check if branch has maxDiscountAmount and limit the discount accordingly
+  const branchMaxDiscount = selectedBranch?.maxDiscountAmount || 0;
+  const discountAmount = branchMaxDiscount > 0 
+    ? Math.min(calculatedDiscount, branchMaxDiscount)
+    : calculatedDiscount;
+  
   const grandTotal = subtotal + serviceCharge + deliveryCharge - discountAmount;
 
   const handleProceedToPayment = () => {
