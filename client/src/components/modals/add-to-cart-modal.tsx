@@ -8,7 +8,7 @@ import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal } from "@/lib/mock-data";
 
 export default function AddToCartModal() {
-  const { isAddToCartModalOpen, setAddToCartModalOpen, addItem, lastAddedItem } = useCartStore();
+  const { isAddToCartModalOpen, setAddToCartModalOpen, addItem, lastAddedItem, selectedBranch } = useCartStore();
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
@@ -53,6 +53,11 @@ export default function AddToCartModal() {
     }));
   };
 
+  // Helper function to calculate discounted price from original price and discount percentage
+  const calculateDiscountedPrice = (originalPrice: number, discountPercentage: number) => {
+    return originalPrice - (originalPrice * discountPercentage / 100);
+  };
+
   const getTotalPrice = () => {
     if (!lastAddedItem) return 0;
     
@@ -63,15 +68,25 @@ export default function AddToCartModal() {
       const menuItem = lastAddedItem as ApiMenuItem;
       if (selectedVariation && menuItem.variations) {
         const variation = menuItem.variations.find(v => v.id === selectedVariation);
-        // Use discounted price if available, otherwise use regular price
-        basePrice = variation?.discountedPrice && variation.discountedPrice < variation.price 
-          ? variation.discountedPrice 
-          : variation?.price || 0;
+        if (variation) {
+          // Use discounted price if available, otherwise calculate from discount percentage, or use regular price
+          if (variation.discountedPrice && variation.discountedPrice < variation.price) {
+            basePrice = variation.discountedPrice;
+          } else if (menuItem.discount && menuItem.discount.value > 0) {
+            basePrice = calculateDiscountedPrice(variation.price, menuItem.discount.value);
+          } else {
+            basePrice = variation.price;
+          }
+        }
       } else if (menuItem.variations && menuItem.variations.length > 0) {
         const firstVariation = menuItem.variations[0];
-        basePrice = firstVariation.discountedPrice && firstVariation.discountedPrice < firstVariation.price
-          ? firstVariation.discountedPrice
-          : firstVariation.price;
+        if (firstVariation.discountedPrice && firstVariation.discountedPrice < firstVariation.price) {
+          basePrice = firstVariation.discountedPrice;
+        } else if (menuItem.discount && menuItem.discount.value > 0) {
+          basePrice = calculateDiscountedPrice(firstVariation.price, menuItem.discount.value);
+        } else {
+          basePrice = firstVariation.price;
+        }
       }
       
       // Add modifiers price
@@ -99,16 +114,13 @@ export default function AddToCartModal() {
     } else if ('dealId' in lastAddedItem) {
       // For deals
       const deal = lastAddedItem as ApiDeal;
-      // Use discounted price if available, otherwise use regular price
-      basePrice = deal.discountedPrice && deal.discountedPrice < deal.price 
-        ? deal.discountedPrice 
-        : deal.price;
-      
-      // Apply discount if no discounted price is already applied and discount exists
-      if (deal.discount && deal.discount.value > 0) {
-        if (!deal.discountedPrice || deal.discountedPrice >= deal.price) {
-          basePrice = basePrice - (basePrice * deal.discount.value / 100);
-        }
+      // Use discounted price if available, otherwise calculate from discount percentage, or use regular price
+      if (deal.discountedPrice && deal.discountedPrice < deal.price) {
+        basePrice = deal.discountedPrice;
+      } else if (deal.discount && deal.discount.value > 0) {
+        basePrice = calculateDiscountedPrice(deal.price, deal.discount.value);
+      } else {
+        basePrice = deal.price;
       }
     }
     
@@ -240,9 +252,13 @@ export default function AddToCartModal() {
             <div className="flex justify-between items-center">
               <span className="font-medium configurable-text-primary">Standard Deal</span>
               <div className="text-sm">
-                {deal.discountedPrice && deal.discountedPrice < deal.price ? (
+                {(deal.discountedPrice && deal.discountedPrice < deal.price) || 
+                 (deal.discount && deal.discount.value > 0) ? (
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-green-600">PKR {deal.discountedPrice.toFixed(2)}</span>
+                    <span className="font-bold text-green-600">
+                      PKR {(deal.discountedPrice || 
+                            calculateDiscountedPrice(deal.price, deal.discount?.value || 0)).toFixed(2)}
+                    </span>
                     <span className="text-gray-500 line-through text-xs">PKR {deal.price.toFixed(2)}</span>
                   </div>
                 ) : (
@@ -294,9 +310,13 @@ export default function AddToCartModal() {
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{variation.name}</span>
                     <div className="text-sm">
-                      {variation.discountedPrice && variation.discountedPrice < variation.price ? (
+                      {(variation.discountedPrice && variation.discountedPrice < variation.price) || 
+                       (menuItem.discount && menuItem.discount.value > 0) ? (
                         <div className="flex items-center space-x-2">
-                          <span className="font-bold text-green-600">PKR {variation.discountedPrice.toFixed(2)}</span>
+                          <span className="font-bold text-green-600">
+                            PKR {(variation.discountedPrice || 
+                                  calculateDiscountedPrice(variation.price, menuItem.discount?.value || 0)).toFixed(2)}
+                          </span>
                           <span className="text-gray-500 line-through text-xs">PKR {variation.price.toFixed(2)}</span>
                         </div>
                       ) : (
@@ -406,6 +426,15 @@ export default function AddToCartModal() {
               className="min-h-[100px] resize-none"
             />
           </div>
+
+          {/* Max Discount Limit Note */}
+          {selectedBranch?.maxDiscountAmount && selectedBranch.maxDiscountAmount > 0 && (
+            <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+              <p className="text-sm font-medium text-yellow-800">
+                Max Discount Allowed limit is PKR {selectedBranch.maxDiscountAmount.toFixed(2)}
+              </p>
+            </div>
+          )}
 
           {/* Quantity and Add to Cart */}
           <div className="flex items-center justify-between pt-4">
