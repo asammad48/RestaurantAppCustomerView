@@ -247,7 +247,7 @@ export default function AddToCartModal() {
                 {(deal.discountedPrice && deal.discountedPrice < deal.price) || 
                  (deal.discount && deal.discount.value > 0) ? (
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-green-600">
+                    <span className="font-bold configurable-primary-text">
                       PKR {(deal.discountedPrice || 
                             calculateDiscountedPrice(deal.price, deal.discount?.value || 0)).toFixed(2)}
                     </span>
@@ -259,8 +259,8 @@ export default function AddToCartModal() {
               </div>
             </div>
             {deal.discount && deal.discount.value > 0 && (
-              <div className="mt-2 p-2 rounded bg-green-50">
-                <p className="text-xs font-medium" style={{color: 'var(--configurable-primary)'}}>
+              <div className="mt-2 p-2 rounded" style={{backgroundColor: 'var(--configurable-primary-alpha-20)'}}>
+                <p className="text-xs font-medium configurable-primary-text">
                   You save {deal.discount.value}% on this deal!
                 </p>
               </div>
@@ -305,7 +305,7 @@ export default function AddToCartModal() {
                       {(variation.discountedPrice && variation.discountedPrice < variation.price) || 
                        (menuItem.discount && menuItem.discount.value > 0) ? (
                         <div className="flex items-center space-x-2">
-                          <span className="font-bold text-green-600">
+                          <span className="font-bold configurable-primary-text">
                             PKR {(variation.discountedPrice || 
                                   calculateDiscountedPrice(variation.price, menuItem.discount?.value || 0)).toFixed(2)}
                           </span>
