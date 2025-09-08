@@ -656,17 +656,25 @@ class MockStorage {
     // Convert menu items to API format
     const apiMenuItems: ApiMenuItem[] = this.menuItems
       .filter(item => !item.isDeal)
-      .map(item => ({
+      .map((item, index) => ({
         menuItemId: parseInt(item.id.substring(0, 8), 16) % 1000,
         name: item.name,
         description: item.description,
         categoryName: item.category,
         picture: item.image,
+        maxAllowedAmount: index === 0 ? 500 : undefined, // Demo: Add max allowed amount to first item
         variations: [
           {
             id: 1,
             name: "Regular",
-            price: parseFloat(item.price)
+            price: parseFloat(item.price),
+            discountedPrice: index === 1 ? parseFloat(item.price) * 0.8 : undefined // Demo: 20% discount on second item
+          },
+          {
+            id: 2,
+            name: "Large",
+            price: parseFloat(item.price) * 1.5,
+            discountedPrice: index === 1 ? parseFloat(item.price) * 1.2 : undefined // Demo: discounted large size
           }
         ],
         modifiers: [],
@@ -681,9 +689,16 @@ class MockStorage {
 
     const recommendedItems = apiMenuItems.filter((_, index) => index < 3);
 
+    // Add demo data to deals
+    const dealsWithDemo = this.deals.map((deal, index) => ({
+      ...deal,
+      maxAllowedAmount: index === 0 ? 1000 : undefined, // Demo: Add max allowed amount to first deal
+      discountedPrice: index === 0 ? deal.price * 0.85 : undefined // Demo: 15% discount on first deal
+    }));
+
     return Promise.resolve({
       menuItems: apiMenuItems,
-      deals: [...this.deals],
+      deals: dealsWithDemo,
       subMenuItems: [],
       recommendedForYou: recommendedItems
     });
