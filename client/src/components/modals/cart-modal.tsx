@@ -112,7 +112,22 @@ export default function CartModal() {
     ? Math.min(calculatedDiscount, branchMaxDiscount)
     : calculatedDiscount;
   
-  const grandTotal = subtotal + serviceCharge + deliveryCharge - discountAmount;
+  // Calculate tax based on branch settings
+  const taxPercentage = selectedBranch?.taxPercentage || 0;
+  const taxAppliedType = selectedBranch?.taxAppliedType || '';
+  let taxAmount = 0;
+  
+  if (taxPercentage > 0) {
+    if (taxAppliedType === 'TaxAppliedOnTotalAmount') {
+      // Tax calculated on subtotal
+      taxAmount = subtotal * (taxPercentage / 100);
+    } else {
+      // Tax calculated on (subtotal - discount)
+      taxAmount = (subtotal - discountAmount) * (taxPercentage / 100);
+    }
+  }
+  
+  const grandTotal = subtotal + serviceCharge + deliveryCharge + taxAmount - discountAmount;
 
   const handleProceedToPayment = () => {
     // Check if user is logged in for delivery orders
@@ -328,6 +343,12 @@ export default function CartModal() {
                       Original discount was RS. {calculatedDiscount.toFixed(2)}, but restaurant has added a limit on discount
                     </div>
                   )}
+                </div>
+              )}
+              {taxAmount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-black">Tax ({taxPercentage}%)</span>
+                  <span className="text-black font-medium">RS. {taxAmount.toFixed(2)}</span>
                 </div>
               )}
               <div className="border-t border-gray-200 pt-3">
