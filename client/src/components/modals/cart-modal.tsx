@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/config";
 
 export default function CartModal() {
-  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem } = useCartStore();
+  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem, selectedBranch } = useCartStore();
   const { items, updateQuantity, clearCart, total } = useCart();
   const { user, setLoginModalOpen } = useAuthStore();
   const { toast } = useToast();
@@ -49,8 +49,8 @@ export default function CartModal() {
 
   // Calculate detailed order summary
   const subtotal = total; // This is the cart total before any additional charges
-  const serviceCharge = 500; // Fixed service charge
-  const deliveryCharge = serviceType === 'delivery' ? 200 : 0; // Delivery charge only for delivery orders
+  const serviceCharge = selectedBranch?.serviceCharges || 0; // Get service charge from branch data
+  const deliveryCharge = serviceType === 'delivery' ? (selectedBranch?.deliveryCharges || 0) : 0; // Get delivery charge from branch data
   
   // Calculate maximum discount based on maxAllowedAmount from items
   const calculateMaxDiscount = () => {
