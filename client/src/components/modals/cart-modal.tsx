@@ -318,9 +318,16 @@ export default function CartModal() {
                 </div>
               )}
               {discountAmount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-black text-green-600">Discount</span>
-                  <span className="text-black font-medium text-green-600">-RS. {discountAmount.toFixed(2)}</span>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-black text-green-600">Discount</span>
+                    <span className="text-black font-medium text-green-600">-RS. {discountAmount.toFixed(2)}</span>
+                  </div>
+                  {branchMaxDiscount > 0 && calculatedDiscount > branchMaxDiscount && (
+                    <div className="text-xs text-gray-500 pl-2">
+                      Original discount was RS. {calculatedDiscount.toFixed(2)}, but restaurant has added a limit on discount
+                    </div>
+                  )}
                 </div>
               )}
               <div className="border-t border-gray-200 pt-3">
