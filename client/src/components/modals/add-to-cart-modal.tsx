@@ -103,14 +103,6 @@ export default function AddToCartModal() {
       }, 0);
       
       basePrice += modifiersPrice + customizationsPrice;
-      
-      // Apply discount if no discounted price is already applied and discount exists
-      if (menuItem.discount && menuItem.discount.value > 0) {
-        const selectedVar = menuItem.variations?.find(v => v.id === selectedVariation) || menuItem.variations?.[0];
-        if (!selectedVar?.discountedPrice || selectedVar.discountedPrice >= selectedVar.price) {
-          basePrice = basePrice - (basePrice * menuItem.discount.value / 100);
-        }
-      }
     } else if ('dealId' in lastAddedItem) {
       // For deals
       const deal = lastAddedItem as ApiDeal;
