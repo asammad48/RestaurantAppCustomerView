@@ -84,6 +84,7 @@ export interface BudgetMenuItem {
     id: number;
     name: string;
     price: number;
+    discountedPrice?: number;
     quantity: number;
   }[];
 }
@@ -93,6 +94,8 @@ export interface BudgetMenuPackage {
   name: string;
   description: string;
   price: number;
+  discountedPrice: number;
+  quantity: number;
   picture: string;
   dealEndDate: string;
   menuItems: {
@@ -104,7 +107,11 @@ export interface BudgetMenuPackage {
       quantity: number;
     }[];
   }[];
-  subMenuItems: any[];
+  subMenuItems: {
+    subMenuItemId: number;
+    name: string;
+    quantity: number;
+  }[];
 }
 
 export interface BudgetOption {
@@ -117,6 +124,7 @@ export interface BudgetOption {
 
 export interface BudgetEstimateResponse {
   budgetOptions: BudgetOption[];
+  maxAllowedDiscount: number;
 }
 
 export interface ApiResponse<T = any> {

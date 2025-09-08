@@ -65,6 +65,8 @@ export async function apiRequest(
       result = await mockStorage.getReservations();
     } else if (url.includes('/reservations') && method === 'POST') {
       result = await mockStorage.createReservation(data as any);
+    } else if (url.includes('/api/customer-search/estimate') && method === 'POST') {
+      result = await mockStorage.getBudgetEstimate(data as any);
     } else {
       throw new Error(`Mock API endpoint not found: ${method} ${url}`);
     }

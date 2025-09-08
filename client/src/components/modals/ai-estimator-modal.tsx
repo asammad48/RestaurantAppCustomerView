@@ -10,10 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/lib/store";
 import { Users, DollarSign, Pizza, Sandwich, Coffee, ChefHat, Cake, Plus, Bot, Sparkles, Clock, TrendingUp, Info, Lightbulb } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
-import { BudgetOption, BudgetMenuItem, BudgetMenuPackage, BudgetEstimateResponse } from "@/lib/api-client";
+import { BudgetOption, BudgetMenuItem, BudgetMenuPackage, BudgetEstimateResponse, BudgetEstimateRequest, apiClient } from "@/lib/api-client";
 
 interface AiEstimatorModalProps {}
 
@@ -39,6 +39,7 @@ export default function AiEstimatorModal() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [mealType, setMealType] = useState<string>('');
   const [dietaryPrefs, setDietaryPrefs] = useState<string[]>([]);
+  const [budgetEstimateData, setBudgetEstimateData] = useState<BudgetEstimateResponse | null>(null);
   
   // Get branch ID
   const getBranchId = () => {
@@ -89,94 +90,6 @@ export default function AiEstimatorModal() {
     return <ChefHat className="w-5 h-5" />;
   };
 
-  // AI Logic to generate budget options in the new format
-  const generateBudgetOptions = (): BudgetOption[] => {
-    if (!apiMenuData?.menuItems) return [];
-
-    const budgetOptions: BudgetOption[] = [];
-    console.log('🤖 AI Estimator: Generating budget options for', { groupSize, budget, selectedCategories });
-
-    // Get available items with their variations
-    const availableItems = apiMenuData.menuItems
-      .filter(item => item.variations && item.variations.length > 0)
-      .filter(item => selectedCategories.length === 0 || selectedCategories.includes(item.categoryName));
-
-    if (availableItems.length === 0) return budgetOptions;
-
-    // Create budget options for each pizza variation
-    const pizzaItems = availableItems.filter(item => 
-      item.name.toLowerCase().includes('pizza') || 
-      item.categoryName.toLowerCase().includes('pizza')
-    );
-    
-    if (pizzaItems.length > 0) {
-      const pizzaItem = pizzaItems[0];
-      
-      // Create separate budget option for each variation
-      pizzaItem.variations?.forEach(variation => {
-        const budgetOption: BudgetOption = {
-          totalCost: variation.price,
-          totalPeopleServed: 3,
-          isWithinBudget: variation.price <= budget,
-          menuPackages: [],
-          menuItems: [{
-            menuItemId: pizzaItem.menuItemId,
-            name: pizzaItem.name,
-            description: pizzaItem.description,
-            categoryName: pizzaItem.categoryName,
-            picture: pizzaItem.picture,
-            variations: [{
-              id: variation.id,
-              name: variation.name,
-              price: variation.price,
-              quantity: 1
-            }]
-          }]
-        };
-        
-        budgetOptions.push(budgetOption);
-      });
-    }
-
-    // Add package deals
-    if (apiMenuData.deals && apiMenuData.deals.length > 0) {
-      const pizzaDeal = apiMenuData.deals.find(deal => 
-        deal.name.toLowerCase().includes('pizza') ||
-        deal.description.toLowerCase().includes('pizza')
-      );
-
-      if (pizzaDeal) {
-        const packageOption: BudgetOption = {
-          totalCost: pizzaDeal.price,
-          totalPeopleServed: 9,
-          isWithinBudget: pizzaDeal.price <= budget,
-          menuItems: [],
-          menuPackages: [{
-            dealId: pizzaDeal.dealId,
-            name: pizzaDeal.name,
-            description: pizzaDeal.description,
-            price: pizzaDeal.price,
-            picture: pizzaDeal.picture,
-            dealEndDate: pizzaDeal.dealEndDate,
-            menuItems: (pizzaDeal.menuItems || []).map((item: any) => ({
-              menuItemId: item.menuItemId || item.id,
-              name: item.name,
-              variantsDetails: item.variantsDetails || item.variations?.map((v: any) => ({
-                menuItemVariantId: v.menuItemVariantId || v.id,
-                name: v.name,
-                quantity: v.quantity || 1
-              })) || []
-            })),
-            subMenuItems: pizzaDeal.subMenuItems || []
-          }]
-        };
-        budgetOptions.push(packageOption);
-      }
-    }
-
-    console.log('🤖 AI Estimator: Generated budget options:', budgetOptions);
-    return budgetOptions.filter(option => option.isWithinBudget);
-  };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
     if (checked) {
@@ -185,6 +98,22 @@ export default function AiEstimatorModal() {
       setSelectedCategories(prev => prev.filter(c => c !== category));
     }
   };
+
+  // Budget estimation mutation
+  const budgetEstimateMutation = useMutation({
+    mutationFn: async (requestData: BudgetEstimateRequest) => {
+      const response = await apiClient.getBudgetEstimate(requestData);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      console.log('🤖 AI Estimator: Budget estimate received', data);
+      setBudgetEstimateData(data);
+      setStep('suggestions');
+    },
+    onError: (error) => {
+      console.error('🤖 AI Estimator: Budget estimate failed', error);
+    }
+  });
 
   const handleGenerateSuggestions = () => {
     console.log('🤖 AI Estimator: Generate suggestions clicked', {
@@ -196,16 +125,22 @@ export default function AiEstimatorModal() {
     });
     
     if (groupSize > 0 && budget > 0) {
-      console.log('🤖 AI Estimator: Validation passed, switching to suggestions step');
-      setStep('suggestions');
+      console.log('🤖 AI Estimator: Validation passed, calling API');
+      const requestData: BudgetEstimateRequest = {
+        branchId,
+        groupSize,
+        maxPrice: budget,
+        categories: selectedCategories
+      };
+      budgetEstimateMutation.mutate(requestData);
     } else {
       console.log('🤖 AI Estimator: Validation failed', { groupSize, budget });
     }
   };
 
-  // Removed add to cart functionality as requested
-
-  const budgetOptions = step === 'suggestions' ? generateBudgetOptions() : [];
+  // Use API data instead of generated data
+  const budgetOptions = budgetEstimateData?.budgetOptions || [];
+  const maxAllowedDiscount = budgetEstimateData?.maxAllowedDiscount || 0;
   const totalSuggestedCost = budgetOptions.reduce((sum, option) => sum + option.totalCost, 0);
 
   return (
@@ -425,6 +360,19 @@ export default function AiEstimatorModal() {
                   <p>Categories: {selectedCategories.join(', ')}</p>
                 )}
               </div>
+              {maxAllowedDiscount > 0 && (
+                <div className="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-yellow-600" />
+                    <p className="text-sm font-medium text-yellow-800">
+                      Max Discount Available
+                    </p>
+                  </div>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Maximum allowed discount for each order: PKR {maxAllowedDiscount.toFixed(2)}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Budget Options */}

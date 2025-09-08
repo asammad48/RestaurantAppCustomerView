@@ -1,0 +1,124 @@
+{
+  "budgetOptions": [
+    {
+      "totalCost": 620,
+      "totalPeopleServed": 3,
+      "isWithinBudget": true,
+      "menuItems": [
+        {
+          "menuItemId": 6,
+          "name": "Pizza Peperonni",
+          "description": "Pizza Peperonni Description",
+          "categoryName": "Pizza",
+          "picture": "uploads/menu-items/ac1fa189-51aa-499d-9dbb-4d4b07775844.jpg",
+          "variations": [
+            {
+              "id": 5,
+              "name": "Small",
+              "price": 620,
+              "discountedPrice": 620,
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "menuPackages": []
+    },
+    {
+      "totalCost": 884,
+      "totalPeopleServed": 3,
+      "isWithinBudget": true,
+      "menuItems": [
+        {
+          "menuItemId": 6,
+          "name": "Pizza Peperonni",
+          "description": "Pizza Peperonni Description",
+          "categoryName": "Pizza",
+          "picture": "uploads/menu-items/ac1fa189-51aa-499d-9dbb-4d4b07775844.jpg",
+          "variations": [
+            {
+              "id": 6,
+              "name": "Medium",
+              "price": 884,
+              "discountedPrice": 884,
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "menuPackages": []
+    },
+    {
+      "totalCost": 1200,
+      "totalPeopleServed": 3,
+      "isWithinBudget": true,
+      "menuItems": [
+        {
+          "menuItemId": 6,
+          "name": "Pizza Peperonni",
+          "description": "Pizza Peperonni Description",
+          "categoryName": "Pizza",
+          "picture": "uploads/menu-items/ac1fa189-51aa-499d-9dbb-4d4b07775844.jpg",
+          "variations": [
+            {
+              "id": 7,
+              "name": "Large",
+              "price": 1200,
+              "discountedPrice": 1200,
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "menuPackages": []
+    },
+    {
+      "totalCost": 1700,
+      "totalPeopleServed": 18,
+      "isWithinBudget": true,
+      "menuItems": [],
+      "menuPackages": [
+        {
+          "dealId": 6,
+          "name": "Pizza Deal",
+          "description": "Pizza Deal Description",
+          "price": 1700,
+          "discountedPrice": 1700,
+          "quantity": 1,
+          "picture": "uploads/deals/469b13d2-d156-41d5-b27d-ab4cf667d498.bin",
+          "dealEndDate": "2025-09-08T20:58:14.863",
+          "menuItems": [
+            {
+              "menuItemId": 6,
+              "name": "Pizza Peperonni",
+              "variantsDetails": [
+                {
+                  "menuItemVariantId": 5,
+                  "name": "Small",
+                  "quantity": 3
+                },
+                {
+                  "menuItemVariantId": 6,
+                  "name": "Medium",
+                  "quantity": 2
+                },
+                {
+                  "menuItemVariantId": 7,
+                  "name": "Large",
+                  "quantity": 1
+                }
+              ]
+            }
+          ],
+          "subMenuItems": [
+            {
+              "subMenuItemId": 4,
+              "name": "Pepsi",
+              "quantity": 4
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
