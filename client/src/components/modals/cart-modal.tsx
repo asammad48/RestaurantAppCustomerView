@@ -335,8 +335,8 @@ export default function CartModal() {
               {discountAmount > 0 && (
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-black text-green-600">Discount</span>
-                    <span className="text-black font-medium text-green-600">-RS. {discountAmount.toFixed(2)}</span>
+                    <span className="text-black configurable-primary-text">Discount</span>
+                    <span className="text-black font-medium configurable-primary-text">-RS. {discountAmount.toFixed(2)}</span>
                   </div>
                   {branchMaxDiscount > 0 && calculatedDiscount > branchMaxDiscount && (
                     <div className="text-xs text-gray-500 pl-2">
