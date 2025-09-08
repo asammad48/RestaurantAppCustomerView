@@ -137,10 +137,23 @@ export default function AddToCartModal() {
     }
     
     const finalPrice = getTotalPrice();
+    
+    // Get selected variation details for menu items
+    let selectedVariationDetails = null;
+    if ('variations' in lastAddedItem && selectedVariation) {
+      selectedVariationDetails = lastAddedItem.variations.find(v => v.id === selectedVariation);
+    }
+    
     const itemWithCustomization = {
       ...lastAddedItem,
       price: finalPrice.toString(),
       customization,
+      // Include variant details if a variation was selected
+      ...(selectedVariationDetails && {
+        selectedVariantId: selectedVariationDetails.id,
+        variantName: selectedVariationDetails.name,
+        variantPrice: selectedVariationDetails.price,
+      }),
     } as any;
     
     // Add to cart with quantity
