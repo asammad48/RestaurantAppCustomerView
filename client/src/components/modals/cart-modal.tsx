@@ -149,7 +149,7 @@ export default function CartModal() {
                   
                   {/* Price */}
                   <div className="text-right">
-                    <div className="text-lg font-bold text-black">Rs. {(() => {
+                    {(() => {
                       const basePrice = parseFloat(item.price.toString());
                       
                       // Calculate modifier price for this item
@@ -161,8 +161,35 @@ export default function CartModal() {
                         }, 0);
                       }
                       
-                      return ((basePrice + modifierPrice) * item.quantity).toFixed(2);
-                    })()}</div>
+                      // Calculate discount if available
+                      const discount = item.discount;
+                      let discountPercentage = 0;
+                      
+                      if (discount) {
+                        if (typeof discount === 'number') {
+                          discountPercentage = discount;
+                        } else if (discount.value) {
+                          discountPercentage = discount.value;
+                        }
+                      }
+                      
+                      const originalTotalPrice = (basePrice + modifierPrice) * item.quantity;
+                      const discountedTotalPrice = discountPercentage > 0 ? originalTotalPrice * (1 - discountPercentage / 100) : originalTotalPrice;
+                      
+                      if (discountPercentage > 0) {
+                        return (
+                          <div>
+                            <div className="text-sm text-gray-500 line-through">Rs. {originalTotalPrice.toFixed(2)}</div>
+                            <div className="text-lg font-bold text-black">Rs. {discountedTotalPrice.toFixed(2)}</div>
+                            <div className="text-xs text-green-600">{discountPercentage}% OFF</div>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="text-lg font-bold text-black">Rs. {originalTotalPrice.toFixed(2)}</div>
+                        );
+                      }
+                    })()}
                   </div>
                 </div>
                 
