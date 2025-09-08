@@ -49,8 +49,8 @@ export default function CartModal() {
 
   // Calculate detailed order summary
   const subtotal = total; // This is the cart total before any additional charges
-  const serviceCharge = selectedBranch?.serviceCharges || 0; // Get service charge from branch data
-  const deliveryCharge = serviceType === 'delivery' ? (selectedBranch?.deliveryCharges || 0) : 0; // Get delivery charge from branch data
+  const serviceCharge = serviceType === 'dine-in' ? (selectedBranch?.serviceCharges || 0) : 0; // Service charges only for dine-in
+  const deliveryCharge = serviceType === 'delivery' ? (selectedBranch?.deliveryCharges || 0) : 0; // Delivery charges only for delivery
   
   // Calculate maximum discount based on maxAllowedAmount from items
   const calculateMaxDiscount = () => {
