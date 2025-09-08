@@ -47,9 +47,65 @@ export default function CartModal() {
     return item.image || getImageUrl(null);
   };
 
-  const serviceCharge = 500;
-  const discount = 500;
-  const grandTotal = total + serviceCharge - discount;
+  // Calculate detailed order summary
+  const subtotal = total; // This is the cart total before any additional charges
+  const serviceCharge = 500; // Fixed service charge
+  const deliveryCharge = serviceType === 'delivery' ? 200 : 0; // Delivery charge only for delivery orders
+  
+  // Calculate maximum discount based on maxAllowedAmount from items
+  const calculateMaxDiscount = () => {
+    let totalMaxAllowed = 0;
+    let totalDiscountAmount = 0;
+    
+    items.forEach(item => {
+      // Get base price for calculation
+      const basePrice = parseFloat(item.price.toString());
+      
+      // Calculate modifier price for this item
+      let modifierPrice = 0;
+      if (item.customization?.selectedModifiers && item.modifiers) {
+        modifierPrice = Object.entries(item.customization.selectedModifiers).reduce((modTotal, [modifierId, qty]) => {
+          const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+          return modTotal + (modifier ? modifier.price * qty : 0);
+        }, 0);
+      }
+      
+      const itemTotalPrice = (basePrice + modifierPrice) * item.quantity;
+      
+      // Check if item has discount
+      const discount = item.discount;
+      let discountPercentage = 0;
+      
+      if (discount) {
+        if (typeof discount === 'number') {
+          discountPercentage = discount;
+        } else if (discount.value) {
+          discountPercentage = discount.value;
+        }
+      }
+      
+      if (discountPercentage > 0) {
+        const discountAmount = itemTotalPrice * (discountPercentage / 100);
+        
+        // Check maxAllowedAmount constraint
+        const maxAllowed = (item as any).maxAllowedAmount || 0;
+        if (maxAllowed > 0) {
+          // Limit discount to maxAllowedAmount
+          const limitedDiscount = Math.min(discountAmount, maxAllowed * item.quantity);
+          totalDiscountAmount += limitedDiscount;
+          totalMaxAllowed += maxAllowed * item.quantity;
+        } else {
+          // No limit, use full discount
+          totalDiscountAmount += discountAmount;
+        }
+      }
+    });
+    
+    return totalDiscountAmount;
+  };
+  
+  const discountAmount = calculateMaxDiscount();
+  const grandTotal = subtotal + serviceCharge + deliveryCharge - discountAmount;
 
   const handleProceedToPayment = () => {
     // Check if user is logged in for delivery orders
@@ -242,20 +298,28 @@ export default function CartModal() {
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-black">Sub Total</span>
-                <span className="text-black font-medium">RS. {total.toFixed(2)}</span>
+                <span className="text-black font-medium">RS. {subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-black">Service Charges</span>
                 <span className="text-black font-medium">RS. {serviceCharge.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-black">Discount</span>
-                <span className="text-black font-medium">RS. {discount.toFixed(2)}</span>
-              </div>
+              {deliveryCharge > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-black">Delivery Charges</span>
+                  <span className="text-black font-medium">RS. {deliveryCharge.toFixed(2)}</span>
+                </div>
+              )}
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-black text-green-600">Discount</span>
+                  <span className="text-black font-medium text-green-600">-RS. {discountAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between">
                   <span className="text-black font-bold text-base">Grand Total</span>
-                  <span className="text-black font-bold text-base">RS. {total.toFixed(2)}</span>
+                  <span className="text-black font-bold text-base">RS. {grandTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
