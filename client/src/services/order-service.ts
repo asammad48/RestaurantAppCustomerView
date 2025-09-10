@@ -1,5 +1,5 @@
 import { apiClient, OrderRequest, OrderResponse, ApiResponse, DeliveryDetails, SplitBill } from '@/lib/api-client';
-import { CartItem, ServiceType, DeliveryDetails as StoreDeliveryDetails } from '@/lib/store';
+import { CartItem, ServiceType, DeliveryDetails as StoreDeliveryDetails, TakeawayDetails as StoreTakeawayDetails } from '@/lib/store';
 
 export class OrderService {
   // Get order type based on service type
@@ -96,11 +96,26 @@ export class OrderService {
       streetAddress: storeDetails.deliveryAddress, // Using same as deliveryAddress
       apartment: storeDetails.apartmentUnit || '',
       deliveryInstruction: storeDetails.deliveryInstructions || '',
-      prefferedDeliveryTime: storeDetails.preferredTime ? 
+      preferredDeliveryTime: storeDetails.preferredTime ? 
         new Date(storeDetails.preferredTime).toISOString() : 
         new Date().toISOString(),
       longitude: 0, // This should be set from location picker
       latitude: 0   // This should be set from location picker
+    };
+  }
+
+  // Convert store takeaway details to API pickup details format
+  private convertPickupDetails(storeDetails: StoreTakeawayDetails | null): any | null {
+    if (!storeDetails) return null;
+    
+    return {
+      name: storeDetails.customerName,
+      email: storeDetails.customerEmail,
+      phoneNumber: storeDetails.customerPhone,
+      pickupInstruction: storeDetails.specialInstructions || '',
+      preferredPickupTime: storeDetails.preferredTime ? 
+        new Date(storeDetails.preferredTime).toISOString() : 
+        new Date().toISOString()
     };
   }
 
@@ -114,7 +129,9 @@ export class OrderService {
     tipAmount = 0,
     deviceInfo = 'WEB_APP',
     deliveryDetails = null,
-    splitBills = null
+    takeawayDetails = null,
+    splitBills = null,
+    specialInstruction = ''
   }: {
     cartItems: CartItem[];
     serviceType: ServiceType;
@@ -124,7 +141,9 @@ export class OrderService {
     tipAmount?: number;
     deviceInfo?: string;
     deliveryDetails?: StoreDeliveryDetails | null;
+    takeawayDetails?: StoreTakeawayDetails | null;
     splitBills?: SplitBill[] | null;
+    specialInstruction?: string;
   }): Promise<ApiResponse<OrderResponse>> {
     const orderData: OrderRequest = {
       branchId,
@@ -136,7 +155,9 @@ export class OrderService {
       orderItems: this.convertCartItemsToOrderItems(cartItems),
       orderPackages: this.convertCartItemsToOrderPackages(cartItems),
       deliveryDetails: serviceType === 'delivery' ? this.convertDeliveryDetails(deliveryDetails) : null,
-      splitBills: splitBills || null
+      pickupDetails: serviceType === 'takeaway' ? this.convertPickupDetails(takeawayDetails) : null,
+      splitBills: splitBills || null,
+      specialInstruction: specialInstruction || ''
     };
 
     return apiClient.createOrder(orderData);

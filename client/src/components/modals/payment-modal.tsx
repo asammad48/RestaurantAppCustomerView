@@ -23,6 +23,8 @@ export default function PaymentModal() {
     serviceType,
     selectedBranch,
     deliveryDetails,
+    takeawayDetails,
+    specialInstructions,
     splitBillMode
   } = useCartStore();
   const { items } = useCart();
@@ -82,7 +84,9 @@ export default function PaymentModal() {
         tipAmount: 0, // This can be extended to include tip selection
         deviceInfo: "WEB_APP",
         deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,
-        splitBills: splitBillsData
+        takeawayDetails: serviceType === 'takeaway' ? takeawayDetails : null,
+        splitBills: splitBillsData,
+        specialInstruction: specialInstructions || ''
       });
 
       if (response.success && response.data) {

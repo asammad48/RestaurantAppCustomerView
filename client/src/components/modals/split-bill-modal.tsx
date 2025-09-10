@@ -23,6 +23,7 @@ export default function SplitBillModal() {
     serviceType, 
     deliveryDetails, 
     takeawayDetails,
+    specialInstructions,
     setOrderResponse,
     setOrderConfirmationOpen 
   } = useCartStore();
@@ -107,7 +108,9 @@ export default function SplitBillModal() {
         username: user.name || user.email || 'guest',
         tipAmount: 0,
         deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,
-        splitBills
+        takeawayDetails: serviceType === 'takeaway' ? takeawayDetails : null,
+        splitBills,
+        specialInstruction: specialInstructions || ''
       });
 
       if (orderResponse.success) {

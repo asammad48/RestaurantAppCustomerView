@@ -91,6 +91,7 @@ interface CartStore {
   userLocation: string;
   deliveryDetails: DeliveryDetails | null;
   takeawayDetails: TakeawayDetails | null;
+  specialInstructions: string;
   isCartOpen: boolean;
   isServiceModalOpen: boolean;
   isServiceSelectionOpen: boolean;
@@ -121,6 +122,7 @@ interface CartStore {
   setPaymentModalOpen: (open: boolean) => void;
   setDeliveryDetails: (details: DeliveryDetails | null) => void;
   setTakeawayDetails: (details: TakeawayDetails | null) => void;
+  setSpecialInstructions: (instructions: string) => void;
   setSplitBillModalOpen: (open: boolean) => void;
   setReviewModalOpen: (open: boolean) => void;
   setOrderConfirmationOpen: (open: boolean) => void;
@@ -146,6 +148,7 @@ export const useCartStore = create<CartStore>()(
       userLocation: '',
       deliveryDetails: null,
       takeawayDetails: null,
+      specialInstructions: '',
       isCartOpen: false,
       isServiceModalOpen: false,
       isServiceSelectionOpen: false,
@@ -319,6 +322,7 @@ export const useCartStore = create<CartStore>()(
   setPaymentModalOpen: (open: boolean) => set({ isPaymentModalOpen: open }),
   setDeliveryDetails: (details: DeliveryDetails | null) => set({ deliveryDetails: details }),
   setTakeawayDetails: (details: TakeawayDetails | null) => set({ takeawayDetails: details }),
+  setSpecialInstructions: (instructions: string) => set({ specialInstructions: instructions }),
   setSplitBillModalOpen: (open: boolean) => set({ isSplitBillModalOpen: open }),
   setReviewModalOpen: (open: boolean) => set({ isReviewModalOpen: open }),
   setOrderConfirmationOpen: (open: boolean) => set({ isOrderConfirmationOpen: open }),
@@ -342,6 +346,7 @@ export const useCartStore = create<CartStore>()(
         userLocation: state.userLocation,
         deliveryDetails: state.deliveryDetails,
         takeawayDetails: state.takeawayDetails,
+        specialInstructions: state.specialInstructions,
       }),
     }
   )

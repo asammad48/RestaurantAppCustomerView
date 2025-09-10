@@ -2,6 +2,7 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
 import { useAuthStore } from "@/lib/auth-store";
@@ -9,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/config";
 
 export default function CartModal() {
-  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem, selectedBranch } = useCartStore();
+  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem, selectedBranch, specialInstructions, setSpecialInstructions } = useCartStore();
   const { items, updateQuantity, clearCart, total } = useCart();
   const { user, setLoginModalOpen } = useAuthStore();
   const { toast } = useToast();
@@ -358,6 +359,18 @@ export default function CartModal() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Special Instructions */}
+          <div className="mt-6">
+            <h3 className="font-semibold text-black text-base mb-3">Special Instructions</h3>
+            <Textarea
+              placeholder="Any special requests for your order (optional)"
+              value={specialInstructions}
+              onChange={(e) => setSpecialInstructions(e.target.value)}
+              className="min-h-[80px] resize-none"
+              data-testid="textarea-cart-special-instructions"
+            />
           </div>
           
           <Button 

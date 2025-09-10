@@ -11,7 +11,6 @@ import { formatToLocalTime } from '@/lib/utils';
 export default function AddToCartModal() {
   const { isAddToCartModalOpen, setAddToCartModalOpen, addItem, lastAddedItem, selectedBranch } = useCartStore();
   const [quantity, setQuantity] = useState(1);
-  const [specialInstructions, setSpecialInstructions] = useState("");
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
   const [selectedModifiers, setSelectedModifiers] = useState<{[key: number]: number}>({});
   const [selectedCustomizations, setSelectedCustomizations] = useState<{[key: number]: number}>({});
@@ -24,7 +23,6 @@ export default function AddToCartModal() {
       setSelectedVariation(null);
       setSelectedModifiers({});
       setSelectedCustomizations({});
-      setSpecialInstructions("");
     } else if (lastAddedItem && 'variations' in lastAddedItem && lastAddedItem.variations && lastAddedItem.variations.length > 0) {
       // Set default variation when modal opens
       setSelectedVariation(lastAddedItem.variations[0].id);
@@ -123,9 +121,7 @@ export default function AddToCartModal() {
   const handleAddToCart = () => {
     if (!lastAddedItem) return;
     
-    let customization: any = {
-      instructions: specialInstructions,
-    };
+    let customization: any = {};
 
     if ('variations' in lastAddedItem) {
       // For menu items
@@ -168,7 +164,6 @@ export default function AddToCartModal() {
     setSelectedVariation(null);
     setSelectedModifiers({});
     setSelectedCustomizations({});
-    setSpecialInstructions("");
   };
 
   const isMenuItem = (item: any): item is ApiMenuItem => {
@@ -421,17 +416,6 @@ export default function AddToCartModal() {
         <div className="space-y-4">
           {lastAddedItem && isDeal(lastAddedItem) && renderDealContent(lastAddedItem)}
           {lastAddedItem && isMenuItem(lastAddedItem) && renderMenuItemContent(lastAddedItem)}
-
-          {/* Special Instructions */}
-          <div>
-            <h3 className="font-bold text-lg mb-3">Special Instructions</h3>
-            <Textarea
-              placeholder="Write your instruction"
-              value={specialInstructions}
-              onChange={(e) => setSpecialInstructions(e.target.value)}
-              className="min-h-[100px] resize-none"
-            />
-          </div>
 
           {/* Max Discount Limit Note */}
           {selectedBranch?.maxDiscountAmount && selectedBranch.maxDiscountAmount > 0 && (

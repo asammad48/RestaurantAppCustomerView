@@ -54,7 +54,9 @@ export interface OrderRequest {
   orderItems: OrderItem[];
   orderPackages?: OrderPackage[];
   deliveryDetails?: DeliveryDetails | null;
+  pickupDetails?: any | null;
   splitBills?: SplitBill[] | null;
+  specialInstruction?: string;
 }
 
 export interface OrderResponse {

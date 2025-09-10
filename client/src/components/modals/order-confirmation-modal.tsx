@@ -16,6 +16,8 @@ export default function OrderConfirmationModal() {
     orderResponse,
     setDeliveryDetails,
     setTakeawayDetails,
+    setSpecialInstructions,
+    setSplitBillModalOpen,
     selectedBranch
   } = useCartStore();
   const { clearCart } = useCart();
@@ -27,8 +29,12 @@ export default function OrderConfirmationModal() {
       // Clear delivery and takeaway details after successful order
       setDeliveryDetails(null);
       setTakeawayDetails(null);
+      // Clear special instructions
+      setSpecialInstructions('');
+      // Close split bill modal if open
+      setSplitBillModalOpen(false);
     }
-  }, [isOrderConfirmationOpen, orderResponse, clearCart, setDeliveryDetails, setTakeawayDetails]);
+  }, [isOrderConfirmationOpen, orderResponse, clearCart, setDeliveryDetails, setTakeawayDetails, setSpecialInstructions, setSplitBillModalOpen]);
 
   const handleContinueShopping = () => {
     setOrderConfirmationOpen(false);
