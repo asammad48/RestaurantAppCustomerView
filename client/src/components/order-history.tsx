@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChevronLeft, ChevronRight, Package, Clock, MapPin, Users, Eye, Building2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Clock, MapPin, Users, Eye, Building2, User, Calendar } from 'lucide-react';
 import { fetchOrderHistory, getOrderStatusText, getOrderTypeText, formatCurrency } from '@/services/order-history-service';
 import { useAuthStore } from '@/lib/auth-store';
 import { Order } from '@/types/order-history';
@@ -143,32 +143,104 @@ function OrderCard({ order }: { order: Order }) {
   const [showDetailModal, setShowDetailModal] = useState(false);
   
   const getStatusColor = (status: string | number) => {
+    if (status === 'Pending' || status === 'pending') {
+      return 'bg-orange-100 text-orange-700 border border-orange-200';
+    }
     return 'bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/20';
+  };
+
+  const getCustomerName = () => {
+    if (order.username && order.username !== 'guest' && !order.username.startsWith('guest_')) {
+      return order.username;
+    }
+    return '';
+  };
+
+  const getOrderDate = () => {
+    if (order.createdAt) {
+      return formatToLocalTime(order.createdAt, 'MMM dd, yyyy');
+    }
+    return 'Date not available';
+  };
+
+  const getOrderTime = () => {
+    if (order.createdAt) {
+      return formatToLocalTime(order.createdAt, 'hh:mm a');
+    }
+    return 'Date not available';
+  };
+
+  const getOrderTypeDisplay = () => {
+    const orderTypeText = getOrderTypeText(order.orderType);
+    return orderTypeText || 'Unknown';
   };
 
   return (
     <>
-    <Card className="transition-all duration-200 hover:shadow-md w-full max-w-md" data-testid={`card-order-${order.id}`}>
-      <CardHeader className="pb-2">
+    <Card className="transition-all duration-200 hover:shadow-md w-full max-w-md border rounded-lg" data-testid={`card-order-${order.id}`}>
+      <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base font-semibold truncate" data-testid={`text-order-number-${order.id}`}>
-              #{order.orderNumber.slice(-6)}
+          <div className="flex-1">
+            <CardTitle className="text-lg font-bold text-gray-900 mb-2" data-testid={`text-order-number-${order.id}`}>
+              {order.orderNumber}
             </CardTitle>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {formatToLocalTime(order.createdAt, 'MMM dd • hh:mm a')}
-            </p>
+            <p className="text-sm text-gray-500 mb-1">Order Number</p>
           </div>
-          <div className="text-right ml-2">
-            <Badge className={`${getStatusColor(order.orderStatus)} text-xs px-1.5 py-0.5`} data-testid={`status-${order.id}`}>
-              {getOrderStatusText(order.orderStatus)}
-            </Badge>
-            <p className="text-sm font-bold mt-1" data-testid={`text-total-${order.id}`}>
-              {formatCurrency(order.totalAmount)}
-            </p>
-          </div>
+          <Badge className={`${getStatusColor(order.orderStatus)} text-sm px-3 py-1 rounded-full`} data-testid={`status-${order.id}`}>
+            {getOrderStatusText(order.orderStatus)}
+          </Badge>
         </div>
       </CardHeader>
+
+      <CardContent className="pt-0 pb-4">
+        <div className="grid grid-cols-2 gap-4">
+          {/* Customer and Order Type Column */}
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <User className="h-4 w-4 mr-2 text-gray-400" />
+              <div>
+                <p className="text-sm font-medium text-gray-900" data-testid={`text-customer-${order.id}`}>
+                  {getCustomerName() || ''}
+                </p>
+                <p className="text-xs text-gray-500">Customer</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+              <div>
+                <p className="text-sm font-medium text-gray-900" data-testid={`text-order-type-${order.id}`}>
+                  {getOrderTypeDisplay()}
+                </p>
+                <p className="text-xs text-gray-500">Order Type</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Date and Time Column */}
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+              <div>
+                <p className="text-sm font-medium text-gray-900" data-testid={`text-order-date-${order.id}`}>
+                  {getOrderDate()}
+                </p>
+                <p className="text-xs text-gray-500">Order Date</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <Clock className="h-4 w-4 mr-2 text-gray-400" />
+              <div>
+                <p className="text-sm font-medium text-gray-900" data-testid={`text-order-time-${order.id}`}>
+                  {getOrderTime()}
+                </p>
+                <p className="text-xs text-gray-500">Order Time</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
 
       <CardContent className="pt-0 pb-3">
         <div className="space-y-1 mb-3">
