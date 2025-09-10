@@ -1,10 +1,11 @@
-import { Check, Clock, MapPin, User, DollarSign, Calendar, Timer } from "lucide-react";
+import { Check, Clock, MapPin, User, DollarSign, Calendar, Timer, Printer } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
-import { useEffect } from "react";
+import { useAuthStore } from "@/lib/auth-store";
+import { useEffect, useState } from "react";
 import { formatToLocalTime, formatBranchCurrency } from "@/lib/utils";
 import { OrderStatus, OrderType } from "@/types/order-history";
 import { useLocation } from "wouter";
@@ -18,31 +19,74 @@ export default function OrderConfirmationModal() {
     setTakeawayDetails,
     setSpecialInstructions,
     setSplitBillModalOpen,
-    selectedBranch
+    selectedBranch,
+    deliveryDetails,
+    takeawayDetails,
+    serviceType
   } = useCartStore();
+  const { user } = useAuthStore();
   const { clearCart } = useCart();
-
-  // Automatically clear cart and order details when order is confirmed
+  
+  // Capture order timestamp and customer/order type snapshot when modal opens
+  const [orderTimestamp, setOrderTimestamp] = useState<Date | null>(null);
+  const [customerSnapshot, setCustomerSnapshot] = useState<string | null>(null);
+  const [orderTypeSnapshot, setOrderTypeSnapshot] = useState<string | null>(null);
+  
   useEffect(() => {
     if (isOrderConfirmationOpen && orderResponse) {
-      clearCart();
-      // Clear delivery and takeaway details after successful order
-      setDeliveryDetails(null);
-      setTakeawayDetails(null);
-      // Clear special instructions
-      setSpecialInstructions('');
-      // Close split bill modal if open
-      setSplitBillModalOpen(false);
+      // Capture snapshots before any potential clearing
+      setOrderTimestamp(new Date());
+      
+      // Capture customer info
+      if (user) {
+        setCustomerSnapshot(user.fullName || user.name || user.email);
+      } else if (deliveryDetails?.customerName) {
+        setCustomerSnapshot(deliveryDetails.customerName);
+      } else if (takeawayDetails?.customerName) {
+        setCustomerSnapshot(takeawayDetails.customerName);
+      } else {
+        setCustomerSnapshot("Guest Customer");
+      }
+      
+      // Capture order type
+      if (deliveryDetails) {
+        setOrderTypeSnapshot("Delivery");
+      } else if (takeawayDetails) {
+        setOrderTypeSnapshot("Takeaway");
+      } else {
+        setOrderTypeSnapshot("Dine In");
+      }
     }
-  }, [isOrderConfirmationOpen, orderResponse, clearCart, setDeliveryDetails, setTakeawayDetails, setSpecialInstructions, setSplitBillModalOpen]);
+  }, [isOrderConfirmationOpen, orderResponse, user, deliveryDetails, takeawayDetails]);
+  
+  // Reset snapshots when modal closes
+  useEffect(() => {
+    if (!isOrderConfirmationOpen) {
+      setOrderTimestamp(null);
+      setCustomerSnapshot(null);
+      setOrderTypeSnapshot(null);
+    }
+  }, [isOrderConfirmationOpen]);
 
   const handleContinueShopping = () => {
+    // Clear cart and order details when user continues shopping
+    clearCart();
+    setDeliveryDetails(null);
+    setTakeawayDetails(null);
+    setSpecialInstructions('');
+    setSplitBillModalOpen(false);
     setOrderConfirmationOpen(false);
   };
 
   const [, setLocation] = useLocation();
 
   const handleTrackOrder = () => {
+    // Clear cart and order details when user goes to track order
+    clearCart();
+    setDeliveryDetails(null);
+    setTakeawayDetails(null);
+    setSpecialInstructions('');
+    setSplitBillModalOpen(false);
     setOrderConfirmationOpen(false);
     setLocation('/order-history');
   };
@@ -60,22 +104,31 @@ export default function OrderConfirmationModal() {
     }
   };
 
-  const getOrderTypeText = (type: number) => {
-    switch (type) {
-      case OrderType.DineIn: return 'Dine In';
-      case OrderType.Takeaway: return 'Takeaway';
-      case OrderType.Delivery: return 'Delivery';
-      default: return 'Unknown';
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return formatBranchCurrency(amount, selectedBranch?.branchCurrency || 'PKR');
   };
 
+  // Get captured snapshots instead of live data
+  const getLocalCustomer = () => {
+    return customerSnapshot || "Guest Customer";
+  };
+
+  const getLocalOrderType = () => {
+    return orderTypeSnapshot || "Dine In";
+  };
+
+  const getCurrentDateTime = () => {
+    return orderTimestamp || new Date();
+  };
+
+  const handlePrintReceipt = () => {
+    window.print();
+  };
+
   return (
     <Dialog open={isOrderConfirmationOpen} onOpenChange={setOrderConfirmationOpen}>
-      <DialogContent className="max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-lg max-h-[95vh] overflow-hidden flex flex-col" data-testid="order-confirmation-content">
         {/* Header with branch primary color */}
         <div className="configurable-primary text-white p-6 -mx-6 -mt-6 mb-6 rounded-t-lg">
           <div className="text-center">
@@ -108,42 +161,40 @@ export default function OrderConfirmationModal() {
               </Badge>
             </div>
 
-            {orderResponse && (
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 configurable-text-muted" />
-                  <div>
-                    <p className="configurable-text-secondary">Customer</p>
-                    <p className="font-medium configurable-text-primary">{orderResponse.username}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 configurable-text-muted" />
-                  <div>
-                    <p className="configurable-text-secondary">Order Type</p>
-                    <p className="font-medium configurable-text-primary">{getOrderTypeText(orderResponse.orderType)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 configurable-text-muted" />
-                  <div>
-                    <p className="configurable-text-secondary">Order Date</p>
-                    <p className="font-medium configurable-text-primary">
-                      {formatToLocalTime(orderResponse.createdAt, 'MMM dd, yyyy')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 configurable-text-muted" />
-                  <div>
-                    <p className="configurable-text-secondary">Order Time</p>
-                    <p className="font-medium configurable-text-primary">
-                      {formatToLocalTime(orderResponse.createdAt, 'hh:mm a')}
-                    </p>
-                  </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 configurable-text-muted" />
+                <div>
+                  <p className="configurable-text-secondary">Customer</p>
+                  <p className="font-medium configurable-text-primary">{getLocalCustomer()}</p>
                 </div>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 configurable-text-muted" />
+                <div>
+                  <p className="configurable-text-secondary">Order Type</p>
+                  <p className="font-medium configurable-text-primary">{getLocalOrderType()}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 configurable-text-muted" />
+                <div>
+                  <p className="configurable-text-secondary">Order Date</p>
+                  <p className="font-medium configurable-text-primary">
+                    {formatToLocalTime(getCurrentDateTime().toISOString(), 'MMM dd, yyyy')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 configurable-text-muted" />
+                <div>
+                  <p className="configurable-text-secondary">Order Time</p>
+                  <p className="font-medium configurable-text-primary">
+                    {formatToLocalTime(getCurrentDateTime().toISOString(), 'hh:mm a')}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Estimated Times */}
@@ -197,7 +248,12 @@ export default function OrderConfirmationModal() {
                 {(orderResponse.discountAmount ?? 0) > 0 && (
                   <div className="flex justify-between">
                     <span className="configurable-text-secondary">Discount:</span>
-                    <span className="font-medium configurable-success">-{formatCurrency(orderResponse.discountAmount!)}</span>
+                    <span 
+                      className="font-medium bg-white px-2 py-1 rounded" 
+                      style={{ color: selectedBranch?.primaryColor || '#000' }}
+                    >
+                      -{formatCurrency(orderResponse.discountAmount!)}
+                    </span>
                   </div>
                 )}
                 {(orderResponse.serviceCharges ?? 0) > 0 && (
@@ -231,6 +287,26 @@ export default function OrderConfirmationModal() {
               </div>
             </div>
           )}
+
+          {/* Print Receipt Section */}
+          <div className="configurable-surface rounded-xl p-4 border configurable-border">
+            <h3 className="font-semibold configurable-text-primary mb-3 flex items-center gap-2">
+              <Printer className="w-5 h-5" />
+              Receipt
+            </h3>
+            <p className="configurable-text-secondary text-sm mb-4">
+              Print or save your order receipt for your records
+            </p>
+            <Button 
+              onClick={handlePrintReceipt}
+              variant="outline"
+              className="w-full configurable-border configurable-text-primary hover:configurable-secondary"
+              data-testid="button-print-receipt"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print Receipt
+            </Button>
+          </div>
         </div>
 
         {/* Action Buttons */}

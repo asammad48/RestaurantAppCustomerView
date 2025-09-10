@@ -219,4 +219,56 @@
       left: 16px;
     }
   }
+
+  /* Print styles for receipt printing */
+  @media print {
+    /* Hide everything except the order confirmation content */
+    body * {
+      visibility: hidden;
+    }
+    
+    /* Show only the order confirmation modal content */
+    [data-testid="order-confirmation-content"], 
+    [data-testid="order-confirmation-content"] * {
+      visibility: visible;
+    }
+    
+    /* Hide action buttons and non-essential elements during print */
+    [data-testid="button-track-order"],
+    [data-testid="button-continue-shopping"],
+    .floating-btn,
+    .service-floating-btn {
+      display: none !important;
+    }
+    
+    /* Style the receipt for clean printing */
+    [data-testid="order-confirmation-content"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      background: white;
+      color: black;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    
+    /* Ensure receipt content is styled for print */
+    .configurable-surface {
+      border: 1px solid #ddd !important;
+      background: white !important;
+    }
+    
+    /* Force black text for readability */
+    .configurable-text-primary,
+    .configurable-text-secondary {
+      color: black !important;
+    }
+    
+    /* Style headers appropriately for print */
+    .configurable-primary {
+      background: #f8f9fa !important;
+      color: black !important;
+    }
+  }
 }
