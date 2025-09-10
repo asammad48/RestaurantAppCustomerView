@@ -17,6 +17,7 @@ export interface Branch {
   branchCloseTime: string;
   isBranchClosed: boolean;
   primaryColor: string;
+  branchCurrency: string;
   branchLogo: string;
   banner: string;
   distanceFromMyLocation: number;

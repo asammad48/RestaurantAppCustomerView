@@ -75,3 +75,22 @@ export function formatToLocalTime(dateValue: string | number | Date | null | und
     return 'Date error';
   }
 }
+
+/**
+ * Formats currency amount using the specified currency code
+ * @param amount - Amount to format (in base currency units)
+ * @param currencyCode - Currency code (e.g., 'PKR', 'USD', 'EUR')
+ * @returns Formatted currency string
+ */
+export function formatBranchCurrency(amount: number, currencyCode: string = 'PKR'): string {
+  try {
+    const formattedAmount = amount.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+    return `${currencyCode} ${formattedAmount}`;
+  } catch (error) {
+    console.error('Error formatting currency:', error, 'Amount:', amount, 'Currency:', currencyCode);
+    return `${currencyCode} ${amount.toFixed(2)}`;
+  }
+}

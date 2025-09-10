@@ -58,12 +58,27 @@ export interface OrderRequest {
 }
 
 export interface OrderResponse {
+  id: number;
   orderId: number;
   orderNumber: string;
+  branchId: number;
+  locationId?: number;
+  userId?: number;
+  username: string;
+  deviceInfo: string;
+  subTotal: number;
+  discountAmount: number;
   serviceCharges: number;
   deliveryCharges: number;
-  totalAmount: number;
+  taxAmount: number;
   tipAmount: number;
+  totalAmount: number;
+  orderStatus: number;
+  orderType: number;
+  createdAt: string;
+  estimatedPreparationTimeMinutes?: number;
+  estimatedDeliveryTimeMinutes?: number;
+  completionTimeMinutes?: number;
 }
 
 // AI Budget Estimator Types
