@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MapPin, X } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 interface MapPickerModalProps {
   isOpen: boolean;
@@ -22,19 +24,22 @@ export default function MapPickerModal({
   const [selectedLng, setSelectedLng] = useState(initialLng);
   const [address, setAddress] = useState("");
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
   // Reverse geocoding to get address from coordinates
   const getAddressFromCoords = async (lat: number, lng: number) => {
     setIsLoadingAddress(true);
     try {
-      // Using a public geocoding service (you can replace with Google Maps API)
+      // Using OpenStreetMap Nominatim for reverse geocoding (free service)
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw`
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`
       );
       const data = await response.json();
       
-      if (data.features && data.features[0]) {
-        setAddress(data.features[0].place_name);
+      if (data.display_name) {
+        setAddress(data.display_name);
       } else {
         setAddress(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
       }
@@ -45,25 +50,68 @@ export default function MapPickerModal({
     setIsLoadingAddress(false);
   };
 
+  // Initialize map when modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && mapRef.current && !mapInstanceRef.current) {
+      // Fix for default markers in Leaflet
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      });
+
+      // Initialize map
+      mapInstanceRef.current = L.map(mapRef.current).setView([selectedLat, selectedLng], 13);
+
+      // Add tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(mapInstanceRef.current);
+
+      // Add marker
+      markerRef.current = L.marker([selectedLat, selectedLng], {
+        draggable: true
+      }).addTo(mapInstanceRef.current);
+
+      // Handle map click
+      mapInstanceRef.current.on('click', (e: L.LeafletMouseEvent) => {
+        const { lat, lng } = e.latlng;
+        setSelectedLat(lat);
+        setSelectedLng(lng);
+        
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng]);
+        }
+      });
+
+      // Handle marker drag
+      markerRef.current.on('dragend', (e: L.DragEndEvent) => {
+        const { lat, lng } = e.target.getLatLng();
+        setSelectedLat(lat);
+        setSelectedLng(lng);
+      });
+
+      // Get initial address
       getAddressFromCoords(selectedLat, selectedLng);
     }
   }, [isOpen, selectedLat, selectedLng]);
 
-  const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    // Convert click position to approximate coordinates
-    // This is a simplified calculation - in a real app you'd use proper map projection
-    const lat = selectedLat + (rect.height / 2 - y) * 0.001;
-    const lng = selectedLng + (x - rect.width / 2) * 0.001;
-    
-    setSelectedLat(lat);
-    setSelectedLng(lng);
-  };
+  // Update address when coordinates change
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      getAddressFromCoords(selectedLat, selectedLng);
+    }
+  }, [selectedLat, selectedLng]);
+
+  // Cleanup map when modal closes
+  useEffect(() => {
+    if (!isOpen && mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+      markerRef.current = null;
+    }
+  }, [isOpen]);
 
   const handleConfirm = () => {
     onLocationSelect(selectedLat, selectedLng, address);
@@ -94,50 +142,11 @@ export default function MapPickerModal({
           {/* Map Container */}
           <div className="relative">
             <div 
-              className="w-full h-96 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg cursor-crosshair relative overflow-hidden"
-              onClick={handleMapClick}
+              ref={mapRef}
+              className="w-full h-96 rounded-lg border border-gray-300 overflow-hidden"
               data-testid="map-container"
-              style={{
-                backgroundImage: `linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
-                                 linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
-                                 linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
-                                 linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)`,
-                backgroundSize: '20px 20px',
-                backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-              }}
-            >
-              {/* Map Placeholder */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <MapPin className="w-12 h-12 mx-auto mb-2 text-green-400" />
-                  <p className="text-lg font-medium">Interactive Map</p>
-                  <p className="text-sm">Click anywhere to select location</p>
-                </div>
-              </div>
-              
-              {/* Selected Location Pin */}
-              <div 
-                className="absolute z-10 transform -translate-x-1/2 -translate-y-full"
-                style={{
-                  left: '50%',
-                  top: '50%'
-                }}
-              >
-                <MapPin className="w-8 h-8 text-green-500 drop-shadow-lg" fill="currentColor" />
-              </div>
-              
-              {/* Grid overlay for visual reference */}
-              <div className="absolute inset-0 opacity-20">
-                <svg width="100%" height="100%" className="text-gray-400">
-                  <defs>
-                    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                      <path d="M 50 0 L 0 0 0 50" fill="none" stroke="currentColor" strokeWidth="1"/>
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#grid)" />
-                </svg>
-              </div>
-            </div>
+              style={{ zIndex: 1 }}
+            />
           </div>
 
           {/* Selected Location Info */}
@@ -154,10 +163,10 @@ export default function MapPickerModal({
           </div>
 
           {/* Instructions */}
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-            <p className="text-sm text-yellow-800">
-              📍 <strong>How to use:</strong> Click anywhere on the map above to select your delivery location. 
-              The pin will move to show your selected spot, and we'll automatically get the address for you.
+          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              📍 <strong>How to use:</strong> Click anywhere on the map above to select your location, or drag the red marker to adjust the position. 
+              We'll automatically get the address for you.
             </p>
           </div>
 
