@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Order } from '@/types/order-history';
 import { formatCurrency, getOrderStatusText, getOrderTypeText } from '@/services/order-history-service';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface OrderDetailModalProps {
   order: Order;
@@ -57,11 +57,11 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
               <div className="flex items-center gap-4 mt-2 text-green-100 text-sm">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {format(new Date(order.createdAt), 'MMM dd, yyyy')}
+                  {format(parseISO(order.createdAt + 'Z'), 'MMM dd, yyyy')}
                 </div>
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {format(new Date(order.createdAt), 'hh:mm a')}
+                  {format(parseISO(order.createdAt + 'Z'), 'hh:mm a')}
                 </div>
               </div>
             </div>
@@ -449,7 +449,7 @@ function generatePrintContent(order: Order): string {
       <div class="header">
         <h1>ORDER RECEIPT</h1>
         <h2>Order #${order.orderNumber}</h2>
-        <p>${format(new Date(order.createdAt), 'MMM dd, yyyy • hh:mm a')}</p>
+        <p>${format(parseISO(order.createdAt + 'Z'), 'MMM dd, yyyy • hh:mm a')}</p>
       </div>
       
       <div class="order-info">

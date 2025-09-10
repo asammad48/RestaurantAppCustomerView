@@ -29,6 +29,7 @@ import ThemeSwitcher from "@/components/theme-switcher";
 import FoodCard from "@/components/food-card";
 import { getImageUrl } from "@/lib/config";
 import { applyBranchPrimaryColor } from "@/lib/colors";
+import { format, parseISO } from 'date-fns';
 
 export default function RestaurantMenuPage() {
   const { 
@@ -569,7 +570,7 @@ export default function RestaurantMenuPage() {
             <div className="mb-3 p-2 rounded-md bg-gray-100">
               <div className="flex items-center text-sm" style={{ color: 'var(--color-primary)' }}>
                 <Calendar className="w-3 h-3 mr-1" />
-                <span>Valid until: {new Date(deal.dealEndDate).toLocaleDateString()}</span>
+                <span>Valid until: {format(parseISO(deal.dealEndDate + 'Z'), 'MMM dd, yyyy')}</span>
               </div>
             </div>
 
