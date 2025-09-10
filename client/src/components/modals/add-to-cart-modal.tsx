@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal } from "@/lib/mock-data";
-import { format, parseISO } from 'date-fns';
+import { formatToLocalTime } from '@/lib/utils';
 
 export default function AddToCartModal() {
   const { isAddToCartModalOpen, setAddToCartModalOpen, addItem, lastAddedItem, selectedBranch } = useCartStore();
@@ -245,7 +245,7 @@ export default function AddToCartModal() {
           <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-primary)' }}>
             <div className="p-2 rounded bg-gray-100">
               <p className="text-xs configurable-text-primary font-medium">
-                Valid until: {format(parseISO(deal.dealEndDate + 'Z'), 'MMM dd, yyyy')}
+                Valid until: {formatToLocalTime(deal.dealEndDate, 'MMM dd, yyyy')}
               </p>
             </div>
           </div>

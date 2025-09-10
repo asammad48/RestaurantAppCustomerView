@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, Package, Clock, MapPin, Users, Eye, Building
 import { fetchOrderHistory, getOrderStatusText, getOrderTypeText, formatCurrency } from '@/services/order-history-service';
 import { useAuthStore } from '@/lib/auth-store';
 import { Order } from '@/types/order-history';
-import { format, parseISO } from 'date-fns';
+import { formatToLocalTime } from '@/lib/utils';
 import OrderDetailModal from './modals/order-detail-modal';
 
 export default function OrderHistory() {
@@ -156,7 +156,7 @@ function OrderCard({ order }: { order: Order }) {
               #{order.orderNumber.slice(-6)}
             </CardTitle>
             <p className="text-xs text-gray-500 mt-0.5">
-              {format(parseISO(order.createdAt + 'Z'), 'MMM dd • hh:mm a')}
+              {formatToLocalTime(order.createdAt, 'MMM dd • hh:mm a')}
             </p>
           </div>
           <div className="text-right ml-2">
