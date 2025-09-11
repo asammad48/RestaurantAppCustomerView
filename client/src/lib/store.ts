@@ -92,6 +92,7 @@ interface CartStore {
   deliveryDetails: DeliveryDetails | null;
   takeawayDetails: TakeawayDetails | null;
   specialInstructions: string;
+  selectedAllergens: number[]; // Array of selected allergen IDs
   isCartOpen: boolean;
   isServiceModalOpen: boolean;
   isServiceSelectionOpen: boolean;
@@ -123,6 +124,7 @@ interface CartStore {
   setDeliveryDetails: (details: DeliveryDetails | null) => void;
   setTakeawayDetails: (details: TakeawayDetails | null) => void;
   setSpecialInstructions: (instructions: string) => void;
+  setSelectedAllergens: (allergens: number[]) => void;
   setSplitBillModalOpen: (open: boolean) => void;
   setReviewModalOpen: (open: boolean) => void;
   setOrderConfirmationOpen: (open: boolean) => void;
@@ -149,6 +151,7 @@ export const useCartStore = create<CartStore>()(
       deliveryDetails: null,
       takeawayDetails: null,
       specialInstructions: '',
+      selectedAllergens: [],
       isCartOpen: false,
       isServiceModalOpen: false,
       isServiceSelectionOpen: false,
@@ -323,6 +326,7 @@ export const useCartStore = create<CartStore>()(
   setDeliveryDetails: (details: DeliveryDetails | null) => set({ deliveryDetails: details }),
   setTakeawayDetails: (details: TakeawayDetails | null) => set({ takeawayDetails: details }),
   setSpecialInstructions: (instructions: string) => set({ specialInstructions: instructions }),
+  setSelectedAllergens: (allergens: number[]) => set({ selectedAllergens: allergens }),
   setSplitBillModalOpen: (open: boolean) => set({ isSplitBillModalOpen: open }),
   setReviewModalOpen: (open: boolean) => set({ isReviewModalOpen: open }),
   setOrderConfirmationOpen: (open: boolean) => set({ isOrderConfirmationOpen: open }),
@@ -347,6 +351,7 @@ export const useCartStore = create<CartStore>()(
         deliveryDetails: state.deliveryDetails,
         takeawayDetails: state.takeawayDetails,
         specialInstructions: state.specialInstructions,
+        selectedAllergens: state.selectedAllergens,
       }),
     }
   )

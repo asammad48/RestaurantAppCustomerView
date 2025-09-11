@@ -57,6 +57,7 @@ export interface OrderRequest {
   pickupDetails?: any | null;
   splitBills?: SplitBill[] | null;
   specialInstruction?: string;
+  allergens?: number[]; // Array of allergen IDs
 }
 
 export interface OrderResponse {
@@ -142,6 +143,12 @@ export interface BudgetOption {
 export interface BudgetEstimateResponse {
   budgetOptions: BudgetOption[];
   maxAllowedDiscount: number;
+}
+
+// Allergens Types
+export interface Allergen {
+  id: number;
+  name: string;
 }
 
 export interface ApiResponse<T = any> {
@@ -305,6 +312,11 @@ class ApiClient {
   // AI Budget Estimator API method
   async getBudgetEstimate(estimateData: BudgetEstimateRequest): Promise<ApiResponse<BudgetEstimateResponse>> {
     return this.post<BudgetEstimateResponse>('/api/customer-search/estimate', estimateData);
+  }
+
+  // Allergens API method
+  async getAllergens(): Promise<ApiResponse<Allergen[]>> {
+    return this.get<Allergen[]>('/api/Generic/allergens');
   }
 }
 
