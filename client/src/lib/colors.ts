@@ -109,9 +109,20 @@ export const applyColors = (colors: ColorConfig) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
   
-  // Set default alpha variants for primary color
+  // Set alpha variants for various UI needs
+  root.style.setProperty('--configurable-primary-alpha-05', hexToRgba(colors.primary, 0.05));
   root.style.setProperty('--configurable-primary-alpha-10', hexToRgba(colors.primary, 0.1));
   root.style.setProperty('--configurable-primary-alpha-20', hexToRgba(colors.primary, 0.2));
+  root.style.setProperty('--configurable-primary-alpha-30', hexToRgba(colors.primary, 0.3));
+  
+  // Set lighter and darker variants for gradients and backgrounds
+  const primaryLight = adjustColorBrightness(colors.primary, 20);
+  const primaryDark = adjustColorBrightness(colors.primary, -20);
+  
+  root.style.setProperty('--color-primary-light', primaryLight);
+  root.style.setProperty('--color-primary-dark', primaryDark);
+  root.style.setProperty('--configurable-primary-light-alpha-10', hexToRgba(primaryLight, 0.1));
+  root.style.setProperty('--configurable-primary-light-alpha-20', hexToRgba(primaryLight, 0.2));
 };
 
 // Initialize colors on app start
@@ -160,9 +171,20 @@ export const applyBranchPrimaryColor = (primaryColor?: string) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
   
-  // Set alpha variants
+  // Set alpha variants for various UI needs
+  root.style.setProperty('--configurable-primary-alpha-05', hexToRgba(primaryColor, 0.05));
   root.style.setProperty('--configurable-primary-alpha-10', hexToRgba(primaryColor, 0.1));
   root.style.setProperty('--configurable-primary-alpha-20', hexToRgba(primaryColor, 0.2));
+  root.style.setProperty('--configurable-primary-alpha-30', hexToRgba(primaryColor, 0.3));
+  
+  // Set lighter and darker variants for gradients and backgrounds
+  const primaryLight = adjustColorBrightness(primaryColor, 20);
+  const primaryDark = adjustColorBrightness(primaryColor, -20);
+  
+  root.style.setProperty('--color-primary-light', primaryLight);
+  root.style.setProperty('--color-primary-dark', primaryDark);
+  root.style.setProperty('--configurable-primary-light-alpha-10', hexToRgba(primaryLight, 0.1));
+  root.style.setProperty('--configurable-primary-light-alpha-20', hexToRgba(primaryLight, 0.2));
 };
 
 // Helper function to adjust color brightness
