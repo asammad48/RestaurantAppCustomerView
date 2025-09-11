@@ -145,7 +145,7 @@ export class OrderService {
     takeawayDetails?: StoreTakeawayDetails | null;
     splitBills?: SplitBill[] | null;
     specialInstruction?: string;
-    allergenIds?: number[];
+    allergenIds?: number[] | null;
   }): Promise<ApiResponse<OrderResponse>> {
     const orderData: OrderRequest = {
       branchId,
