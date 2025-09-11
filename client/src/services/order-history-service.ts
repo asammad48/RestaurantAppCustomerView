@@ -47,8 +47,10 @@ export async function fetchOrderHistory(params: {
       ...data,
       items: data.items.map(order => ({
         ...order,
-        subTotal: order.orderAmount, // Map subTotal from orderAmount
-        discountAmount: order.discountedAmount, // Map discountAmount from discountedAmount
+        // Temporarily use totalAmount as subTotal to test display
+        subTotal: order.totalAmount,
+        // Set a test discount amount to see if it displays
+        discountAmount: 50,
         orderStatusChanges: [
           {
             orderStatus: getOrderStatusText(order.orderStatus),
