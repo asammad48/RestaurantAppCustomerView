@@ -126,6 +126,7 @@ export interface Order {
   deliveryCharges: number;
   orderAmount: number;
   subTotal: number;
+  discountAmount: number;
   discountedAmount: number;
   taxAmount: number;
   tipAmount: number;
