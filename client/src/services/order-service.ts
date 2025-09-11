@@ -132,7 +132,7 @@ export class OrderService {
     takeawayDetails = null,
     splitBills = null,
     specialInstruction = '',
-    allergens = []
+    allergenIds = []
   }: {
     cartItems: CartItem[];
     serviceType: ServiceType;
@@ -145,7 +145,7 @@ export class OrderService {
     takeawayDetails?: StoreTakeawayDetails | null;
     splitBills?: SplitBill[] | null;
     specialInstruction?: string;
-    allergens?: number[];
+    allergenIds?: number[];
   }): Promise<ApiResponse<OrderResponse>> {
     const orderData: OrderRequest = {
       branchId,
@@ -160,7 +160,7 @@ export class OrderService {
       pickupDetails: serviceType === 'takeaway' ? this.convertPickupDetails(takeawayDetails) : null,
       splitBills: splitBills || null,
       specialInstruction: specialInstruction || '',
-      allergens: allergens.length > 0 ? allergens : undefined
+      allergenIds: allergenIds.length > 0 ? allergenIds : null
     };
 
     return apiClient.createOrder(orderData);

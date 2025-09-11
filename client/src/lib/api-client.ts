@@ -57,7 +57,7 @@ export interface OrderRequest {
   pickupDetails?: any | null;
   splitBills?: SplitBill[] | null;
   specialInstruction?: string;
-  allergens?: number[]; // Array of allergen IDs
+  allergenIds?: number[] | null; // Array of allergen IDs
 }
 
 export interface OrderResponse {
