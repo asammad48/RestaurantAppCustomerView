@@ -118,6 +118,34 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
             </div>
           </div>
 
+          {/* Order Status Changes */}
+          {order.orderStatusChanges && order.orderStatusChanges.length > 0 && (
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-blue-600 p-1.5 rounded-lg">
+                  <Clock className="h-4 w-4 text-white" />
+                </div>
+                <h3 className="font-bold text-lg text-blue-700">Order Status History</h3>
+              </div>
+              <div className="space-y-3">
+                {order.orderStatusChanges.map((status, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100">
+                    <div className="w-3 h-3 bg-blue-600 rounded-full mt-1 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-blue-900">{status.orderStatus}</span>
+                        <span className="text-xs text-gray-500">
+                          {formatToLocalTime(status.statusChangesDate, 'MMM dd, yyyy hh:mm a')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">{status.statusComment}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Delivery Details */}
           {order.orderDeliveryDetails && (
             <div className="bg-[#15803d]/5 p-4 rounded-xl border border-[#15803d]/10">
