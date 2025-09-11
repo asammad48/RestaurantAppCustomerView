@@ -913,6 +913,17 @@ export default function RestaurantMenuPage() {
                         </CardContent>
                       </Card>
                     ))
+                  ) : isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12" data-testid="status-menu-loading">
+                      <div className="relative">
+                        <div className="w-12 h-12 border-4 border-gray-200 rounded-full animate-spin mb-4" style={{borderTopColor: 'var(--primary)'}}>
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-semibold configurable-text-primary mb-2">Menu is being loaded</h3>
+                      <p className="text-gray-500 text-center max-w-md">
+                        Please wait while we fetch the latest menu items and prepare your dining options.
+                      </p>
+                    </div>
                   ) : (
                     <div className="text-center py-8">
                       <Bot className="w-16 h-16 mx-auto text-gray-400 mb-4" />
