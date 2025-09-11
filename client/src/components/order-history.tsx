@@ -726,8 +726,8 @@ function OrderTrackerModal({ order, isOpen, onClose }: { order: Order; isOpen: b
                 <p className="font-semibold text-gray-900">{formatToLocalTime(order.createdAt, 'MMM dd, yyyy')}</p>
               </div>
               <div>
-                <span className="text-gray-500">SubTotal:</span>
-                <p className="font-semibold text-gray-900">{formatCurrency(order.orderAmount, order.currency)}</p>
+                <span className="text-gray-500">Total Amount:</span>
+                <p className="font-semibold text-gray-900">{formatCurrency(order.totalAmount, order.currency)}</p>
               </div>
             </div>
           </div>

@@ -411,7 +411,7 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
             <div className="bg-[#15803d]/5 rounded-xl p-4 border border-[#15803d]/10">
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-[#15803d]/10">
-                  <span>Order Amount</span>
+                  <span>SubTotal</span>
                   <span className="font-semibold">{formatCurrency(order.orderAmount, order.currency)}</span>
                 </div>
                 {order.discountedAmount > 0 && (
