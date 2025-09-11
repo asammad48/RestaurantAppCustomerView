@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChevronLeft, ChevronRight, Package, Clock, MapPin, Users, Eye, Building2, User, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Clock, MapPin, Users, Eye, Building2, User, Calendar, 
+         Phone, Mail, DollarSign, Utensils, ShoppingCart, AlertTriangle, ChevronDown, ChevronUp, 
+         Smartphone, Receipt, CreditCard, Truck, Package2, Plus } from 'lucide-react';
 import { fetchOrderHistory, getOrderStatusText, getOrderTypeText, formatCurrency } from '@/services/order-history-service';
 import { useAuthStore } from '@/lib/auth-store';
 import { Order } from '@/types/order-history';
@@ -139,7 +141,7 @@ export default function OrderHistory() {
 }
 
 function OrderCard({ order }: { order: Order }) {
-  const [showDetails, setShowDetails] = useState(false);
+  const [showAllDetails, setShowAllDetails] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   
   const getStatusColor = (status: string | number) => {
@@ -175,9 +177,18 @@ function OrderCard({ order }: { order: Order }) {
     return orderTypeText || 'Unknown';
   };
 
+  // Helper function to check if a value should be displayed
+  const shouldDisplay = (value: any) => {
+    if (value === null || value === undefined) return false;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'string') return value.trim() !== '';
+    if (typeof value === 'number') return true;
+    return Boolean(value);
+  };
+
   return (
     <>
-    <Card className="transition-all duration-200 hover:shadow-md w-full max-w-md border rounded-lg" data-testid={`card-order-${order.id}`}>
+    <Card className="transition-all duration-200 hover:shadow-md w-full border rounded-lg" data-testid={`card-order-${order.id}`}>
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -185,6 +196,27 @@ function OrderCard({ order }: { order: Order }) {
               {order.orderNumber}
             </CardTitle>
             <p className="text-sm text-gray-500 mb-1">Order Number</p>
+            
+            {/* Branch and Location Info */}
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center text-xs text-gray-600">
+                <Building2 className="h-3 w-3 mr-1.5" />
+                <span>{order.branchName}</span>
+                {shouldDisplay(order.branchId) && (
+                  <span className="text-gray-400 ml-1">(ID: {order.branchId})</span>
+                )}
+              </div>
+              
+              {shouldDisplay(order.locationName) && (
+                <div className="flex items-center text-xs text-gray-500">
+                  <MapPin className="h-3 w-3 mr-1.5" />
+                  <span>{order.locationName}</span>
+                  {shouldDisplay(order.locationId) && (
+                    <span className="text-gray-400 ml-1">(ID: {order.locationId})</span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <Badge className={`${getStatusColor(order.orderStatus)} text-sm px-3 py-1 rounded-full`} data-testid={`status-${order.id}`}>
             {getOrderStatusText(order.orderStatus)}
@@ -193,32 +225,35 @@ function OrderCard({ order }: { order: Order }) {
       </CardHeader>
 
       <CardContent className="pt-0 pb-4">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Customer and Order Type Column */}
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <User className="h-4 w-4 mr-2 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900" data-testid={`text-customer-${order.id}`}>
-                  {getCustomerName() || ''}
-                </p>
-                <p className="text-xs text-gray-500">Customer</p>
+        {/* Customer and Device Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="space-y-3">
+            {shouldDisplay(getCustomerName()) && (
+              <div className="flex items-center">
+                <User className="h-4 w-4 mr-2 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900" data-testid={`text-customer-${order.id}`}>
+                    {getCustomerName()}
+                  </p>
+                  <p className="text-xs text-gray-500">Customer</p>
+                </div>
               </div>
-            </div>
+            )}
             
-            <div className="flex items-center">
-              <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900" data-testid={`text-order-type-${order.id}`}>
-                  {getOrderTypeDisplay()}
-                </p>
-                <p className="text-xs text-gray-500">Order Type</p>
+            {shouldDisplay(order.deviceInfo) && (
+              <div className="flex items-center">
+                <Smartphone className="h-4 w-4 mr-2 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {order.deviceInfo}
+                  </p>
+                  <p className="text-xs text-gray-500">Device</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Date and Time Column */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-2 text-gray-400" />
               <div>
@@ -240,39 +275,79 @@ function OrderCard({ order }: { order: Order }) {
             </div>
           </div>
         </div>
-      </CardContent>
 
-      <CardContent className="pt-0 pb-3">
-        <div className="space-y-1 mb-3">
-          <div className="flex items-center text-xs text-gray-600">
-            <Package className="h-3 w-3 mr-1.5" />
-            <span>{getOrderTypeText(order.orderType)}</span>
-            <span className="mx-2">•</span>
-            <Building2 className="h-3 w-3 mr-1" />
-            <span className="truncate">{order.branchName}</span>
+        {/* Order Type */}
+        <div className="mb-4">
+          <div className="flex items-center">
+            <Package className="h-4 w-4 mr-2 text-gray-400" />
+            <div>
+              <p className="text-sm font-medium text-gray-900" data-testid={`text-order-type-${order.id}`}>
+                {getOrderTypeDisplay()}
+              </p>
+              <p className="text-xs text-gray-500">Order Type</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Financial Summary */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <Receipt className="h-4 w-4 mr-2 text-gray-600" />
+              <span className="text-sm font-medium text-gray-900">Financial Summary</span>
+            </div>
+            <span className="text-lg font-bold text-gray-900">{formatCurrency(order.totalAmount)}</span>
           </div>
           
-          {order.locationName && (
-            <div className="flex items-center text-xs text-gray-500">
-              <MapPin className="h-3 w-3 mr-1.5" />
-              <span className="truncate">{order.locationName}</span>
-            </div>
-          )}
-          
-          {order.orderDeliveryDetails && (
-            <div className="flex items-center text-xs text-gray-500">
-              <MapPin className="h-3 w-3 mr-1.5" />
-              <span className="truncate">{order.orderDeliveryDetails.deliveryAddress}</span>
+          {showAllDetails && (
+            <div className="space-y-1 text-xs text-gray-600">
+              <div className="flex justify-between">
+                <span>Order Amount:</span>
+                <span>{formatCurrency(order.orderAmount)}</span>
+              </div>
+              {shouldDisplay(order.serviceCharges) && order.serviceCharges > 0 && (
+                <div className="flex justify-between">
+                  <span>Service Charges:</span>
+                  <span>{formatCurrency(order.serviceCharges)}</span>
+                </div>
+              )}
+              {shouldDisplay(order.deliveryCharges) && order.deliveryCharges > 0 && (
+                <div className="flex justify-between">
+                  <span>Delivery Charges:</span>
+                  <span>{formatCurrency(order.deliveryCharges)}</span>
+                </div>
+              )}
+              {shouldDisplay(order.taxAmount) && order.taxAmount > 0 && (
+                <div className="flex justify-between">
+                  <span>Tax Amount:</span>
+                  <span>{formatCurrency(order.taxAmount)}</span>
+                </div>
+              )}
+              {shouldDisplay(order.tipAmount) && order.tipAmount > 0 && (
+                <div className="flex justify-between">
+                  <span>Tip Amount:</span>
+                  <span>{formatCurrency(order.tipAmount)}</span>
+                </div>
+              )}
+              {shouldDisplay(order.discountedAmount) && order.discountedAmount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount:</span>
+                  <span>-{formatCurrency(order.discountedAmount)}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Order Items Summary */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-700">
-              {order.orderItems.length + (order.orderPackages?.length || 0)} items
-            </span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <Utensils className="h-4 w-4 mr-2 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                {order.orderItems.length + (order.orderPackages?.length || 0)} items
+              </span>
+            </div>
             <Button 
               onClick={() => setShowDetailModal(true)}
               variant="ghost"
@@ -284,71 +359,282 @@ function OrderCard({ order }: { order: Order }) {
               Details
             </Button>
           </div>
-          <div className="text-xs text-gray-600">
-            {order.orderItems.slice(0, 1).map((item, index) => (
-              <span key={item.id}>
-                {item.quantity}× {item.itemName.length > 20 ? item.itemName.substring(0, 20) + '...' : item.itemName}
-              </span>
-            ))}
-            {order.orderItems.length > 1 && (
-              <span className="text-gray-400"> +{order.orderItems.length - 1} more</span>
-            )}
-          </div>
-        </div>
-
-        {/* Split Bills */}
-        {showDetails && order.splitBills.length > 0 && (
-          <div className="mt-4 pt-4 border-t">
-            <h4 className="font-medium text-sm mb-2">Split Bill Details</h4>
-            <div className="space-y-1">
-              {order.splitBills.map((split, index) => (
-                <div key={split.id} className="flex justify-between text-sm" data-testid={`split-${order.id}-${index}`}>
-                  <span>{split.mobileNumber} - {split.itemName}</span>
-                  <span>{formatCurrency(split.price)}</span>
+          
+          {!showAllDetails && (
+            <div className="text-xs text-gray-600">
+              {order.orderItems.slice(0, 2).map((item, index) => (
+                <div key={item.id} className="truncate">
+                  {item.quantity}× {item.itemName}
+                  {shouldDisplay(item.variantName) && <span className="text-gray-400"> ({item.variantName})</span>}
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* Delivery Details */}
-        {showDetails && order.orderDeliveryDetails && (
-          <div className="mt-4 pt-4 border-t">
-            <h4 className="font-medium text-sm mb-2">Delivery Details</h4>
-            <div className="text-sm space-y-1">
-              <p><strong>Name:</strong> {order.orderDeliveryDetails.fullName}</p>
-              <p><strong>Phone:</strong> {order.orderDeliveryDetails.phoneNumber}</p>
-              <p><strong>Address:</strong> {order.orderDeliveryDetails.deliveryAddress}</p>
-              {order.orderDeliveryDetails.deliveryInstruction && (
-                <p><strong>Instructions:</strong> {order.orderDeliveryDetails.deliveryInstruction}</p>
+              {order.orderItems.length > 2 && (
+                <span className="text-gray-400">+{order.orderItems.length - 2} more items</span>
+              )}
+              {shouldDisplay(order.orderPackages) && order.orderPackages.length > 0 && (
+                <div className="mt-1 text-gray-400">
+                  +{order.orderPackages.length} package{order.orderPackages.length > 1 ? 's' : ''}
+                </div>
               )}
             </div>
+          )}
+        </div>
+
+        {/* Expandable Details Section */}
+        {showAllDetails && (
+          <div className="space-y-4">
+            {/* Allergens */}
+            {shouldDisplay(order.allergens) && (
+              <div className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                <div className="flex items-center mb-2">
+                  <AlertTriangle className="h-4 w-4 mr-2 text-yellow-600" />
+                  <span className="text-sm font-medium text-yellow-800">Allergens to Avoid</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {order.allergens!.map((allergen, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                      {allergen}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Order Items */}
+            {shouldDisplay(order.orderItems) && (
+              <div>
+                <div className="flex items-center mb-2">
+                  <Utensils className="h-4 w-4 mr-2 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-900">Order Items</span>
+                </div>
+                <div className="space-y-2">
+                  {order.orderItems.map((item) => (
+                    <div key={item.id} className="p-2 bg-gray-50 rounded text-xs">
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="flex-1">
+                          <span className="font-medium">{item.quantity}× {item.itemName}</span>
+                          {shouldDisplay(item.variantName) && (
+                            <span className="text-gray-500 ml-1">({item.variantName})</span>
+                          )}
+                          {shouldDisplay(item.personServing) && (
+                            <span className="text-gray-500 ml-1">- {item.personServing}</span>
+                          )}
+                        </div>
+                        <span className="font-medium">{formatCurrency(item.totalPrice)}</span>
+                      </div>
+                      
+                      {/* Modifiers */}
+                      {shouldDisplay(item.orderItemModifiers) && (
+                        <div className="ml-2 space-y-1">
+                          {item.orderItemModifiers.map((modifier) => (
+                            <div key={modifier.id} className="flex justify-between text-gray-600">
+                              <span>+ {modifier.modifierName} (x{modifier.quantity})</span>
+                              <span>+{formatCurrency(modifier.price)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Customizations */}
+                      {shouldDisplay(item.orderItemCustomizations) && (
+                        <div className="ml-2 space-y-1">
+                          {item.orderItemCustomizations.map((customization) => (
+                            <div key={customization.id} className="text-gray-600">
+                              <span>{customization.customizationName}</span>
+                              {shouldDisplay(customization.price) && customization.price > 0 && (
+                                <span className="ml-1">+{formatCurrency(customization.price)}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {shouldDisplay(item.discount) && item.discount! > 0 && (
+                        <div className="text-green-600 text-right">
+                          Discount: -{formatCurrency(item.discount!)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Order Packages */}
+            {shouldDisplay(order.orderPackages) && (
+              <div>
+                <div className="flex items-center mb-2">
+                  <Package2 className="h-4 w-4 mr-2 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-900">Order Packages</span>
+                </div>
+                <div className="space-y-2">
+                  {order.orderPackages.map((pkg) => (
+                    <div key={pkg.id} className="p-2 bg-blue-50 rounded text-xs">
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="flex-1">
+                          <span className="font-medium">{pkg.quantity}× {pkg.packageName}</span>
+                        </div>
+                        <span className="font-medium">{formatCurrency(pkg.price * pkg.quantity)}</span>
+                      </div>
+                      
+                      {/* Package Items */}
+                      {shouldDisplay(pkg.menuItems) && (
+                        <div className="ml-2 space-y-1">
+                          {pkg.menuItems!.map((item) => (
+                            <div key={item.id} className="text-gray-600">
+                              <span>{item.quantity}× {item.itemName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Package Sub Items */}
+                      {shouldDisplay(pkg.subItems) && (
+                        <div className="ml-2 space-y-1">
+                          {pkg.subItems!.map((subItem) => (
+                            <div key={subItem.id} className="text-gray-600">
+                              <span>{subItem.quantity}× {subItem.itemName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {shouldDisplay(pkg.discount) && pkg.discount! > 0 && (
+                        <div className="text-green-600 text-right">
+                          Package Discount: -{formatCurrency(pkg.discount!)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Split Bills */}
+            {shouldDisplay(order.splitBills) && (
+              <div>
+                <div className="flex items-center mb-2">
+                  <CreditCard className="h-4 w-4 mr-2 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-900">Split Bill Details</span>
+                </div>
+                <div className="space-y-1">
+                  {order.splitBills.map((split, index) => (
+                    <div key={split.id} className="flex justify-between text-sm p-2 bg-gray-50 rounded" data-testid={`split-${order.id}-${index}`}>
+                      <div>
+                        <div className="font-medium">{split.itemName}</div>
+                        <div className="text-xs text-gray-500">{split.mobileNumber}</div>
+                      </div>
+                      <span className="font-medium">{formatCurrency(split.price)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Details */}
+            {shouldDisplay(order.orderDeliveryDetails) && order.orderDeliveryDetails && (
+              <div>
+                <div className="flex items-center mb-2">
+                  <Truck className="h-4 w-4 mr-2 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-900">Delivery Details</span>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg text-sm space-y-1">
+                  {shouldDisplay(order.orderDeliveryDetails.fullName) && (
+                    <div><strong>Name:</strong> {order.orderDeliveryDetails.fullName}</div>
+                  )}
+                  {shouldDisplay(order.orderDeliveryDetails.email) && (
+                    <div className="flex items-center">
+                      <Mail className="h-3 w-3 mr-1" />
+                      <span>{order.orderDeliveryDetails.email}</span>
+                    </div>
+                  )}
+                  {shouldDisplay(order.orderDeliveryDetails.phoneNumber) && (
+                    <div className="flex items-center">
+                      <Phone className="h-3 w-3 mr-1" />
+                      <span>{order.orderDeliveryDetails.phoneNumber}</span>
+                    </div>
+                  )}
+                  {shouldDisplay(order.orderDeliveryDetails.deliveryAddress) && (
+                    <div><strong>Address:</strong> {order.orderDeliveryDetails.deliveryAddress}</div>
+                  )}
+                  {shouldDisplay(order.orderDeliveryDetails.streetAddress) && (
+                    <div><strong>Street:</strong> {order.orderDeliveryDetails.streetAddress}</div>
+                  )}
+                  {shouldDisplay(order.orderDeliveryDetails.apartment) && (
+                    <div><strong>Apartment:</strong> {order.orderDeliveryDetails.apartment}</div>
+                  )}
+                  {shouldDisplay(order.orderDeliveryDetails.deliveryInstruction) && (
+                    <div><strong>Instructions:</strong> {order.orderDeliveryDetails.deliveryInstruction}</div>
+                  )}
+                  {shouldDisplay(order.orderDeliveryDetails.prefferedDeliveryTime) && (
+                    <div><strong>Preferred Time:</strong> {formatToLocalTime(order.orderDeliveryDetails.prefferedDeliveryTime, 'MMM dd, yyyy hh:mm a')}</div>
+                  )}
+                  {shouldDisplay(order.orderDeliveryDetails.latitude) && shouldDisplay(order.orderDeliveryDetails.longitude) && (
+                    <div className="text-xs text-gray-500">
+                      <strong>Coordinates:</strong> {order.orderDeliveryDetails.latitude}, {order.orderDeliveryDetails.longitude}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Pickup Details */}
+            {shouldDisplay(order.orderPickupDetails) && order.orderPickupDetails && (
+              <div>
+                <div className="flex items-center mb-2">
+                  <ShoppingCart className="h-4 w-4 mr-2 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-900">Pickup Details</span>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg text-sm space-y-1">
+                  {shouldDisplay(order.orderPickupDetails.name) && (
+                    <div><strong>Name:</strong> {order.orderPickupDetails.name}</div>
+                  )}
+                  {shouldDisplay(order.orderPickupDetails.email) && (
+                    <div className="flex items-center">
+                      <Mail className="h-3 w-3 mr-1" />
+                      <span>{order.orderPickupDetails.email}</span>
+                    </div>
+                  )}
+                  {shouldDisplay(order.orderPickupDetails.phoneNumber) && (
+                    <div className="flex items-center">
+                      <Phone className="h-3 w-3 mr-1" />
+                      <span>{order.orderPickupDetails.phoneNumber}</span>
+                    </div>
+                  )}
+                  {shouldDisplay(order.orderPickupDetails.pickupInstruction) && (
+                    <div><strong>Instructions:</strong> {order.orderPickupDetails.pickupInstruction}</div>
+                  )}
+                  {shouldDisplay(order.orderPickupDetails.prefferedPickupTime) && (
+                    <div><strong>Preferred Time:</strong> {formatToLocalTime(order.orderPickupDetails.prefferedPickupTime, 'MMM dd, yyyy hh:mm a')}</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {showDetails && (
+        {/* Toggle Details Button */}
+        <div className="mt-4 flex justify-center">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowDetails(false)}
-            className="mt-2"
-            data-testid={`button-show-less-${order.id}`}
+            onClick={() => setShowAllDetails(!showAllDetails)}
+            className="text-[#15803d] hover:text-[#15803d] hover:bg-[#15803d]/10"
+            data-testid={`button-toggle-details-${order.id}`}
           >
-            Show Less
+            {showAllDetails ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-1" />
+                Show Less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-1" />
+                Show All Details
+              </>
+            )}
           </Button>
-        )}
-
-        {!showDetails && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowDetails(true)}
-            className="mt-2"
-            data-testid={`button-view-details-${order.id}`}
-          >
-            View Details
-          </Button>
-        )}
+        </div>
       </CardContent>
     </Card>
     

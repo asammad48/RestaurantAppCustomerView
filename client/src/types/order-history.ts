@@ -97,6 +97,15 @@ export interface OrderPackageVariant {
   quantity: number;
 }
 
+export interface OrderPickupDetails {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  pickupInstruction: string;
+  prefferedPickupTime: string;
+}
+
 export interface Order {
   id: number;
   orderNumber: string;
@@ -118,6 +127,8 @@ export interface Order {
   orderType: string;
   createdAt: string;
   orderDeliveryDetails: OrderDeliveryDetails | null;
+  orderPickupDetails: OrderPickupDetails | null;
+  allergens: string[] | null;
   orderItems: OrderItem[];
   orderPackages: OrderPackage[];
   splitBills: SplitBill[];
