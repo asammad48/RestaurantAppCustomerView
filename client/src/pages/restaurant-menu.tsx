@@ -1118,11 +1118,23 @@ export default function RestaurantMenuPage() {
                 {/* Generate Button */}
                 <Button
                   onClick={handleGenerateBudgetEstimate}
-                  disabled={aiGroupSize <= 0 || aiBudget <= 0}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-lg font-medium"
+                  disabled={aiGroupSize <= 0 || aiBudget <= 0 || isBudgetLoading}
+                  className="w-full configurable-primary hover:configurable-primary-hover text-white py-3 text-lg font-medium relative overflow-hidden"
                   data-testid="button-generate-estimate"
                 >
-                  Generate AI Budget
+                  {isBudgetLoading ? (
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="relative">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      </div>
+                      <span>Analyzing Menu...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <Calculator className="w-5 h-5" />
+                      <span>Generate AI Budget</span>
+                    </div>
+                  )}
                 </Button>
               </div>
             </div>
