@@ -42,11 +42,12 @@ export async function fetchOrderHistory(params: {
 
     const data: OrderHistoryResponse = await response.json();
     
-    // Add order status changes to each order using the actual order status
+    // Add order status changes and subTotal to each order using the actual order status
     const enhancedData = {
       ...data,
       items: data.items.map(order => ({
         ...order,
+        subTotal: order.orderAmount, // Map subTotal from orderAmount
         orderStatusChanges: [
           {
             orderStatus: getOrderStatusText(order.orderStatus),
