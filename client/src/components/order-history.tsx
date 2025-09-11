@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, Package, Clock, MapPin, Users, Eye, Building2, User, Calendar, 
          Phone, Mail, DollarSign, Utensils, ShoppingCart, AlertTriangle, ChevronDown, ChevronUp, 
          Smartphone, Receipt, CreditCard, Truck, Package2, Plus } from 'lucide-react';
@@ -143,6 +144,7 @@ export default function OrderHistory() {
 function OrderCard({ order }: { order: Order }) {
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showOrderTracker, setShowOrderTracker] = useState(false);
   
   const getStatusColor = (status: string | number) => {
     if (status === 'Pending' || status === 'pending') {
@@ -348,16 +350,28 @@ function OrderCard({ order }: { order: Order }) {
                 {order.orderItems.length + (order.orderPackages?.length || 0)} items
               </span>
             </div>
-            <Button 
-              onClick={() => setShowDetailModal(true)}
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs text-[#15803d] hover:text-[#15803d] hover:bg-[#15803d]/10"
-              data-testid={`button-view-details-${order.id}`}
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              Details
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowDetailModal(true)}
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs text-[#15803d] hover:text-[#15803d] hover:bg-[#15803d]/10"
+                data-testid={`button-view-details-${order.id}`}
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                Details
+              </Button>
+              <Button 
+                onClick={() => setShowOrderTracker(true)}
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs text-blue-600 hover:text-blue-600 hover:bg-blue-50"
+                data-testid={`button-order-tracker-${order.id}`}
+              >
+                <Truck className="h-3 w-3 mr-1" />
+                Track Order
+              </Button>
+            </div>
           </div>
           
           {!showAllDetails && (
@@ -643,6 +657,75 @@ function OrderCard({ order }: { order: Order }) {
       isOpen={showDetailModal}
       onClose={() => setShowDetailModal(false)}
     />
+    <OrderTrackerModal 
+      order={order}
+      isOpen={showOrderTracker}
+      onClose={() => setShowOrderTracker(false)}
+    />
     </>
+  );
+}
+
+// Order Tracker Modal Component
+function OrderTrackerModal({ order, isOpen, onClose }: { order: Order; isOpen: boolean; onClose: () => void }) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md max-h-[95vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Truck className="h-5 w-5 text-blue-600" />
+            Order Tracker
+          </DialogTitle>
+          <DialogDescription>
+            Track your order #{order.orderNumber}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium">Current Status</span>
+              <Badge className="bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/20">
+                {getOrderStatusText(order.orderStatus)}
+              </Badge>
+            </div>
+            <p className="text-sm text-gray-600">Order Type: {getOrderTypeText(order.orderType)}</p>
+          </div>
+
+          {order.orderStatusChanges && order.orderStatusChanges.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900">Order Progress</h4>
+              {order.orderStatusChanges.map((status, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-3 h-3 bg-blue-600 rounded-full mt-1 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm">{status.orderStatus}</span>
+                      <span className="text-xs text-gray-500">
+                        {formatToLocalTime(status.statusChangesDate, 'MMM dd, hh:mm a')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">{status.statusComment}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="border-t pt-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-500">Order Date:</span>
+                <p className="font-medium">{formatToLocalTime(order.createdAt, 'MMM dd, yyyy')}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Total Amount:</span>
+                <p className="font-medium">{formatCurrency(order.totalAmount, order.currency)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
