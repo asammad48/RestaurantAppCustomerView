@@ -42,16 +42,16 @@ export async function fetchOrderHistory(params: {
 
     const data: OrderHistoryResponse = await response.json();
     
-    // Add order status changes to each order
+    // Add order status changes to each order using the actual order status
     const enhancedData = {
       ...data,
       items: data.items.map(order => ({
         ...order,
         orderStatusChanges: [
           {
-            orderStatus: "Completed",
-            statusChangesDate: "2025-09-12T19:15:00Z",
-            statusComment: "Order delivered successfully"
+            orderStatus: getOrderStatusText(order.orderStatus),
+            statusChangesDate: order.createdAt,
+            statusComment: `Order ${getOrderStatusText(order.orderStatus).toLowerCase()}`
           }
         ]
       }))
