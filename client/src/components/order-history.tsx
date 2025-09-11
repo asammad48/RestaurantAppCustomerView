@@ -681,46 +681,53 @@ function OrderTrackerModal({ order, isOpen, onClose }: { order: Order; isOpen: b
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-medium">Current Status</span>
-              <Badge className="bg-[#15803d]/10 text-[#15803d] border border-[#15803d]/20">
+        <div className="space-y-6">
+          {/* Current Status Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-semibold text-gray-900">Current Status</span>
+              <Badge className="bg-green-100 text-green-800 border border-green-200 px-3 py-1">
                 {getOrderStatusText(order.orderStatus)}
               </Badge>
             </div>
-            <p className="text-sm text-gray-600">Order Type: {getOrderTypeText(order.orderType)}</p>
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-600">Order Type: {getOrderTypeText(order.orderType)}</p>
+            </div>
           </div>
 
+          {/* Order Progress Section */}
           {order.orderStatusChanges && order.orderStatusChanges.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="font-medium text-gray-900">Order Progress</h4>
-              {order.orderStatusChanges.map((status, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-3 h-3 bg-blue-600 rounded-full mt-1 flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm">{status.orderStatus}</span>
-                      <span className="text-xs text-gray-500">
-                        {formatToLocalTime(status.statusChangesDate, 'MMM dd, hh:mm a')}
-                      </span>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Order Progress</h3>
+              <div className="space-y-3">
+                {order.orderStatusChanges.map((status, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-3 h-3 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-gray-900">{status.orderStatus}</span>
+                        <span className="text-sm text-gray-500">
+                          {formatToLocalTime(status.statusChangesDate, 'MMM dd, h:mm a')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">{status.statusComment}</p>
                     </div>
-                    <p className="text-sm text-gray-600">{status.statusComment}</p>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
+          {/* Bottom Section */}
           <div className="border-t pt-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">Order Date:</span>
-                <p className="font-medium">{formatToLocalTime(order.createdAt, 'MMM dd, yyyy')}</p>
+                <p className="font-semibold text-gray-900">{formatToLocalTime(order.createdAt, 'MMM dd, yyyy')}</p>
               </div>
               <div>
                 <span className="text-gray-500">Total Amount:</span>
-                <p className="font-medium">{formatCurrency(order.totalAmount, order.currency)}</p>
+                <p className="font-semibold text-gray-900">{formatCurrency(order.totalAmount, order.currency)}</p>
               </div>
             </div>
           </div>
