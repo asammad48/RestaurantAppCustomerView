@@ -1,5 +1,11 @@
 // Order History API types based on the provided response structure
 
+export interface OrderStatusChange {
+  orderStatus: string;
+  statusChangesDate: string;
+  statusComment: string;
+}
+
 export interface OrderModifier {
   id: number;
   modifierId: number;
@@ -133,6 +139,7 @@ export interface Order {
   orderItems: OrderItem[];
   orderPackages: OrderPackage[];
   splitBills: SplitBill[];
+  orderStatusChanges?: OrderStatusChange[];
 }
 
 export interface OrderHistoryResponse {
