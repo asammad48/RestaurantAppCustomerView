@@ -165,6 +165,7 @@ export default function RestaurantMenuPage() {
     queryKey: ['budget-estimate', budgetEstimateData],
     queryFn: async () => {
       if (!budgetEstimateData) return null;
+      console.log('🤖 API Call: Making budget estimate request with data:', budgetEstimateData);
       const response = await apiClient.getBudgetEstimate(budgetEstimateData);
       return response.data;
     },
@@ -201,9 +202,17 @@ export default function RestaurantMenuPage() {
       categories: aiSelectedCategories
     };
     
+    console.log('🤖 GENERATE: Creating estimate request:', estimateRequest);
+    
+    // Set the data and wait for state update, then refetch
     setBudgetEstimateData(estimateRequest);
     setViewMode('ai-budget');
-    await refetchBudgetEstimate();
+    
+    // Use setTimeout to ensure state update completes before refetch
+    setTimeout(async () => {
+      console.log('🤖 GENERATE: Triggering refetch');
+      await refetchBudgetEstimate();
+    }, 50);
   };
 
   const handleSwitchToMenu = () => {
