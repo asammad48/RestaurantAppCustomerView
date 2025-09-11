@@ -126,6 +126,7 @@ export interface Order {
   orderStatus: string;
   orderType: string;
   createdAt: string;
+  currency: string;
   orderDeliveryDetails: OrderDeliveryDetails | null;
   orderPickupDetails: OrderPickupDetails | null;
   allergens: string[] | null;

@@ -296,43 +296,43 @@ function OrderCard({ order }: { order: Order }) {
               <Receipt className="h-4 w-4 mr-2 text-gray-600" />
               <span className="text-sm font-medium text-gray-900">Financial Summary</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">{formatCurrency(order.totalAmount)}</span>
+            <span className="text-lg font-bold text-gray-900">{formatCurrency(order.totalAmount, order.currency)}</span>
           </div>
           
           {showAllDetails && (
             <div className="space-y-1 text-xs text-gray-600">
               <div className="flex justify-between">
                 <span>Order Amount:</span>
-                <span>{formatCurrency(order.orderAmount)}</span>
+                <span>{formatCurrency(order.orderAmount, order.currency)}</span>
               </div>
               {shouldDisplay(order.serviceCharges) && order.serviceCharges > 0 && (
                 <div className="flex justify-between">
                   <span>Service Charges:</span>
-                  <span>{formatCurrency(order.serviceCharges)}</span>
+                  <span>{formatCurrency(order.serviceCharges, order.currency)}</span>
                 </div>
               )}
               {shouldDisplay(order.deliveryCharges) && order.deliveryCharges > 0 && (
                 <div className="flex justify-between">
                   <span>Delivery Charges:</span>
-                  <span>{formatCurrency(order.deliveryCharges)}</span>
+                  <span>{formatCurrency(order.deliveryCharges, order.currency)}</span>
                 </div>
               )}
               {shouldDisplay(order.taxAmount) && order.taxAmount > 0 && (
                 <div className="flex justify-between">
                   <span>Tax Amount:</span>
-                  <span>{formatCurrency(order.taxAmount)}</span>
+                  <span>{formatCurrency(order.taxAmount, order.currency)}</span>
                 </div>
               )}
               {shouldDisplay(order.tipAmount) && order.tipAmount > 0 && (
                 <div className="flex justify-between">
                   <span>Tip Amount:</span>
-                  <span>{formatCurrency(order.tipAmount)}</span>
+                  <span>{formatCurrency(order.tipAmount, order.currency)}</span>
                 </div>
               )}
               {shouldDisplay(order.discountedAmount) && order.discountedAmount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount:</span>
-                  <span>-{formatCurrency(order.discountedAmount)}</span>
+                  <span>-{formatCurrency(order.discountedAmount, order.currency)}</span>
                 </div>
               )}
             </div>
@@ -420,7 +420,7 @@ function OrderCard({ order }: { order: Order }) {
                             <span className="text-gray-500 ml-1">- {item.personServing}</span>
                           )}
                         </div>
-                        <span className="font-medium">{formatCurrency(item.totalPrice)}</span>
+                        <span className="font-medium">{formatCurrency(item.totalPrice, order.currency)}</span>
                       </div>
                       
                       {/* Modifiers */}
@@ -429,7 +429,7 @@ function OrderCard({ order }: { order: Order }) {
                           {item.orderItemModifiers.map((modifier) => (
                             <div key={modifier.id} className="flex justify-between text-gray-600">
                               <span>+ {modifier.modifierName} (x{modifier.quantity})</span>
-                              <span>+{formatCurrency(modifier.price)}</span>
+                              <span>+{formatCurrency(modifier.price, order.currency)}</span>
                             </div>
                           ))}
                         </div>
@@ -442,7 +442,7 @@ function OrderCard({ order }: { order: Order }) {
                             <div key={customization.id} className="text-gray-600">
                               <span>{customization.customizationName}</span>
                               {shouldDisplay(customization.price) && customization.price > 0 && (
-                                <span className="ml-1">+{formatCurrency(customization.price)}</span>
+                                <span className="ml-1">+{formatCurrency(customization.price, order.currency)}</span>
                               )}
                             </div>
                           ))}
@@ -451,7 +451,7 @@ function OrderCard({ order }: { order: Order }) {
                       
                       {shouldDisplay(item.discount) && item.discount! > 0 && (
                         <div className="text-green-600 text-right">
-                          Discount: -{formatCurrency(item.discount!)}
+                          Discount: -{formatCurrency(item.discount!, order.currency)}
                         </div>
                       )}
                     </div>
@@ -474,7 +474,7 @@ function OrderCard({ order }: { order: Order }) {
                         <div className="flex-1">
                           <span className="font-medium">{pkg.quantity}× {pkg.packageName}</span>
                         </div>
-                        <span className="font-medium">{formatCurrency(pkg.price * pkg.quantity)}</span>
+                        <span className="font-medium">{formatCurrency(pkg.price * pkg.quantity, order.currency)}</span>
                       </div>
                       
                       {/* Package Items */}
@@ -501,7 +501,7 @@ function OrderCard({ order }: { order: Order }) {
                       
                       {shouldDisplay(pkg.discount) && pkg.discount! > 0 && (
                         <div className="text-green-600 text-right">
-                          Package Discount: -{formatCurrency(pkg.discount!)}
+                          Package Discount: -{formatCurrency(pkg.discount!, order.currency)}
                         </div>
                       )}
                     </div>
@@ -524,7 +524,7 @@ function OrderCard({ order }: { order: Order }) {
                         <div className="font-medium">{split.itemName}</div>
                         <div className="text-xs text-gray-500">{split.mobileNumber}</div>
                       </div>
-                      <span className="font-medium">{formatCurrency(split.price)}</span>
+                      <span className="font-medium">{formatCurrency(split.price, order.currency)}</span>
                     </div>
                   ))}
                 </div>

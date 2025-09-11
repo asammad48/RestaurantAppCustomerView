@@ -195,14 +195,14 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
                     </div>
                     <div className="text-right bg-[#15803d]/5 p-3 rounded-lg">
                       <div className="font-bold text-sm">
-                        {item.quantity} × {formatCurrency(item.unitPrice)}
+                        {item.quantity} × {formatCurrency(item.unitPrice, order.currency)}
                       </div>
                       <div className="text-lg font-bold text-[#15803d]">
-                        {formatCurrency(item.totalPrice)}
+                        {formatCurrency(item.totalPrice, order.currency)}
                       </div>
                       {item.discount && item.discount > 0 && (
                         <div className="text-xs text-[#15803d] font-semibold">
-                          Saved: {formatCurrency(item.discount)}
+                          Saved: {formatCurrency(item.discount, order.currency)}
                         </div>
                       )}
                     </div>
@@ -216,7 +216,7 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
                         {item.orderItemModifiers.map((modifier) => (
                           <div key={modifier.id} className="flex justify-between items-center bg-white p-2 rounded text-sm">
                             <span>{modifier.quantity}× {modifier.modifierName}</span>
-                            <span className="font-bold text-[#15803d]">+{formatCurrency(modifier.price * modifier.quantity)}</span>
+                            <span className="font-bold text-[#15803d]">+{formatCurrency(modifier.price * modifier.quantity, order.currency)}</span>
                           </div>
                         ))}
                       </div>
@@ -231,7 +231,7 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
                         {item.orderItemCustomizations.map((customization) => (
                           <div key={customization.id} className="flex justify-between items-center bg-white p-2 rounded text-sm">
                             <span>{customization.customizationName}</span>
-                            <span className="font-bold text-[#15803d]">+{formatCurrency(customization.price)}</span>
+                            <span className="font-bold text-[#15803d]">+{formatCurrency(customization.price, order.currency)}</span>
                           </div>
                         ))}
                       </div>
@@ -247,11 +247,11 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
                           <div key={subItem.id} className="bg-white p-2 rounded">
                             <div className="flex justify-between items-center text-sm">
                               <span>{subItem.quantity}× {subItem.itemName}</span>
-                              <span className="font-bold text-[#15803d]">{formatCurrency(subItem.totalPrice)}</span>
+                              <span className="font-bold text-[#15803d]">{formatCurrency(subItem.totalPrice, order.currency)}</span>
                             </div>
                             {subItem.discount && subItem.discount > 0 && (
                               <div className="text-xs text-[#15803d] font-semibold">
-                                Discount: -{formatCurrency(subItem.discount)}
+                                Discount: -{formatCurrency(subItem.discount, order.currency)}
                               </div>
                             )}
                           </div>
@@ -283,14 +283,14 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
                       <h4 className="font-bold text-lg">{pkg.packageName}</h4>
                       <div className="text-right bg-white p-3 rounded-lg border border-[#15803d]/10">
                         <div className="font-bold text-sm">
-                          {pkg.quantity} × {formatCurrency(pkg.price)}
+                          {pkg.quantity} × {formatCurrency(pkg.price, order.currency)}
                         </div>
                         <div className="text-lg font-bold text-[#15803d]">
-                          {formatCurrency(pkg.price * pkg.quantity)}
+                          {formatCurrency(pkg.price * pkg.quantity, order.currency)}
                         </div>
                         {pkg.discount && pkg.discount > 0 && (
                           <div className="text-xs text-[#15803d] font-semibold">
-                            Discount: -{formatCurrency(pkg.discount)}
+                            Discount: -{formatCurrency(pkg.discount, order.currency)}
                           </div>
                         )}
                       </div>
@@ -364,7 +364,7 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
                           {split.splitType}
                         </div>
                       </div>
-                      <div className="text-xl font-bold text-[#15803d]">{formatCurrency(split.price)}</div>
+                      <div className="text-xl font-bold text-[#15803d]">{formatCurrency(split.price, order.currency)}</div>
                     </div>
                   </div>
                 ))}
@@ -384,37 +384,37 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-[#15803d]/10">
                   <span>Order Amount</span>
-                  <span className="font-semibold">{formatCurrency(order.orderAmount)}</span>
+                  <span className="font-semibold">{formatCurrency(order.orderAmount, order.currency)}</span>
                 </div>
                 {order.discountedAmount > 0 && (
                   <div className="flex justify-between items-center py-2 border-b border-[#15803d]/10">
                     <span>Discount Applied</span>
-                    <span className="font-semibold text-[#15803d]">-{formatCurrency(order.discountedAmount)}</span>
+                    <span className="font-semibold text-[#15803d]">-{formatCurrency(order.discountedAmount, order.currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center py-2 border-b border-[#15803d]/10">
                   <span>Service Charges</span>
-                  <span className="font-semibold">{formatCurrency(order.serviceCharges)}</span>
+                  <span className="font-semibold">{formatCurrency(order.serviceCharges, order.currency)}</span>
                 </div>
                 {order.deliveryCharges > 0 && (
                   <div className="flex justify-between items-center py-2 border-b border-[#15803d]/10">
                     <span>Delivery Charges</span>
-                    <span className="font-semibold">{formatCurrency(order.deliveryCharges)}</span>
+                    <span className="font-semibold">{formatCurrency(order.deliveryCharges, order.currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center py-2 border-b border-[#15803d]/10">
                   <span>Tax Amount</span>
-                  <span className="font-semibold">{formatCurrency(order.taxAmount)}</span>
+                  <span className="font-semibold">{formatCurrency(order.taxAmount, order.currency)}</span>
                 </div>
                 {order.tipAmount > 0 && (
                   <div className="flex justify-between items-center py-2 border-b border-[#15803d]/10">
                     <span>Tip</span>
-                    <span className="font-semibold">{formatCurrency(order.tipAmount)}</span>
+                    <span className="font-semibold">{formatCurrency(order.tipAmount, order.currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center py-3 bg-[#15803d] text-white -mx-4 px-4 rounded-lg mt-4">
                   <span className="text-lg font-bold">Total Amount</span>
-                  <span className="text-xl font-bold">{formatCurrency(order.totalAmount)}</span>
+                  <span className="text-xl font-bold">{formatCurrency(order.totalAmount, order.currency)}</span>
                 </div>
               </div>
             </div>
@@ -473,22 +473,22 @@ function generatePrintContent(order: Order): string {
         <h3>Order Items</h3>
         ${order.orderItems.map(item => `
           <div class="item">
-            <div><strong>${item.quantity}× ${item.itemName}</strong> - ${formatCurrency(item.totalPrice)}</div>
+            <div><strong>${item.quantity}× ${item.itemName}</strong> - ${formatCurrency(item.totalPrice, order.currency)}</div>
             ${item.variantName ? `<div class="modifier">Variant: ${item.variantName}</div>` : ''}
             ${item.orderItemModifiers?.map(mod => `
-              <div class="modifier">${mod.quantity}× ${mod.modifierName} (+${formatCurrency(mod.price)})</div>
+              <div class="modifier">${mod.quantity}× ${mod.modifierName} (+${formatCurrency(mod.price, order.currency)})</div>
             `).join('') || ''}
           </div>
         `).join('')}
       </div>
       
       <div class="summary">
-        <p>Order Amount: ${formatCurrency(order.orderAmount)}</p>
-        ${order.discountedAmount > 0 ? `<p>Discount: -${formatCurrency(order.discountedAmount)}</p>` : ''}
-        <p>Service Charges: ${formatCurrency(order.serviceCharges)}</p>
-        ${order.deliveryCharges > 0 ? `<p>Delivery Charges: ${formatCurrency(order.deliveryCharges)}</p>` : ''}
-        <p>Tax Amount: ${formatCurrency(order.taxAmount)}</p>
-        <p class="total">Total: ${formatCurrency(order.totalAmount)}</p>
+        <p>Order Amount: ${formatCurrency(order.orderAmount, order.currency)}</p>
+        ${order.discountedAmount > 0 ? `<p>Discount: -${formatCurrency(order.discountedAmount, order.currency)}</p>` : ''}
+        <p>Service Charges: ${formatCurrency(order.serviceCharges, order.currency)}</p>
+        ${order.deliveryCharges > 0 ? `<p>Delivery Charges: ${formatCurrency(order.deliveryCharges, order.currency)}</p>` : ''}
+        <p>Tax Amount: ${formatCurrency(order.taxAmount, order.currency)}</p>
+        <p class="total">Total: ${formatCurrency(order.totalAmount, order.currency)}</p>
       </div>
     </body>
     </html>
