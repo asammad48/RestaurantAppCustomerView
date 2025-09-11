@@ -96,7 +96,7 @@ export class OrderService {
       streetAddress: storeDetails.deliveryAddress, // Using same as deliveryAddress
       apartment: storeDetails.apartmentUnit || '',
       deliveryInstruction: storeDetails.deliveryInstructions || '',
-      preferredDeliveryTime: storeDetails.preferredTime ? 
+      prefferedDeliveryTime: storeDetails.preferredTime ? 
         new Date(storeDetails.preferredTime).toISOString() : 
         new Date().toISOString(),
       longitude: 0, // This should be set from location picker
@@ -131,7 +131,8 @@ export class OrderService {
     deliveryDetails = null,
     takeawayDetails = null,
     splitBills = null,
-    specialInstruction = ''
+    specialInstruction = '',
+    allergens = []
   }: {
     cartItems: CartItem[];
     serviceType: ServiceType;
@@ -144,6 +145,7 @@ export class OrderService {
     takeawayDetails?: StoreTakeawayDetails | null;
     splitBills?: SplitBill[] | null;
     specialInstruction?: string;
+    allergens?: number[];
   }): Promise<ApiResponse<OrderResponse>> {
     const orderData: OrderRequest = {
       branchId,
@@ -157,7 +159,8 @@ export class OrderService {
       deliveryDetails: serviceType === 'delivery' ? this.convertDeliveryDetails(deliveryDetails) : null,
       pickupDetails: serviceType === 'takeaway' ? this.convertPickupDetails(takeawayDetails) : null,
       splitBills: splitBills || null,
-      specialInstruction: specialInstruction || ''
+      specialInstruction: specialInstruction || '',
+      allergens: allergens.length > 0 ? allergens : undefined
     };
 
     return apiClient.createOrder(orderData);

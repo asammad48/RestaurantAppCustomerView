@@ -25,7 +25,8 @@ export default function PaymentModal() {
     deliveryDetails,
     takeawayDetails,
     specialInstructions,
-    splitBillMode
+    splitBillMode,
+    selectedAllergens
   } = useCartStore();
   const { items } = useCart();
   const { toast } = useToast();
@@ -86,7 +87,8 @@ export default function PaymentModal() {
         deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,
         takeawayDetails: serviceType === 'takeaway' ? takeawayDetails : null,
         splitBills: splitBillsData,
-        specialInstruction: specialInstructions || ''
+        specialInstruction: specialInstructions || '',
+        allergens: selectedAllergens || []
       });
 
       if (response.success && response.data) {
