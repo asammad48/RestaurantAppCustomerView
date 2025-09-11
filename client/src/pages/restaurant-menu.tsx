@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal, ApiMenuResponse } from "@/lib/mock-data";
@@ -160,16 +160,20 @@ export default function RestaurantMenuPage() {
     refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
-  // AI Budget Estimate Query
-  const { data: budgetData, isLoading: isBudgetLoading, refetch: refetchBudgetEstimate } = useQuery({
-    queryKey: ['budget-estimate', budgetEstimateData],
-    queryFn: async () => {
-      if (!budgetEstimateData) return null;
-      console.log('🤖 API Call: Making budget estimate request with data:', budgetEstimateData);
-      const response = await apiClient.getBudgetEstimate(budgetEstimateData);
+  // AI Budget Estimate Mutation
+  const { data: budgetData, isPending: isBudgetLoading, mutate: generateBudgetEstimate } = useMutation({
+    mutationFn: async (estimateRequest: BudgetEstimateRequest) => {
+      console.log('🤖 API Call: Making budget estimate request with data:', estimateRequest);
+      const response = await apiClient.getBudgetEstimate(estimateRequest);
       return response.data;
     },
-    enabled: false, // Only run when manually triggered
+    onSuccess: (data) => {
+      console.log('🤖 API Success: Budget estimate completed', data);
+      setBudgetEstimateData(null); // Clear the request data
+    },
+    onError: (error) => {
+      console.error('🤖 API Error: Budget estimate failed', error);
+    }
   });
 
   const apiMenuData = menuData as ApiMenuResponse;
@@ -194,7 +198,7 @@ export default function RestaurantMenuPage() {
   const categories = ["all", ...uniqueCategories];
 
   // AI Budget Estimation handlers
-  const handleGenerateBudgetEstimate = async () => {
+  const handleGenerateBudgetEstimate = () => {
     const estimateRequest: BudgetEstimateRequest = {
       branchId,
       groupSize: aiGroupSize,
@@ -204,15 +208,9 @@ export default function RestaurantMenuPage() {
     
     console.log('🤖 GENERATE: Creating estimate request:', estimateRequest);
     
-    // Set the data and wait for state update, then refetch
-    setBudgetEstimateData(estimateRequest);
+    // Switch to AI budget view and trigger the mutation
     setViewMode('ai-budget');
-    
-    // Use setTimeout to ensure state update completes before refetch
-    setTimeout(async () => {
-      console.log('🤖 GENERATE: Triggering refetch');
-      await refetchBudgetEstimate();
-    }, 50);
+    generateBudgetEstimate(estimateRequest);
   };
 
   const handleSwitchToMenu = () => {
@@ -1002,134 +1000,149 @@ export default function RestaurantMenuPage() {
           {/* Right Side - AI Estimator Panel (Desktop Only) */}
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-4">
-              <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200/60 backdrop-blur-sm rounded-2xl shadow-xl shadow-slate-900/5 p-6 space-y-6">
                 {/* Header */}
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center mb-2">
-                    <Calculator className="w-8 h-8 text-orange-500" />
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
+                    <Sparkles className="w-7 h-7 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
                     AI Budget Estimator
-                    <span className="text-yellow-400">✨</span>
                   </h2>
+                  <p className="text-sm text-slate-500 mt-1">Smart recommendations for your perfect meal</p>
                 </div>
 
                 {/* Group Size */}
-                <div className="mb-4">
-                  <Label htmlFor="group-size" className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Users className="w-4 h-4" />
-                    Group Size
-                  </Label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-700 font-medium">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Users className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <span>Group Size</span>
+                  </div>
                   <Input
-                    id="group-size"
                     type="number"
                     min="1"
                     max="20"
                     value={aiGroupSize}
                     onChange={(e) => setAiGroupSize(parseInt(e.target.value) || 1)}
-                    className="w-full h-12 text-lg"
+                    className="h-12 text-lg bg-white/80 border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl"
                     data-testid="input-group-size"
                   />
                 </div>
 
                 {/* Total Budget */}
-                <div className="mb-4">
-                  <Label htmlFor="budget" className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <DollarSign className="w-4 h-4" />
-                    Total Budget (PKR)
-                  </Label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-700 font-medium">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <span>Total Budget (PKR)</span>
+                  </div>
                   <Input
-                    id="budget"
                     type="number"
                     min="500"
                     step="100"
                     value={aiBudget}
                     onChange={(e) => setAiBudget(parseInt(e.target.value) || 500)}
-                    className="w-full h-12 text-lg"
+                    className="h-12 text-lg bg-white/80 border-slate-200 focus:border-emerald-400 focus:ring-emerald-400/20 rounded-xl"
                     data-testid="input-budget"
                   />
-                  <p className="text-sm text-gray-600 mt-1">
-                    About PKR {Math.round(aiBudget / aiGroupSize)} per person
-                  </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-slate-500 bg-white/60 rounded-lg py-2 px-3">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+                    <span>PKR {Math.round(aiBudget / aiGroupSize)} per person</span>
+                  </div>
                 </div>
 
                 {/* Popular Ranges */}
-                <div className="mb-6">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">Popular Ranges</span>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-700 font-medium">
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-purple-600" />
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <button
-                        onClick={() => setAiBudget(1500)}
-                        className="bg-white border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors"
-                        data-testid="button-range-light"
-                      >
-                        <div className="font-medium text-gray-900">Light</div>
-                        <div className="text-lg font-bold text-blue-600">1500</div>
-                        <div className="text-xs text-gray-500">{Math.round(1500 / aiGroupSize)}</div>
-                      </button>
-                      <button
-                        onClick={() => setAiBudget(3000)}
-                        className="bg-white border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors"
-                        data-testid="button-range-standard"
-                      >
-                        <div className="font-medium text-gray-900">Standard</div>
-                        <div className="text-lg font-bold text-blue-600">3000</div>
-                        <div className="text-xs text-gray-500">{Math.round(3000 / aiGroupSize)}</div>
-                      </button>
-                      <button
-                        onClick={() => setAiBudget(6000)}
-                        className="bg-white border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors"
-                        data-testid="button-range-premium"
-                      >
-                        <div className="font-medium text-gray-900">Premium</div>
-                        <div className="text-lg font-bold text-blue-600">6000</div>
-                        <div className="text-xs text-gray-500">{Math.round(6000 / aiGroupSize)}</div>
-                      </button>
-                    </div>
+                    <span>Popular Ranges</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setAiBudget(1500)}
+                      className="group bg-white/80 hover:bg-white border border-slate-200 hover:border-blue-300 rounded-xl p-3 text-center transition-all duration-200 hover:shadow-md hover:scale-105"
+                      data-testid="button-range-light"
+                    >
+                      <div className="text-xs font-medium text-slate-600 mb-1">Light</div>
+                      <div className="text-lg font-bold text-blue-600 group-hover:text-blue-700">1500</div>
+                      <div className="text-xs text-slate-400">{Math.round(1500 / aiGroupSize)}/person</div>
+                    </button>
+                    <button
+                      onClick={() => setAiBudget(3000)}
+                      className="group bg-white/80 hover:bg-white border border-slate-200 hover:border-purple-300 rounded-xl p-3 text-center transition-all duration-200 hover:shadow-md hover:scale-105"
+                      data-testid="button-range-standard"
+                    >
+                      <div className="text-xs font-medium text-slate-600 mb-1">Standard</div>
+                      <div className="text-lg font-bold text-purple-600 group-hover:text-purple-700">3000</div>
+                      <div className="text-xs text-slate-400">{Math.round(3000 / aiGroupSize)}/person</div>
+                    </button>
+                    <button
+                      onClick={() => setAiBudget(6000)}
+                      className="group bg-white/80 hover:bg-white border border-slate-200 hover:border-emerald-300 rounded-xl p-3 text-center transition-all duration-200 hover:shadow-md hover:scale-105"
+                      data-testid="button-range-premium"
+                    >
+                      <div className="text-xs font-medium text-slate-600 mb-1">Premium</div>
+                      <div className="text-lg font-bold text-emerald-600 group-hover:text-emerald-700">6000</div>
+                      <div className="text-xs text-slate-400">{Math.round(6000 / aiGroupSize)}/person</div>
+                    </button>
                   </div>
                 </div>
 
                 {/* Smart Tips */}
-                <div className="mb-6">
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Lightbulb className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">Smart Tips</span>
+                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center">
+                      <Lightbulb className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <div className="space-y-2 text-sm text-green-700">
-                      <div className="flex items-start gap-2">
-                        <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                        <span>Budget 20% extra for drinks</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                        <span>Combo meals offer better value</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                        <span>Share family portions for groups 3+</span>
-                      </div>
+                    <span className="font-semibold text-emerald-800">Smart Tips</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2 text-sm text-emerald-700">
+                      <div className="w-1 h-1 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>Budget 20% extra for drinks</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm text-emerald-700">
+                      <div className="w-1 h-1 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>Combo meals offer better value</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm text-emerald-700">
+                      <div className="w-1 h-1 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span>Share family portions for groups 3+</span>
                     </div>
                   </div>
                 </div>
 
                 {/* How AI Works */}
-                <div className="mb-6">
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Info className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-medium text-purple-800">How AI Works</span>
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200/60 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
+                      <Info className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <div className="text-sm text-purple-700">
-                      <p className="mb-2">Our algorithm creates combinations that:</p>
-                      <div className="space-y-1 text-xs">
-                        <p>• Maximize variety within budget</p>
-                        <p>• Balance nutrition and taste</p>
-                        <p>• Consider group sharing</p>
-                        <p>• Optimize price-per-person</p>
+                    <span className="font-semibold text-purple-800">How AI Works</span>
+                  </div>
+                  <div className="text-sm text-purple-700">
+                    <p className="mb-2 font-medium">Our algorithm creates combinations that:</p>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                        <span>Maximize variety within budget</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                        <span>Balance nutrition and taste</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                        <span>Consider group sharing</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                        <span>Optimize price-per-person</span>
                       </div>
                     </div>
                   </div>
@@ -1139,19 +1152,17 @@ export default function RestaurantMenuPage() {
                 <Button
                   onClick={handleGenerateBudgetEstimate}
                   disabled={aiGroupSize <= 0 || aiBudget <= 0 || isBudgetLoading}
-                  className="w-full configurable-primary hover:configurable-primary-hover text-white py-3 text-lg font-medium relative overflow-hidden"
+                  className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="button-generate-estimate"
                 >
                   {isBudgetLoading ? (
                     <div className="flex items-center justify-center gap-3">
-                      <div className="relative">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      </div>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                       <span>Analyzing Menu...</span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center gap-2">
-                      <Calculator className="w-5 h-5" />
+                      <Sparkles className="w-5 h-5" />
                       <span>Generate AI Budget</span>
                     </div>
                   )}
