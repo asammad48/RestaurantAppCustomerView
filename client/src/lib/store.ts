@@ -291,7 +291,7 @@ export const useCartStore = create<CartStore>()(
   },
   
   clearCart: () => {
-    set({ items: [], cartBranchId: null });
+    set({ items: [], cartBranchId: null, selectedAllergens: [] });
   },
   
   getCartTotal: () => {

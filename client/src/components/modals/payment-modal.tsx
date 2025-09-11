@@ -88,7 +88,7 @@ export default function PaymentModal() {
         takeawayDetails: serviceType === 'takeaway' ? takeawayDetails : null,
         splitBills: splitBillsData,
         specialInstruction: specialInstructions || '',
-        allergenIds: selectedAllergens || []
+        allergenIds: selectedAllergens && selectedAllergens.length > 0 ? selectedAllergens : null
       });
 
       if (response.success && response.data) {

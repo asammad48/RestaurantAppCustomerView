@@ -160,7 +160,7 @@ export class OrderService {
       pickupDetails: serviceType === 'takeaway' ? this.convertPickupDetails(takeawayDetails) : null,
       splitBills: splitBills || null,
       specialInstruction: specialInstruction || '',
-      allergenIds: allergenIds.length > 0 ? allergenIds : null
+      allergenIds: allergenIds && allergenIds.length > 0 ? allergenIds : null
     };
 
     return apiClient.createOrder(orderData);

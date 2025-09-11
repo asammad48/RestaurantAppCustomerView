@@ -19,6 +19,7 @@ export default function OrderConfirmationModal() {
     setTakeawayDetails,
     setSpecialInstructions,
     setSplitBillModalOpen,
+    setSelectedAllergens,
     selectedBranch,
     deliveryDetails,
     takeawayDetails,
@@ -74,6 +75,7 @@ export default function OrderConfirmationModal() {
     setDeliveryDetails(null);
     setTakeawayDetails(null);
     setSpecialInstructions('');
+    setSelectedAllergens([]);
     setSplitBillModalOpen(false);
     setOrderConfirmationOpen(false);
   };
@@ -86,6 +88,7 @@ export default function OrderConfirmationModal() {
     setDeliveryDetails(null);
     setTakeawayDetails(null);
     setSpecialInstructions('');
+    setSelectedAllergens([]);
     setSplitBillModalOpen(false);
     setOrderConfirmationOpen(false);
     setLocation('/order-history');
