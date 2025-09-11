@@ -200,4 +200,31 @@ The system is designed to be easily replaced with external API calls. Simply upd
 - **State Management**: Coordinate state synchronization between map and form components
 - **Error Handling**: Robust error handling for geocoding and map initialization
 
-**Last Updated**: September 10, 2025 - Completed real interactive map integration replacing placeholder with Leaflet/OpenStreetMap solution
+## AI Budget Estimator System
+
+### Inline Implementation
+- **Integration Method**: Implemented directly inline within restaurant-menu.tsx due to vite-plugin-cartographer compatibility issues
+- **Design Compliance**: Matches exact UI requirements from provided design specifications
+- **Location**: Right sidebar panel on desktop (hidden on mobile as designed)
+
+### Feature Components
+- **Group Size Input**: Users icon with number input and validation
+- **Total Budget Input**: DollarSign icon with amount input and dynamic per-person calculation
+- **Popular Ranges**: Three preset buttons (Light: 1500, Standard: 3000, Premium: 6000) with per-person breakdown
+- **Smart Tips Section**: Lightbulb icon with helpful budgeting advice and green background styling
+- **How AI Works Section**: Info icon explaining algorithm approach with purple background styling
+- **Generate Button**: Calculator icon integration with existing backend API functionality
+
+### API Integration
+- **Single API Call**: Eliminates duplicate API calls by using form data collection and parent state management
+- **Backend Integration**: Connects to existing budget estimation API with proper request formatting
+- **Navigation Flow**: Automatic transition to AI Budget component upon successful estimation
+- **State Management**: Uses existing aiGroupSize, aiBudget, aiSelectedCategories state variables
+
+### Technical Implementation
+- **Responsive Design**: Desktop-only display with mobile-first approach maintained
+- **Test IDs**: Comprehensive data-testid attributes for all interactive elements
+- **State Synchronization**: Form data properly synchronized with parent component state
+- **Error Handling**: Graceful handling of API errors and loading states
+
+**Last Updated**: September 11, 2025 - Completed AI Budget Estimator implementation with full design compliance and API integration

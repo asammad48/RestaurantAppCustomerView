@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info } from "lucide-react";
+import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/navbar";
@@ -982,245 +982,149 @@ export default function RestaurantMenuPage() {
           {/* Right Side - AI Estimator Panel (Desktop Only) */}
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-4">
-              <Card className="h-full" style={{ minHeight: '700px' }}>
-                <CardContent className="p-6">
-                  <div className="text-center mb-6">
-                    <Bot className="w-8 h-8 configurable-primary-text mx-auto mb-3" />
-                    <h3 className="text-xl font-bold configurable-text-primary mb-2 flex items-center justify-center gap-2">
-                      AI Budget Estimator
-                      <Sparkles className="w-4 h-4 text-yellow-500" />
-                    </h3>
+              <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-sm">
+                {/* Header */}
+                <div className="text-center mb-6">
+                  <div className="flex items-center justify-center mb-2">
+                    <Calculator className="w-8 h-8 text-orange-500" />
                   </div>
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
+                    AI Budget Estimator
+                    <span className="text-yellow-400">✨</span>
+                  </h2>
+                </div>
 
-                  {aiStep === 'input' && (
-                    <div className="space-y-4">
-                      {/* Group Size */}
-                      <div className="space-y-2">
-                        <Label htmlFor="ai-group-size" className="text-sm font-medium flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          Group Size
-                        </Label>
-                        <Input
-                          id="ai-group-size"
-                          type="number"
-                          min="1"
-                          max="20"
-                          value={aiGroupSize}
-                          onChange={(e) => setAiGroupSize(parseInt(e.target.value) || 1)}
-                          className="w-full"
-                          data-testid="input-ai-group-size"
-                        />
-                      </div>
+                {/* Group Size */}
+                <div className="mb-4">
+                  <Label htmlFor="group-size" className="text-sm font-medium flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4" />
+                    Group Size
+                  </Label>
+                  <Input
+                    id="group-size"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={aiGroupSize}
+                    onChange={(e) => setAiGroupSize(parseInt(e.target.value) || 1)}
+                    className="w-full h-12 text-lg"
+                    data-testid="input-group-size"
+                  />
+                </div>
 
-                      {/* Budget */}
-                      <div className="space-y-3">
-                        <Label htmlFor="ai-budget" className="text-sm font-medium flex items-center gap-2">
-                          <DollarSign className="w-4 h-4" />
-                          Total Budget (PKR)
-                        </Label>
-                        <Input
-                          id="ai-budget"
-                          type="number"
-                          min="500"
-                          step="100"
-                          value={aiBudget}
-                          onChange={(e) => setAiBudget(parseInt(e.target.value) || 500)}
-                          className="w-full"
-                          data-testid="input-ai-budget"
-                        />
-                        <p className="text-xs text-gray-600">
-                          About PKR {Math.round(aiBudget / aiGroupSize)} per person
-                        </p>
-                        
-                        {/* Popular Budget Suggestions */}
-                        <div className="bg-blue-50 p-2 rounded-lg">
-                          <div className="flex items-center gap-1 mb-2">
-                            <TrendingUp className="w-3 h-3 text-blue-600" />
-                            <span className="text-xs font-medium text-blue-800">Popular Ranges</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            {[
-                              { label: 'Light', amount: 1500 },
-                              { label: 'Standard', amount: 3000 },
-                              { label: 'Premium', amount: 6000 }
-                            ].map((option) => (
-                              <Button
-                                key={option.label}
-                                variant="outline"
-                                size="sm"
-                                className="h-auto p-1 flex flex-col items-center text-xs"
-                                onClick={() => setAiBudget(option.amount)}
-                              >
-                                <span className="font-medium text-xs">{option.label}</span>
-                                <span className="text-gray-600 text-xs">{option.amount}</span>
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                {/* Total Budget */}
+                <div className="mb-4">
+                  <Label htmlFor="budget" className="text-sm font-medium flex items-center gap-2 mb-2">
+                    <DollarSign className="w-4 h-4" />
+                    Total Budget (PKR)
+                  </Label>
+                  <Input
+                    id="budget"
+                    type="number"
+                    min="500"
+                    step="100"
+                    value={aiBudget}
+                    onChange={(e) => setAiBudget(parseInt(e.target.value) || 500)}
+                    className="w-full h-12 text-lg"
+                    data-testid="input-budget"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    About PKR {Math.round(aiBudget / aiGroupSize)} per person
+                  </p>
+                </div>
 
-                      {/* Category Selection */}
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium">Food Categories (Optional)</Label>
-                        <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
-                          {uniqueCategories.map(category => (
-                            <div key={category} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`ai-category-${category}`}
-                                checked={aiSelectedCategories.includes(category)}
-                                onCheckedChange={(checked) => handleAiCategoryToggle(category, checked as boolean)}
-                              />
-                              <Label htmlFor={`ai-category-${category}`} className="text-xs flex items-center gap-2">
-                                {getCategoryIcon(category)}
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Smart Tips Section */}
-                      <div className="bg-green-50 p-3 rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Lightbulb className="w-3 h-3 text-green-600" />
-                          <span className="text-xs font-medium text-green-800">Smart Tips</span>
-                        </div>
-                        <div className="space-y-1 text-xs text-green-700">
-                          <div className="flex items-start gap-1">
-                            <span className="w-1 h-1 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></span>
-                            <span>Budget 20% extra for drinks</span>
-                          </div>
-                          <div className="flex items-start gap-1">
-                            <span className="w-1 h-1 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></span>
-                            <span>Combo meals offer better value</span>
-                          </div>
-                          <div className="flex items-start gap-1">
-                            <span className="w-1 h-1 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></span>
-                            <span>Share family portions for groups 3+</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* How AI Works */}
-                      <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Info className="w-3 h-3 text-purple-600" />
-                          <span className="text-xs font-medium text-purple-800">How AI Works</span>
-                        </div>
-                        <div className="text-xs text-purple-700 space-y-1">
-                          <p>Our algorithm creates combinations that:</p>
-                          <div className="grid grid-cols-1 gap-1 ml-2">
-                            <span>• Maximize variety within budget</span>
-                            <span>• Balance nutrition and taste</span>
-                            <span>• Consider group sharing</span>
-                            <span>• Optimize value per person</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Generate Button */}
-                      <div className="pt-4">
-                        <Button
-                          onClick={handleGenerateAiSuggestions}
-                          className="w-full configurable-primary hover:configurable-primary-hover text-white py-3"
-                          disabled={aiGroupSize <= 0 || aiBudget <= 0}
-                          data-testid="button-generate-ai-suggestions"
-                        >
-                          <Bot className="w-4 h-4 mr-2" />
-                          Generate AI Suggestions
-                        </Button>
-                        <p className="text-xs text-gray-500 text-center mt-2">
-                          Get personalized meal combinations in seconds
-                        </p>
-                      </div>
+                {/* Popular Ranges */}
+                <div className="mb-6">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Popular Ranges</span>
                     </div>
-                  )}
-
-                  {aiStep === 'suggestions' && (
-                    <div className="space-y-4">
-                      {/* Summary */}
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <h4 className="font-semibold mb-2 text-sm">Your Request</h4>
-                        <div className="text-xs text-gray-600 space-y-1">
-                          <p>Group: {aiGroupSize} people</p>
-                          <p>Budget: PKR {aiBudget}</p>
-                          <p>Per person: PKR {Math.round(aiBudget / aiGroupSize)}</p>
-                        </div>
-                      </div>
-
-                      {/* AI Suggestions */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-bold">AI Recommendations</h4>
-                          <Badge className="configurable-primary text-white text-xs">
-                            PKR {totalSuggestedCost}
-                          </Badge>
-                        </div>
-
-                        {aiSuggestions.length === 0 ? (
-                          <Card>
-                            <CardContent className="p-4 text-center">
-                              <p className="text-xs text-gray-600">No combinations found within budget. Try increasing budget.</p>
-                            </CardContent>
-                          </Card>
-                        ) : (
-                          <div className="space-y-3 max-h-60 overflow-y-auto">
-                            {aiSuggestions.map((combo: any, index: number) => (
-                              <Card key={index} className="border hover:border-gray-300 transition-colors">
-                                <CardContent className="p-3">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    {combo.icon}
-                                    <span className="text-sm font-semibold">{combo.categoryName}</span>
-                                    <Badge variant="outline" className="text-xs">PKR {combo.totalPrice}</Badge>
-                                  </div>
-                                  <div className="space-y-1 mb-3">
-                                    {combo.items.map((item: any, itemIndex: number) => (
-                                      <div key={itemIndex} className="flex justify-between text-xs">
-                                        <span>{item.quantity}x {item.name}</span>
-                                        <span className="font-medium">PKR {item.price * item.quantity}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <Button
-                                    onClick={() => handleAddComboToCart(combo)}
-                                    className="w-full configurable-primary hover:configurable-primary-hover text-white text-xs py-2"
-                                    data-testid={`button-add-combo-${index}`}
-                                  >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    Add Combo
-                                  </Button>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Budget remaining */}
-                        {totalSuggestedCost < aiBudget && (
-                          <Card className="bg-green-50 border-green-200">
-                            <CardContent className="p-3">
-                              <div className="text-center">
-                                <p className="text-xs font-medium text-green-800">Budget Remaining</p>
-                                <p className="text-xs text-green-600">PKR {aiBudget - totalSuggestedCost} left</p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-                      </div>
-
-                      {/* Back Button */}
-                      <Button
-                        variant="outline"
-                        onClick={() => setAiStep('input')}
-                        className="w-full"
-                        data-testid="button-back-to-ai-input"
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        onClick={() => setAiBudget(1500)}
+                        className="bg-white border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors"
+                        data-testid="button-range-light"
                       >
-                        Back to Input
-                      </Button>
+                        <div className="font-medium text-gray-900">Light</div>
+                        <div className="text-lg font-bold text-blue-600">1500</div>
+                        <div className="text-xs text-gray-500">{Math.round(1500 / aiGroupSize)}</div>
+                      </button>
+                      <button
+                        onClick={() => setAiBudget(3000)}
+                        className="bg-white border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors"
+                        data-testid="button-range-standard"
+                      >
+                        <div className="font-medium text-gray-900">Standard</div>
+                        <div className="text-lg font-bold text-blue-600">3000</div>
+                        <div className="text-xs text-gray-500">{Math.round(3000 / aiGroupSize)}</div>
+                      </button>
+                      <button
+                        onClick={() => setAiBudget(6000)}
+                        className="bg-white border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors"
+                        data-testid="button-range-premium"
+                      >
+                        <div className="font-medium text-gray-900">Premium</div>
+                        <div className="text-lg font-bold text-blue-600">6000</div>
+                        <div className="text-xs text-gray-500">{Math.round(6000 / aiGroupSize)}</div>
+                      </button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                </div>
+
+                {/* Smart Tips */}
+                <div className="mb-6">
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Lightbulb className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">Smart Tips</span>
+                    </div>
+                    <div className="space-y-2 text-sm text-green-700">
+                      <div className="flex items-start gap-2">
+                        <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                        <span>Budget 20% extra for drinks</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                        <span>Combo meals offer better value</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                        <span>Share family portions for groups 3+</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* How AI Works */}
+                <div className="mb-6">
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Info className="w-4 h-4 text-purple-600" />
+                      <span className="text-sm font-medium text-purple-800">How AI Works</span>
+                    </div>
+                    <div className="text-sm text-purple-700">
+                      <p className="mb-2">Our algorithm creates combinations that:</p>
+                      <div className="space-y-1 text-xs">
+                        <p>• Maximize variety within budget</p>
+                        <p>• Balance nutrition and taste</p>
+                        <p>• Consider group sharing</p>
+                        <p>• Optimize price-per-person</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Generate Button */}
+                <Button
+                  onClick={handleGenerateBudgetEstimate}
+                  disabled={aiGroupSize <= 0 || aiBudget <= 0}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-lg font-medium"
+                  data-testid="button-generate-estimate"
+                >
+                  Generate AI Budget
+                </Button>
+              </div>
             </div>
           </div>
         </div>
