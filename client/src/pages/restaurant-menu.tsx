@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal, ApiMenuResponse } from "@/lib/mock-data";
-import { apiClient, BudgetEstimateRequest, BudgetEstimateResponse, BudgetOption, Allergen } from "@/lib/api-client";
+import { apiClient, BudgetEstimateRequest, BudgetEstimateResponse, BudgetOption } from "@/lib/api-client";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,8 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info, ChevronDown, Check } from "lucide-react";
+import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/navbar";
@@ -42,8 +41,6 @@ export default function RestaurantMenuPage() {
     setAddToCartModalOpen,
     setAiEstimatorModalOpen,
     addItem,
-    selectedAllergens,
-    setSelectedAllergens
   } = useCartStore();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -179,22 +176,6 @@ export default function RestaurantMenuPage() {
     }
   });
 
-  // Fetch allergens data
-  const { data: allergensResponse, isLoading: allergensLoading, error: allergensError } = useQuery({
-    queryKey: ['/api/Generic/allergens'],
-    queryFn: () => apiClient.getAllergens(),
-  });
-
-  const allergens = allergensResponse?.data || [];
-
-  // Handle allergen selection
-  const handleAllergenToggle = (allergenId: number) => {
-    const updatedAllergens = selectedAllergens.includes(allergenId)
-      ? selectedAllergens.filter(id => id !== allergenId)
-      : [...selectedAllergens, allergenId];
-    
-    setSelectedAllergens(updatedAllergens);
-  };
 
   const apiMenuData = menuData as ApiMenuResponse;
 
@@ -777,64 +758,6 @@ export default function RestaurantMenuPage() {
           </div>
         </section>
 
-        {/* Allergens Selection */}
-        <section className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <h3 className="font-semibold text-black text-base">Allergens to avoid:</h3>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="justify-between text-left font-normal min-w-60"
-                  data-testid="button-allergens-select"
-                >
-                  {selectedAllergens.length > 0 
-                    ? `${selectedAllergens.length} allergen${selectedAllergens.length > 1 ? 's' : ''} selected`
-                    : "Select allergens to avoid"
-                  }
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <div className="max-h-60 overflow-auto">
-                  {allergensLoading ? (
-                    <div className="p-4 text-center text-sm text-gray-500">Loading allergens...</div>
-                  ) : allergensError ? (
-                    <div className="p-4 text-center text-sm text-red-500">Failed to load allergens</div>
-                  ) : allergens.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-gray-500">No allergens available</div>
-                  ) : (
-                    <div className="p-2">
-                      {allergens.map((allergen: Allergen) => (
-                        <div
-                          key={allergen.id}
-                          className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          onClick={() => handleAllergenToggle(allergen.id)}
-                          data-testid={`checkbox-allergen-${allergen.id}`}
-                        >
-                          <Checkbox
-                            id={`allergen-${allergen.id}`}
-                            checked={selectedAllergens.includes(allergen.id)}
-                            onChange={() => handleAllergenToggle(allergen.id)}
-                          />
-                          <label 
-                            htmlFor={`allergen-${allergen.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                          >
-                            {allergen.name}
-                          </label>
-                          {selectedAllergens.includes(allergen.id) && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </section>
 
         {/* Split Layout: Menu Items Left, AI Estimator Right */}
         <div className="flex flex-col lg:flex-row gap-8 mb-12">
