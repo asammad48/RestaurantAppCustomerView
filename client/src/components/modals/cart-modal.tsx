@@ -1,40 +1,20 @@
-import { Minus, Plus, Trash2, ChevronDown, Check } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
 import { useAuthStore } from "@/lib/auth-store";
 import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/config";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient, Allergen } from "@/lib/api-client";
 
 export default function CartModal() {
-  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem, selectedBranch, specialInstructions, setSpecialInstructions, selectedAllergens, setSelectedAllergens } = useCartStore();
+  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem, selectedBranch, specialInstructions, setSpecialInstructions } = useCartStore();
   const { items, updateQuantity, clearCart, total } = useCart();
   const { user, setLoginModalOpen } = useAuthStore();
   const { toast } = useToast();
 
-  // Fetch allergens data
-  const { data: allergensResponse, isLoading: allergensLoading, error: allergensError } = useQuery({
-    queryKey: ['/api/Generic/allergens'],
-    queryFn: () => apiClient.getAllergens(),
-  });
-
-  const allergens = allergensResponse?.data || [];
-
-  // Handle allergen selection
-  const handleAllergenToggle = (allergenId: number) => {
-    const updatedAllergens = selectedAllergens.includes(allergenId)
-      ? selectedAllergens.filter(id => id !== allergenId)
-      : [...selectedAllergens, allergenId];
-    
-    setSelectedAllergens(updatedAllergens);
-  };
 
   // Debug logging for cart modal
   console.debug('🛒 Cart Modal: Rendering', {
@@ -382,62 +362,6 @@ export default function CartModal() {
             </div>
           </div>
 
-          {/* Allergens Selection */}
-          <div className="mt-6">
-            <h3 className="font-semibold text-black text-base mb-3">Allergens</h3>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between text-left font-normal"
-                  data-testid="button-allergens-select"
-                >
-                  {selectedAllergens.length > 0 
-                    ? `${selectedAllergens.length} allergen${selectedAllergens.length > 1 ? 's' : ''} selected`
-                    : "Select allergens to avoid"
-                  }
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <div className="max-h-60 overflow-auto">
-                  {allergensLoading ? (
-                    <div className="p-4 text-center text-sm text-gray-500">Loading allergens...</div>
-                  ) : allergensError ? (
-                    <div className="p-4 text-center text-sm text-red-500">Failed to load allergens</div>
-                  ) : allergens.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-gray-500">No allergens available</div>
-                  ) : (
-                    <div className="p-2">
-                      {allergens.map((allergen: Allergen) => (
-                        <div
-                          key={allergen.id}
-                          className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          onClick={() => handleAllergenToggle(allergen.id)}
-                          data-testid={`checkbox-allergen-${allergen.id}`}
-                        >
-                          <Checkbox
-                            id={`allergen-${allergen.id}`}
-                            checked={selectedAllergens.includes(allergen.id)}
-                            onChange={() => handleAllergenToggle(allergen.id)}
-                          />
-                          <label 
-                            htmlFor={`allergen-${allergen.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                          >
-                            {allergen.name}
-                          </label>
-                          {selectedAllergens.includes(allergen.id) && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
 
           {/* Special Instructions */}
           <div className="mt-6">
