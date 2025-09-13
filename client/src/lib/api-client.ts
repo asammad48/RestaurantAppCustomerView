@@ -151,6 +151,35 @@ export interface Allergen {
   name: string;
 }
 
+// Branch API Types
+export interface BranchByIdRequest {
+  branchId: number;
+}
+
+export interface BranchByIdResponse {
+  branchName: string;
+  rating: number;
+  deliveryTime: number;
+  deliveryFee: number;
+  maxDistanceForDelivery: number;
+  branchPicture: string;
+  branchAddress: string;
+  branchId: number;
+  branchOpenTime: string;
+  branchCloseTime: string;
+  isBranchClosed: boolean;
+  primaryColor: string;
+  branchLogo: string;
+  banner: string;
+  deliveryCharges: number;
+  minDeliveryAmount: number;
+  serviceCharges: number;
+  taxAppliedType: string;
+  taxPercentage: number;
+  maxDiscountAmount: number;
+  currency: string;
+}
+
 export interface ApiResponse<T = any> {
   data: T;
   status: number;
@@ -317,6 +346,11 @@ class ApiClient {
   // Allergens API method
   async getAllergens(): Promise<ApiResponse<Allergen[]>> {
     return this.get<Allergen[]>('/api/Generic/allergens');
+  }
+
+  // Branch API method
+  async getBranchById(requestData: BranchByIdRequest): Promise<ApiResponse<BranchByIdResponse>> {
+    return this.post<BranchByIdResponse>('/api/customer-search/get-branch-by-id', requestData);
   }
 }
 

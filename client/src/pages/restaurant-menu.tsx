@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal, ApiMenuResponse } from "@/lib/mock-data";
-import { apiClient, BudgetEstimateRequest, BudgetEstimateResponse, BudgetOption } from "@/lib/api-client";
+import { apiClient, BudgetEstimateRequest, BudgetEstimateResponse, BudgetOption, BranchByIdResponse } from "@/lib/api-client";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -60,9 +61,7 @@ export default function RestaurantMenuPage() {
   const itemsPerPage = 10;
 
   const queryClient = useQueryClient();
-
-  // Get currency code with fallback
-  const currencyCode = selectedBranch?.branchCurrency ?? 'PKR';
+  const { toast } = useToast();
 
   // Get URL parameters helper function
   const getUrlParams = () => {
@@ -100,7 +99,7 @@ export default function RestaurantMenuPage() {
   // Get branch ID dynamically - can come from:
   // 1. Selected branch (from takeaway/delivery flow)
   // 2. URL parameters (for direct access)
-  // 3. Default fallback (for QR code access)
+  // Note: No fallback to avoid showing wrong branch data
   const getBranchId = () => {
     // Check if branch is selected from the service flow
     if (selectedBranch?.branchId) {
@@ -114,13 +113,29 @@ export default function RestaurantMenuPage() {
       return parseInt(urlBranchId, 10);
     }
     
-    // Default fallback
-    return 1;
+    // No fallback - return null to prevent accidental wrong branch display
+    return null;
   };
 
   const restaurantId = getRestaurantId();
   const methodType = getMethodType();
   const branchId = getBranchId();
+
+  // API call to get branch information by ID
+  const { data: branchData, isLoading: isBranchLoading, error: branchError } = useQuery<BranchByIdResponse>({
+    queryKey: ['/api/customer-search/get-branch-by-id', branchId],
+    queryFn: async () => {
+      if (!branchId) {
+        throw new Error('Branch ID is required');
+      }
+      const response = await apiClient.getBranchById({ branchId });
+      return response.data;
+    },
+    enabled: !!branchId,
+  });
+
+  // Get currency code with fallback
+  const currencyCode = branchData?.currency ?? 'PKR';
 
   // Update URL when restaurant/method changes
   useEffect(() => {
@@ -184,17 +199,29 @@ export default function RestaurantMenuPage() {
 
   // Handle case where no restaurant is selected for QR code access
   useEffect(() => {
-    if (!selectedRestaurant && !selectedBranch && methodType !== 'qr') {
-      setLocation('/');
+    if (methodType !== 'qr') {
+      // Don't redirect while branch data is still loading
+      if (isBranchLoading) return;
+      
+      // Redirect if no context is available (no branchId and no selectedRestaurant)
+      if (!branchId && !selectedRestaurant) {
+        setLocation('/');
+        return;
+      }
+      
+      // Redirect if we have context but the branch query failed
+      if (!selectedRestaurant && branchError) {
+        setLocation('/');
+      }
     }
-  }, [selectedRestaurant, selectedBranch, methodType, setLocation]);
+  }, [selectedRestaurant, methodType, isBranchLoading, branchError, branchId, setLocation]);
 
   // Apply branch primary color when branch is selected
   useEffect(() => {
-    if (selectedBranch?.primaryColor) {
-      applyBranchPrimaryColor(selectedBranch.primaryColor);
+    if (branchData?.primaryColor) {
+      applyBranchPrimaryColor(branchData.primaryColor);
     }
-  }, [selectedBranch?.primaryColor]);
+  }, [branchData?.primaryColor]);
 
   // Get unique categories from menu items
   const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
@@ -220,6 +247,17 @@ export default function RestaurantMenuPage() {
   };
 
   const handleGenerateBudgetEstimate = () => {
+    // Guard against missing branchId
+    if (!branchId) {
+      console.error('🤖 GENERATE: Cannot generate estimate without branchId');
+      toast({
+        title: "Error",
+        description: "Unable to generate estimate. Please select a restaurant location.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const estimateRequest: BudgetEstimateRequest = {
       branchId,
       groupSize: aiGroupSize,
@@ -346,16 +384,16 @@ export default function RestaurantMenuPage() {
   };
 
   const getServiceInfo = () => {
-    if (selectedBranch) {
+    if (branchData) {
       return (
         <div className="space-y-2 text-sm text-gray-600">
           <div className="flex items-center">
             <Clock className="w-4 h-4 mr-2 configurable-primary-text" />
-            {selectedBranch.isBranchClosed ? 'Closed' : `Open: ${selectedBranch.branchOpenTime} - ${selectedBranch.branchCloseTime}`}
+            {branchData.isBranchClosed ? 'Closed' : `Open: ${branchData.branchOpenTime} - ${branchData.branchCloseTime}`}
           </div>
           <div className="flex items-start">
             <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 configurable-primary-text" />
-            <div className="text-gray-600">{selectedBranch.branchAddress}</div>
+            <div className="text-gray-600">{branchData.branchAddress}</div>
           </div>
         </div>
       );
@@ -616,6 +654,63 @@ export default function RestaurantMenuPage() {
     );
   };
 
+  // Handle QR mode with missing/invalid branchId
+  if (methodType === 'qr' && !branchId) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">Invalid or missing QR link</p>
+              <p className="text-gray-600 mb-4">Please rescan the QR code or contact the restaurant.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle loading state for branch data
+  if (isBranchLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading restaurant information...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error state for branch data  
+  if (branchError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">Failed to load restaurant information</p>
+              {methodType !== 'qr' ? (
+                <Button onClick={() => setLocation('/')} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  Go Back to Restaurants
+                </Button>
+              ) : (
+                <p className="text-gray-600">Please scan a valid QR code or contact the restaurant.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -641,19 +736,19 @@ export default function RestaurantMenuPage() {
               {methodType === 'takeaway' && (
                 <>
                   <Clock className="mr-3" size={20} />
-                  <span className="text-lg font-medium">Takeaway Order - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
+                  <span className="text-lg font-medium">Takeaway Order - {selectedRestaurant?.name || branchData?.branchName}</span>
                 </>
               )}
               {methodType === 'qr' && (
                 <>
                   <MapPin className="mr-3" size={20} />
-                  <span className="text-lg font-medium">Menu - {selectedBranch?.branchName || 'Restaurant'}</span>
+                  <span className="text-lg font-medium">Menu - {branchData?.branchName || 'Restaurant'}</span>
                 </>
               )}
               {(methodType === 'dine-in' || !methodType) && (
                 <>
                   <MapPin className="mr-3" size={20} />
-                  <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || selectedBranch?.branchName}</span>
+                  <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || branchData?.branchName}</span>
                 </>
               )}
             </div>
@@ -682,8 +777,8 @@ export default function RestaurantMenuPage() {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-6">
               <img
-                src={selectedBranch?.branchPicture ? getImageUrl(selectedBranch.branchPicture) : selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
-                alt={selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant'}
+                src={branchData?.branchPicture ? getImageUrl(branchData.branchPicture) : selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
+                alt={branchData?.branchName || selectedRestaurant?.name || 'Restaurant'}
                 className="w-full md:w-48 h-32 object-cover rounded-lg flex-shrink-0"
               />
               
@@ -691,12 +786,12 @@ export default function RestaurantMenuPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                      {selectedBranch?.branchName || selectedRestaurant?.name || 'Restaurant Menu'}
+                      {branchData?.branchName || selectedRestaurant?.name || 'Restaurant Menu'}
                     </h1>
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center">
                         <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
-                        <span className="font-medium">{selectedBranch?.rating || selectedRestaurant?.rating || '4.5'}</span>
+                        <span className="font-medium">{branchData?.rating || selectedRestaurant?.rating || '4.5'}</span>
                       </div>
                       {getServiceBadge()}
                     </div>
