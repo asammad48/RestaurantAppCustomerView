@@ -42,6 +42,7 @@ export default function RestaurantMenuPage() {
     setAddToCartModalOpen,
     setAiEstimatorModalOpen,
     setBranchCurrency,
+    branchCurrency,
     addItem,
   } = useCartStore();
   const [, setLocation] = useLocation();
