@@ -972,14 +972,18 @@ export default function RestaurantMenuPage() {
                       const perPersonCost = option.totalPeopleServed > 0 ? Math.round(option.totalCost / option.totalPeopleServed) : 0;
                       
                       return (
-                        <Card key={index} className="border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white dark:bg-gray-800 h-full flex flex-col">
-                          <CardHeader className="pb-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                              <h3 className="min-w-0 flex-1 text-base md:text-lg font-semibold leading-tight truncate text-gray-900 dark:text-gray-100" data-testid={`title-budget-option-${index}`}>
-                                Budget Option {index + 1}
-                              </h3>
+                        <Card key={index} className="relative border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white dark:bg-gray-800 h-full flex flex-col">
+                          {/* Numbered Badge in Top Left Corner */}
+                          <div className="absolute top-3 left-3 z-10">
+                            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold" data-testid={`badge-option-number-${index}`}>
+                              {index + 1}
+                            </div>
+                          </div>
+                          
+                          <CardHeader className="pb-4 pt-6">
+                            <div className="flex justify-end mb-3">
                               <Badge 
-                                className={`self-start sm:self-auto text-xs px-2 py-0.5 ${option.isWithinBudget 
+                                className={`text-xs px-2 py-0.5 ${option.isWithinBudget 
                                   ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300" 
                                   : "bg-red-100 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300"
                                 }`}
