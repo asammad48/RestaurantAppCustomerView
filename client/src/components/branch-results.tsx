@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Branch } from "@/types/branch";
 import { BranchService } from "@/services/branch-service";
+import { useCartStore } from "@/lib/store";
+import { formatBranchCurrency } from "@/lib/utils";
 
 interface BranchResultsProps {
   branches: Branch[];
@@ -13,6 +15,7 @@ interface BranchResultsProps {
 }
 
 export default function BranchResults({ branches, loading = false, onSelectBranch, serviceType = 'delivery' }: BranchResultsProps) {
+  const { branchCurrency } = useCartStore();
   const getButtonText = (service: string) => {
     switch (service) {
       case 'reservation':
@@ -109,7 +112,7 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
                 </div>
                 <div className="flex items-center">
                   <DollarSign className="w-3 h-3 mr-1" style={{ color: 'var(--color-primary)' }} />
-                  Fee: $3.99
+                  Fee: {formatBranchCurrency(3.99, branchCurrency)}
                 </div>
                 <div className="flex items-center">
                   <MapPin className="w-3 h-3 mr-1" style={{ color: 'var(--color-primary)' }} />

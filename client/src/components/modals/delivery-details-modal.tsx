@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MapPin, User, Mail, Phone, Clock, Navigation, Map } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { useAuthStore } from "@/lib/auth-store";
+import { formatBranchCurrency } from "@/lib/utils";
 import MapPickerModal from "./map-picker-modal";
 
 interface DeliveryDetails {
@@ -28,7 +29,8 @@ export default function DeliveryDetailsModal() {
     setPaymentModalOpen,
     selectedRestaurant,
     setDeliveryDetails,
-    deliveryDetails
+    deliveryDetails,
+    branchCurrency
   } = useCartStore();
   const { user } = useAuthStore();
 
@@ -200,7 +202,7 @@ export default function DeliveryDetailsModal() {
                 </div>
                 <div className="flex items-center">
                   <MapPin className="w-4 h-4 mr-2" />
-                  Delivery fee: PKR {selectedRestaurant.deliveryFee}
+                  Delivery fee: {formatBranchCurrency(parseFloat(selectedRestaurant.deliveryFee) || 0, branchCurrency)}
                 </div>
               </div>
             </div>

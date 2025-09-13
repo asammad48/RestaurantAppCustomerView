@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/lib/store";
+import { formatBranchCurrency } from "@/lib/utils";
 import { Users, DollarSign, Pizza, Sandwich, Coffee, ChefHat, Cake, Plus, Bot, Sparkles, Clock, TrendingUp, Info, Lightbulb } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
@@ -30,7 +31,7 @@ interface CategoryCombo {
 }
 
 export default function AiEstimatorModal() {
-  const { isAiEstimatorModalOpen, setAiEstimatorModalOpen, selectedBranch, addItem } = useCartStore();
+  const { isAiEstimatorModalOpen, setAiEstimatorModalOpen, selectedBranch, branchCurrency, addItem } = useCartStore();
   const [step, setStep] = useState<'input' | 'suggestions'>('input');
   
   // Form state
@@ -178,7 +179,7 @@ export default function AiEstimatorModal() {
             <div className="space-y-3">
               <Label htmlFor="budget" className="text-sm font-medium flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Total Budget (PKR)
+                Total Budget ({branchCurrency})
               </Label>
               <Input
                 id="budget"
@@ -191,7 +192,7 @@ export default function AiEstimatorModal() {
                 data-testid="input-budget"
               />
               <p className="text-sm text-gray-600">
-                About PKR {Math.round(budget / groupSize)} per person
+                About {formatBranchCurrency(Math.round(budget / groupSize), branchCurrency)} per person
               </p>
               
               {/* Popular Budget Suggestions */}
@@ -354,8 +355,8 @@ export default function AiEstimatorModal() {
               <h3 className="font-semibold mb-2">Your Request</h3>
               <div className="text-sm text-gray-600 space-y-1">
                 <p>Group size: {groupSize} people</p>
-                <p>Budget: PKR {budget}</p>
-                <p>Per person: PKR {Math.round(budget / groupSize)}</p>
+                <p>Budget: {formatBranchCurrency(budget, branchCurrency)}</p>
+                <p>Per person: {formatBranchCurrency(Math.round(budget / groupSize), branchCurrency)}</p>
                 {selectedCategories.length > 0 && (
                   <p>Categories: {selectedCategories.join(', ')}</p>
                 )}
@@ -369,7 +370,7 @@ export default function AiEstimatorModal() {
                     </p>
                   </div>
                   <p className="text-sm text-yellow-700 mt-1">
-                    Maximum allowed discount for each order: PKR {maxAllowedDiscount.toFixed(2)}
+                    Maximum allowed discount for each order: {formatBranchCurrency(maxAllowedDiscount, branchCurrency)}
                   </p>
                 </div>
               )}
@@ -395,7 +396,7 @@ export default function AiEstimatorModal() {
                 <p>Branch ID: {branchId}</p>
                 <p>Menu Items: {apiMenuData?.menuItems?.length || 0}</p>
                 <p>Deals: {apiMenuData?.deals?.length || 0}</p>
-                <p>Budget: PKR {budget}, Group: {groupSize}</p>
+                <p>Budget: {formatBranchCurrency(budget, branchCurrency)}, Group: {groupSize}</p>
                 <p>Categories: {selectedCategories.length > 0 ? selectedCategories.join(', ') : 'All'}</p>
               </div>
 
@@ -408,17 +409,22 @@ export default function AiEstimatorModal() {
               ) : (
                 <div className="grid gap-4">
                   {budgetOptions.map((option, index) => (
-                    <Card key={index} className="border-2 hover:border-gray-300 transition-colors">
-                      <CardHeader className="pb-3">
+                    <Card key={index} className="border-2 hover:border-gray-300 transition-colors relative">
+                      {/* Option Number Badge in Top Left Corner */}
+                      <div className="absolute top-3 left-3 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold z-10">
+                        {index + 1}
+                      </div>
+                      <CardHeader className="pb-3 pt-6 pl-16">
                         <CardTitle className="flex items-center gap-2 text-lg">
-                          <ChefHat className="w-5 h-5" />
-                          Option {index + 1}
                           <Badge variant="outline" className={option.isWithinBudget ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}>
-                            PKR {option.totalCost}
+                            {option.isWithinBudget ? 'Within Budget' : 'Over Budget'}
                           </Badge>
                         </CardTitle>
+                        <div className="text-lg font-semibold text-gray-900">
+                          {formatBranchCurrency(option.totalCost, branchCurrency)}
+                        </div>
                         <div className="text-sm text-gray-600">
-                          Serves {option.totalPeopleServed} people • PKR {Math.round(option.totalCost / option.totalPeopleServed)} per person
+                          Serves {option.totalPeopleServed} people • {formatBranchCurrency(Math.round(option.totalCost / option.totalPeopleServed), branchCurrency)} per person
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
@@ -434,7 +440,7 @@ export default function AiEstimatorModal() {
                                     {item.variations[0]?.name} • {item.categoryName}
                                   </div>
                                 </div>
-                                <span className="font-medium">PKR {item.variations[0]?.price * item.variations[0]?.quantity}</span>
+                                <span className="font-medium">{formatBranchCurrency(item.variations[0]?.price * item.variations[0]?.quantity, branchCurrency)}</span>
                               </div>
                             ))}
                           </div>
@@ -455,7 +461,7 @@ export default function AiEstimatorModal() {
                                     Deal includes multiple items
                                   </div>
                                 </div>
-                                <span className="font-medium">PKR {packageItem.price}</span>
+                                <span className="font-medium">{formatBranchCurrency(packageItem.price, branchCurrency)}</span>
                               </div>
                             ))}
                           </div>
@@ -482,11 +488,11 @@ export default function AiEstimatorModal() {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="font-medium text-blue-800">Your Budget</p>
-                        <p className="text-blue-600">PKR {budget}</p>
+                        <p className="text-blue-600">{formatBranchCurrency(budget, branchCurrency)}</p>
                       </div>
                       <div>
                         <p className="font-medium text-blue-800">Best Option</p>
-                        <p className="text-blue-600">PKR {Math.min(...budgetOptions.map(o => o.totalCost))}</p>
+                        <p className="text-blue-600">{formatBranchCurrency(Math.min(...budgetOptions.map(o => o.totalCost)), branchCurrency)}</p>
                       </div>
                     </div>
                   </CardContent>
