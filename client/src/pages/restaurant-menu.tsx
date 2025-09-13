@@ -982,7 +982,7 @@ export default function RestaurantMenuPage() {
                           
                           <CardHeader className="pb-3 pt-8 px-4">
                             {/* Status Badge and Price Section */}
-                            <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center justify-between mb-3">
                               <div className="text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid={`price-total-${index}`}>
                                 {formatBranchCurrency(option.totalCost, branchCurrency)}
                               </div>
