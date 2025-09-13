@@ -29,7 +29,7 @@ import ThemeSwitcher from "@/components/theme-switcher";
 import FoodCard from "@/components/food-card";
 import { getImageUrl } from "@/lib/config";
 import { applyBranchPrimaryColor } from "@/lib/colors";
-import { formatToLocalTime } from '@/lib/utils';
+import { formatToLocalTime, formatBranchCurrency } from '@/lib/utils';
 
 export default function RestaurantMenuPage() {
   const { 
@@ -60,6 +60,9 @@ export default function RestaurantMenuPage() {
   const itemsPerPage = 10;
 
   const queryClient = useQueryClient();
+
+  // Get currency code with fallback
+  const currencyCode = selectedBranch?.branchCurrency ?? 'PKR';
 
   // Get URL parameters helper function
   const getUrlParams = () => {
@@ -369,7 +372,7 @@ export default function RestaurantMenuPage() {
               </div>
               <div className="flex items-center">
                 <DollarSign className="w-4 h-4 mr-2 configurable-primary-text" />
-                Delivery Fee: PKR {selectedRestaurant.deliveryFee}
+                Delivery Fee: {formatBranchCurrency(Number(selectedRestaurant.deliveryFee) || 0, currencyCode)}
               </div>
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2 configurable-primary-text" />
@@ -587,15 +590,15 @@ export default function RestaurantMenuPage() {
                 {hasDiscount ? (
                   <>
                     <span className="text-lg font-bold configurable-text-primary">
-                      PKR {formatPrice(discountedPrice)}
+                      {formatBranchCurrency(Number(discountedPrice) || 0, currencyCode)}
                     </span>
                     <span className="text-sm text-gray-500 line-through">
-                      PKR {formatPrice(deal.price)}
+                      {formatBranchCurrency(Number(deal.price) || 0, currencyCode)}
                     </span>
                   </>
                 ) : (
                   <span className="text-lg font-bold configurable-text-primary">
-                    PKR {formatPrice(deal.price)}
+                    {formatBranchCurrency(Number(deal.price) || 0, currencyCode)}
                   </span>
                 )}
               </div>
@@ -887,7 +890,7 @@ export default function RestaurantMenuPage() {
                             {/* Price and Serves Info */}
                             <div className="space-y-2">
                               <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid={`price-total-${index}`}>
-                                PKR {option.totalCost}
+                                {formatBranchCurrency(option.totalCost, currencyCode)}
                               </div>
                               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600 dark:text-gray-400">
                                 <span className="flex items-center" data-testid={`serves-info-${index}`}>
@@ -897,7 +900,7 @@ export default function RestaurantMenuPage() {
                                 {perPersonCost > 0 && (
                                   <span className="flex items-center" data-testid={`per-person-cost-${index}`}>
                                     <DollarSign className="w-4 h-4 mr-1 flex-shrink-0" />
-                                    PKR {perPersonCost} / person
+                                    {formatBranchCurrency(perPersonCost, currencyCode)} / person
                                   </span>
                                 )}
                               </div>
@@ -916,7 +919,7 @@ export default function RestaurantMenuPage() {
                                   {option.menuPackages.map((pkg, pkgIndex) => (
                                     <div key={pkgIndex} className="flex justify-between items-center text-sm">
                                       <span className="text-gray-700 dark:text-gray-300">{pkg.name}</span>
-                                      <span className="font-semibold text-gray-900 dark:text-gray-100">PKR {pkg.price}</span>
+                                      <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBranchCurrency(Number(pkg.price) || 0, currencyCode)}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -944,7 +947,7 @@ export default function RestaurantMenuPage() {
                                         </div>
                                       </div>
                                       <span className="font-semibold text-gray-900 dark:text-gray-100">
-                                        PKR {item.variations[0]?.price}
+                                        {formatBranchCurrency(item.variations[0]?.price || 0, currencyCode)}
                                       </span>
                                     </div>
                                   ))}
@@ -1088,7 +1091,7 @@ export default function RestaurantMenuPage() {
                     <div className="w-8 h-8 bg-[var(--configurable-primary-alpha-10)] rounded-lg flex items-center justify-center">
                       <DollarSign className="w-4 h-4 text-[var(--color-primary)]" />
                     </div>
-                    <span>Total Budget (PKR)</span>
+                    <span>Total Budget ({currencyCode})</span>
                   </div>
                   <Input
                     type="number"
@@ -1101,7 +1104,7 @@ export default function RestaurantMenuPage() {
                   />
                   <div className="flex items-center justify-center gap-2 text-sm text-slate-500 bg-white/60 rounded-lg py-2 px-3">
                     <span className="w-1.5 h-1.5 bg-[var(--color-primary)] rounded-full"></span>
-                    <span>PKR {Math.round(aiBudget / aiGroupSize)} per person</span>
+                    <span>{formatBranchCurrency(Math.round(aiBudget / aiGroupSize), currencyCode)} per person</span>
                   </div>
                 </div>
 
