@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store";
 import { getImageUrl } from "@/lib/config";
+import { formatBranchCurrency } from "@/lib/utils";
 
 interface FoodCardProps {
   item: MenuItem | ApiMenuItem;
@@ -13,7 +14,7 @@ interface FoodCardProps {
 }
 
 export default function FoodCard({ item, variant = "grid", isRecommended = false, className = "" }: FoodCardProps) {
-  const { addItem, setAddToCartModalOpen, setLastAddedItem } = useCartStore();
+  const { addItem, setAddToCartModalOpen, setLastAddedItem, branchCurrency } = useCartStore();
   
   // Helper functions to work with both old and new API data
   const isApiMenuItem = (item: any): item is ApiMenuItem => {
@@ -165,11 +166,11 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
             <div className="flex flex-col">
               {discountPercentage > 0 ? (
                 <>
-                  <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {discountedPrice.toFixed(2)}</span>
-                  <span className="text-sm text-gray-400 line-through">Rs. {originalPrice.toFixed(2)}</span>
+                  <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(discountedPrice, branchCurrency)}</span>
+                  <span className="text-sm text-gray-400 line-through">{formatBranchCurrency(originalPrice, branchCurrency)}</span>
                 </>
               ) : (
-                <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {totalPrice.toFixed(2)}</span>
+                <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(totalPrice, branchCurrency)}</span>
               )}
             </div>
             <Button onClick={handleAddToCart} className="configurable-primary text-white hover:configurable-primary-hover">
@@ -206,11 +207,11 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
             <div className="flex flex-col">
               {discountPercentage > 0 ? (
                 <>
-                  <span className="text-sm font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {discountedPrice.toFixed(2)}</span>
-                  <span className="text-xs text-gray-400 line-through">Rs. {originalPrice.toFixed(2)}</span>
+                  <span className="text-sm font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(discountedPrice, branchCurrency)}</span>
+                  <span className="text-xs text-gray-400 line-through">{formatBranchCurrency(originalPrice, branchCurrency)}</span>
                 </>
               ) : (
-                <span className="text-sm font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {totalPrice.toFixed(2)}</span>
+                <span className="text-sm font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(totalPrice, branchCurrency)}</span>
               )}
             </div>
             <Button 
@@ -271,11 +272,11 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
           <div className="flex flex-col">
             {discountPercentage > 0 ? (
               <>
-                <span className="text-lg font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {discountedPrice.toFixed(2)}</span>
-                <span className="text-xs text-gray-400 line-through">Rs. {originalPrice.toFixed(2)}</span>
+                <span className="text-lg font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(discountedPrice, branchCurrency)}</span>
+                <span className="text-xs text-gray-400 line-through">{formatBranchCurrency(originalPrice, branchCurrency)}</span>
               </>
             ) : (
-              <span className="text-lg font-bold" style={{ color: 'var(--configurable-primary)' }}>Rs. {totalPrice.toFixed(2)}</span>
+              <span className="text-lg font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(totalPrice, branchCurrency)}</span>
             )}
           </div>
           <Button 

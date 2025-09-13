@@ -6,10 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal } from "@/lib/mock-data";
-import { formatToLocalTime } from '@/lib/utils';
+import { formatToLocalTime, formatBranchCurrency } from '@/lib/utils';
 
 export default function AddToCartModal() {
-  const { isAddToCartModalOpen, setAddToCartModalOpen, addItem, lastAddedItem, selectedBranch } = useCartStore();
+  const { isAddToCartModalOpen, setAddToCartModalOpen, addItem, lastAddedItem, selectedBranch, branchCurrency } = useCartStore();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
   const [selectedModifiers, setSelectedModifiers] = useState<{[key: number]: number}>({});
@@ -181,7 +181,7 @@ export default function AddToCartModal() {
         {deal.maxAllowedAmount && deal.maxAllowedAmount > 0 && (
           <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
             <p className="text-sm font-medium text-blue-800">
-              Max Allowed discount for the Order is PKR {deal.maxAllowedAmount.toFixed(2)}
+              Max Allowed discount for the Order is {formatBranchCurrency(deal.maxAllowedAmount, branchCurrency)}
             </p>
           </div>
         )}
@@ -257,13 +257,13 @@ export default function AddToCartModal() {
                  (deal.discount && deal.discount.value > 0) ? (
                   <div className="flex items-center space-x-2">
                     <span className="font-bold configurable-primary-text">
-                      PKR {(deal.discountedPrice || 
-                            calculateDiscountedPrice(deal.price, deal.discount?.value || 0)).toFixed(2)}
+                      {formatBranchCurrency(deal.discountedPrice || 
+                            calculateDiscountedPrice(deal.price, deal.discount?.value || 0), branchCurrency)}
                     </span>
-                    <span className="text-gray-500 line-through text-xs">PKR {deal.price.toFixed(2)}</span>
+                    <span className="text-gray-500 line-through text-xs">{formatBranchCurrency(deal.price, branchCurrency)}</span>
                   </div>
                 ) : (
-                  <span className="font-bold configurable-text-primary">PKR {deal.price.toFixed(2)}</span>
+                  <span className="font-bold configurable-text-primary">{formatBranchCurrency(deal.price, branchCurrency)}</span>
                 )}
               </div>
             </div>
@@ -287,7 +287,7 @@ export default function AddToCartModal() {
         {menuItem.maxAllowedAmount && menuItem.maxAllowedAmount > 0 && (
           <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
             <p className="text-sm font-medium text-blue-800">
-              Max Allowed discount for the Order is PKR {menuItem.maxAllowedAmount.toFixed(2)}
+              Max Allowed discount for the Order is {formatBranchCurrency(menuItem.maxAllowedAmount, branchCurrency)}
             </p>
           </div>
         )}
@@ -315,13 +315,13 @@ export default function AddToCartModal() {
                        (menuItem.discount && menuItem.discount.value > 0) ? (
                         <div className="flex items-center space-x-2">
                           <span className="font-bold configurable-primary-text">
-                            PKR {(variation.discountedPrice || 
-                                  calculateDiscountedPrice(variation.price, menuItem.discount?.value || 0)).toFixed(2)}
+                            {formatBranchCurrency((variation.discountedPrice || 
+                                  calculateDiscountedPrice(variation.price, menuItem.discount?.value || 0)), branchCurrency)}
                           </span>
-                          <span className="text-gray-500 line-through text-xs">PKR {variation.price.toFixed(2)}</span>
+                          <span className="text-gray-500 line-through text-xs">{formatBranchCurrency(variation.price, branchCurrency)}</span>
                         </div>
                       ) : (
-                        <span className="font-bold">PKR {variation.price.toFixed(2)}</span>
+                        <span className="font-bold">{formatBranchCurrency(variation.price, branchCurrency)}</span>
                       )}
                     </div>
                   </div>
@@ -343,7 +343,7 @@ export default function AddToCartModal() {
                 <div key={modifier.id} className="flex items-center justify-between py-2">
                   <span className="text-sm">{modifier.name}</span>
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium">PKR {modifier.price.toFixed(2)}</span>
+                    <span className="text-sm font-medium">{formatBranchCurrency(modifier.price, branchCurrency)}</span>
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => updateModifierQuantity(modifier.id, -1)}
@@ -392,7 +392,7 @@ export default function AddToCartModal() {
                       <div className="flex justify-between items-center">
                         <span>{option.name}</span>
                         {option.price > 0 && (
-                          <span className="text-xs font-medium">+PKR {option.price.toFixed(2)}</span>
+                          <span className="text-xs font-medium">+{formatBranchCurrency(option.price, branchCurrency)}</span>
                         )}
                       </div>
                     </button>
@@ -421,7 +421,7 @@ export default function AddToCartModal() {
           {selectedBranch?.maxDiscountAmount && selectedBranch.maxDiscountAmount > 0 && (
             <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
               <p className="text-sm font-medium text-yellow-800">
-                Max Discount Allowed limit is PKR {selectedBranch.maxDiscountAmount.toFixed(2)}
+                Max Discount Allowed limit is {formatBranchCurrency(selectedBranch.maxDiscountAmount, branchCurrency)}
               </p>
             </div>
           )}
@@ -447,7 +447,7 @@ export default function AddToCartModal() {
               onClick={handleAddToCart}
               className="configurable-primary hover:configurable-primary-hover text-white px-8 py-3 rounded-lg font-medium"
             >
-              PKR {getTotalPrice().toFixed(2)} Add to cart
+              {formatBranchCurrency(getTotalPrice(), branchCurrency)} Add to cart
             </Button>
           </div>
         </div>

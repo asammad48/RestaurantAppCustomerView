@@ -12,9 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/config";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient, Allergen } from "@/lib/api-client";
+import { formatBranchCurrency } from "@/lib/utils";
 
 export default function CartModal() {
-  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem, selectedBranch, specialInstructions, setSpecialInstructions, selectedAllergens, setSelectedAllergens } = useCartStore();
+  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem, selectedBranch, branchCurrency, specialInstructions, setSpecialInstructions, selectedAllergens, setSelectedAllergens } = useCartStore();
   const { items, updateQuantity, clearCart, total } = useCart();
   const { user, setLoginModalOpen } = useAuthStore();
   const { toast } = useToast();
@@ -210,7 +211,7 @@ export default function CartModal() {
                         <h5 className="text-sm font-medium text-black">Variation</h5>
                         <p className="text-sm text-gray-600">{item.variantName || item.variation}</p>
                         {item.variantPrice && (
-                          <p className="text-xs text-gray-500">PKR {item.variantPrice} each</p>
+                          <p className="text-xs text-gray-500">{formatBranchCurrency(item.variantPrice, branchCurrency)} each</p>
                         )}
                       </div>
                     )}
@@ -226,7 +227,7 @@ export default function CartModal() {
                             return modifier && qty > 0 ? (
                               <p key={modifierId}>
                                 {qty}x {modifier.name} 
-                                <span className="text-xs text-gray-500 ml-1">(+PKR {modifier.price * qty})</span>
+                                <span className="text-xs text-gray-500 ml-1">(+{formatBranchCurrency(modifier.price * qty, branchCurrency)})</span>
                               </p>
                             ) : null;
                           })}
@@ -279,14 +280,14 @@ export default function CartModal() {
                       if (discountPercentage > 0) {
                         return (
                           <div>
-                            <div className="text-sm text-gray-500 line-through">Rs. {originalTotalPrice.toFixed(2)}</div>
-                            <div className="text-lg font-bold text-black">Rs. {discountedTotalPrice.toFixed(2)}</div>
+                            <div className="text-sm text-gray-500 line-through">{formatBranchCurrency(originalTotalPrice, branchCurrency)}</div>
+                            <div className="text-lg font-bold text-black">{formatBranchCurrency(discountedTotalPrice, branchCurrency)}</div>
                             <div className="text-xs text-green-600">{discountPercentage}% OFF</div>
                           </div>
                         );
                       } else {
                         return (
-                          <div className="text-lg font-bold text-black">Rs. {originalTotalPrice.toFixed(2)}</div>
+                          <div className="text-lg font-bold text-black">{formatBranchCurrency(originalTotalPrice, branchCurrency)}</div>
                         );
                       }
                     })()}
@@ -342,27 +343,27 @@ export default function CartModal() {
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-black">Sub Total</span>
-                <span className="text-black font-medium">RS. {subtotal.toFixed(2)}</span>
+                <span className="text-black font-medium">{formatBranchCurrency(subtotal, branchCurrency)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-black">Service Charges</span>
-                <span className="text-black font-medium">RS. {serviceCharge.toFixed(2)}</span>
+                <span className="text-black font-medium">{formatBranchCurrency(serviceCharge, branchCurrency)}</span>
               </div>
               {deliveryCharge > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-black">Delivery Charges</span>
-                  <span className="text-black font-medium">RS. {deliveryCharge.toFixed(2)}</span>
+                  <span className="text-black font-medium">{formatBranchCurrency(deliveryCharge, branchCurrency)}</span>
                 </div>
               )}
               {discountAmount > 0 && (
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
                     <span className="text-black configurable-primary-text">Discount</span>
-                    <span className="text-black font-medium configurable-primary-text">-RS. {discountAmount.toFixed(2)}</span>
+                    <span className="text-black font-medium configurable-primary-text">-{formatBranchCurrency(discountAmount, branchCurrency)}</span>
                   </div>
                   {branchMaxDiscount > 0 && calculatedDiscount > branchMaxDiscount && (
                     <div className="text-xs text-gray-500 pl-2">
-                      Original discount was RS. {calculatedDiscount.toFixed(2)}, but restaurant has added a limit on discount
+                      Original discount was {formatBranchCurrency(calculatedDiscount, branchCurrency)}, but restaurant has added a limit on discount
                     </div>
                   )}
                 </div>
@@ -370,13 +371,13 @@ export default function CartModal() {
               {taxAmount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-black">Tax ({taxPercentage}%)</span>
-                  <span className="text-black font-medium">RS. {taxAmount.toFixed(2)}</span>
+                  <span className="text-black font-medium">{formatBranchCurrency(taxAmount, branchCurrency)}</span>
                 </div>
               )}
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between">
                   <span className="text-black font-bold text-base">Grand Total</span>
-                  <span className="text-black font-bold text-base">RS. {grandTotal.toFixed(2)}</span>
+                  <span className="text-black font-bold text-base">{formatBranchCurrency(grandTotal, branchCurrency)}</span>
                 </div>
               </div>
             </div>

@@ -88,6 +88,7 @@ interface CartStore {
   serviceType: ServiceType;
   selectedRestaurant: Restaurant | null;
   selectedBranch: Branch | null;
+  branchCurrency: string; // Current branch currency code
   userLocation: string;
   deliveryDetails: DeliveryDetails | null;
   takeawayDetails: TakeawayDetails | null;
@@ -134,6 +135,7 @@ interface CartStore {
   setServiceType: (type: ServiceType) => void;
   setSelectedRestaurant: (restaurant: Restaurant | null) => void;
   setSelectedBranch: (branch: Branch | null) => void;
+  setBranchCurrency: (currency: string) => void;
   setUserLocation: (location: string) => void;
   setOrderResponse: (response: OrderResponse | null) => void;
 }
@@ -147,6 +149,7 @@ export const useCartStore = create<CartStore>()(
       serviceType: 'qr',
       selectedRestaurant: null,
       selectedBranch: null,
+      branchCurrency: 'PKR',
       userLocation: '',
       deliveryDetails: null,
       takeawayDetails: null,
@@ -336,6 +339,7 @@ export const useCartStore = create<CartStore>()(
   setServiceType: (type: ServiceType) => set({ serviceType: type }),
   setSelectedRestaurant: (restaurant: Restaurant | null) => set({ selectedRestaurant: restaurant }),
   setSelectedBranch: (branch: Branch | null) => set({ selectedBranch: branch }),
+  setBranchCurrency: (currency: string) => set({ branchCurrency: currency }),
   setUserLocation: (location: string) => set({ userLocation: location }),
   setOrderResponse: (response: OrderResponse | null) => set({ orderResponse: response }),
     }),

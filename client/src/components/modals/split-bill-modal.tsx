@@ -11,6 +11,7 @@ import { orderService } from "@/services/order-service";
 import { useAuthStore } from "@/lib/auth-store";
 import { useToast } from "@/hooks/use-toast";
 import { ApiError, SplitBill } from "@/lib/api-client";
+import { formatBranchCurrency } from "@/lib/utils";
 
 export default function SplitBillModal() {
   const { 
@@ -25,7 +26,8 @@ export default function SplitBillModal() {
     takeawayDetails,
     specialInstructions,
     setOrderResponse,
-    setOrderConfirmationOpen 
+    setOrderConfirmationOpen,
+    branchCurrency 
   } = useCartStore();
   const { items, total } = useCart();
   const { user, setLoginModalOpen } = useAuthStore();
@@ -250,7 +252,7 @@ export default function SplitBillModal() {
                   </Button>
                 </div>
                 <p className="text-lg font-semibold configurable-text-primary">
-                  Each Pays: Rs. {perPersonAmount.toFixed(2)}
+                  Each Pays: {formatBranchCurrency(perPersonAmount, branchCurrency)}
                 </p>
               </div>
               
@@ -277,7 +279,7 @@ export default function SplitBillModal() {
                   <div key={item.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium configurable-text-primary">{item.name}</span>
-                      <span className="font-bold configurable-text-primary">Rs. {(parseFloat(item.price.toString()) * item.quantity).toFixed(2)}</span>
+                      <span className="font-bold configurable-text-primary">{formatBranchCurrency(parseFloat(item.price.toString()) * item.quantity, branchCurrency)}</span>
                     </div>
                     <Input
                       type="tel"
