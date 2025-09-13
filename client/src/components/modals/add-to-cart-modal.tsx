@@ -178,10 +178,10 @@ export default function AddToCartModal() {
     return (
       <div className="space-y-4">
         {/* Max Allowed Amount Note */}
-        {deal.maxAllowedAmount && deal.maxAllowedAmount > 0 && (
+        {(deal.maxAllowedAmount ?? 0) > 0 && (
           <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
             <p className="text-sm font-medium text-blue-800">
-              Max Allowed discount for the Order is {formatBranchCurrency(deal.maxAllowedAmount, branchCurrency)}
+              Max Allowed discount for the Order is {formatBranchCurrency(deal.maxAllowedAmount || 0, branchCurrency)}
             </p>
           </div>
         )}
@@ -284,10 +284,10 @@ export default function AddToCartModal() {
     return (
       <div className="space-y-4">
         {/* Max Allowed Amount Note */}
-        {menuItem.maxAllowedAmount && menuItem.maxAllowedAmount > 0 && (
+        {(menuItem.maxAllowedAmount ?? 0) > 0 && (
           <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
             <p className="text-sm font-medium text-blue-800">
-              Max Allowed discount for the Order is {formatBranchCurrency(menuItem.maxAllowedAmount, branchCurrency)}
+              Max Allowed discount for the Order is {formatBranchCurrency(menuItem.maxAllowedAmount || 0, branchCurrency)}
             </p>
           </div>
         )}
@@ -418,10 +418,10 @@ export default function AddToCartModal() {
           {lastAddedItem && isMenuItem(lastAddedItem) && renderMenuItemContent(lastAddedItem)}
 
           {/* Max Discount Limit Note */}
-          {selectedBranch?.maxDiscountAmount && selectedBranch.maxDiscountAmount > 0 && (
+          {(selectedBranch?.maxDiscountAmount ?? 0) > 0 && (
             <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
               <p className="text-sm font-medium text-yellow-800">
-                Max Discount Allowed limit is {formatBranchCurrency(selectedBranch.maxDiscountAmount, branchCurrency)}
+                Max Discount Allowed limit is {formatBranchCurrency(selectedBranch?.maxDiscountAmount || 0, branchCurrency)}
               </p>
             </div>
           )}
