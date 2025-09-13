@@ -199,6 +199,23 @@ export default function RestaurantMenuPage() {
   const categories = ["all", ...uniqueCategories];
 
   // AI Budget Estimation handlers
+  const getCategoryIcon = (categoryName: string) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('pizza')) return <Pizza className="w-4 h-4" />;
+    if (name.includes('burger')) return <Sandwich className="w-4 h-4" />;
+    if (name.includes('drink') || name.includes('beverage')) return <Coffee className="w-4 h-4" />;
+    if (name.includes('dessert') || name.includes('sweet')) return <Cake className="w-4 h-4" />;
+    return <ChefHat className="w-4 h-4" />;
+  };
+
+  const handleAiCategoryToggle = (category: string, checked: boolean) => {
+    if (checked) {
+      setAiSelectedCategories(prev => [...prev, category]);
+    } else {
+      setAiSelectedCategories(prev => prev.filter(c => c !== category));
+    }
+  };
+
   const handleGenerateBudgetEstimate = () => {
     const estimateRequest: BudgetEstimateRequest = {
       branchId,
@@ -411,24 +428,6 @@ export default function RestaurantMenuPage() {
   const handleAddDealToCart = (deal: ApiDeal) => {
     setLastAddedItem(deal);
     setAddToCartModalOpen(true);
-  };
-
-  // AI Estimator helper functions
-  const getCategoryIcon = (categoryName: string) => {
-    const name = categoryName.toLowerCase();
-    if (name.includes('pizza')) return <Pizza className="w-4 h-4" />;
-    if (name.includes('burger')) return <Sandwich className="w-4 h-4" />;
-    if (name.includes('drink') || name.includes('beverage')) return <Coffee className="w-4 h-4" />;
-    if (name.includes('dessert') || name.includes('sweet')) return <Cake className="w-4 h-4" />;
-    return <ChefHat className="w-4 h-4" />;
-  };
-
-  const handleAiCategoryToggle = (category: string, checked: boolean) => {
-    if (checked) {
-      setAiSelectedCategories(prev => [...prev, category]);
-    } else {
-      setAiSelectedCategories(prev => prev.filter(c => c !== category));
-    }
   };
 
   const generateAiSuggestions = () => {
@@ -1002,13 +1001,13 @@ export default function RestaurantMenuPage() {
           {/* Right Side - AI Estimator Panel (Desktop Only) */}
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-4">
-              <div className="bg-gradient-to-br from-slate-50 to-[var(--configurable-primary-light-alpha-10)] border border-slate-200/60 backdrop-blur-sm rounded-2xl shadow-xl shadow-slate-900/5 p-6 space-y-6">
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-6 space-y-6">
                 {/* Header */}
                 <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] rounded-2xl mb-4 shadow-lg">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] rounded-2xl mb-4 shadow-lg">
                     <Sparkles className="w-7 h-7 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                  <h2 className="text-2xl font-bold text-[var(--color-primary)]">
                     AI Budget Estimator
                   </h2>
                   <p className="text-sm text-slate-500 mt-1">Smart recommendations for your perfect meal</p>
@@ -1056,6 +1055,37 @@ export default function RestaurantMenuPage() {
                   </div>
                 </div>
 
+                {/* Categories */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-700 font-medium">
+                    <div className="w-8 h-8 bg-[var(--configurable-primary-alpha-10)] rounded-lg flex items-center justify-center">
+                      <ChefHat className="w-4 h-4 text-[var(--color-primary)]" />
+                    </div>
+                    <span>Food Categories</span>
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {uniqueCategories.map(category => (
+                      <div key={category} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`ai-category-${category}`}
+                          checked={aiSelectedCategories.includes(category)}
+                          onCheckedChange={(checked) => handleAiCategoryToggle(category, checked as boolean)}
+                          data-testid={`checkbox-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                        />
+                        <Label htmlFor={`ai-category-${category}`} className="text-sm flex items-center gap-2 cursor-pointer flex-1">
+                          {getCategoryIcon(category)}
+                          <span className="text-slate-700">{category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {aiSelectedCategories.length > 0 && (
+                    <div className="text-xs text-[var(--color-primary)] bg-[var(--configurable-primary-alpha-05)] rounded-lg py-2 px-3">
+                      {aiSelectedCategories.length} category(ies) selected
+                    </div>
+                  )}
+                </div>
+
                 {/* Popular Ranges */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-slate-700 font-medium">
@@ -1096,7 +1126,7 @@ export default function RestaurantMenuPage() {
                 </div>
 
                 {/* Smart Tips */}
-                <div className="bg-gradient-to-r from-[var(--configurable-primary-alpha-05)] to-[var(--configurable-primary-alpha-10)] border border-[var(--configurable-primary-alpha-20)] rounded-xl p-4">
+                <div className="bg-[var(--configurable-primary-alpha-05)] border border-[var(--configurable-primary-alpha-20)] rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
                       <Lightbulb className="w-3.5 h-3.5 text-white" />
@@ -1120,7 +1150,7 @@ export default function RestaurantMenuPage() {
                 </div>
 
                 {/* How AI Works */}
-                <div className="bg-gradient-to-r from-[var(--configurable-primary-alpha-05)] to-[var(--configurable-primary-alpha-10)] border border-[var(--configurable-primary-alpha-20)] rounded-xl p-4">
+                <div className="bg-[var(--configurable-primary-alpha-05)] border border-[var(--configurable-primary-alpha-20)] rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
                       <Info className="w-3.5 h-3.5 text-white" />
@@ -1154,7 +1184,7 @@ export default function RestaurantMenuPage() {
                 <Button
                   onClick={handleGenerateBudgetEstimate}
                   disabled={aiGroupSize <= 0 || aiBudget <= 0 || isBudgetLoading}
-                  className="w-full h-14 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] hover:from-[var(--color-primary-hover)] hover:to-[var(--color-primary-dark)] text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-14 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="button-generate-estimate"
                 >
                   {isBudgetLoading ? (
