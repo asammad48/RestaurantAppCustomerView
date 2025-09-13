@@ -847,13 +847,9 @@ export default function RestaurantMenuPage() {
                     </div>
                   ) : budgetData?.budgetOptions && budgetData.budgetOptions.length > 0 ? (
                     budgetData.budgetOptions.map((option, index) => {
-                      // Select image based on index to provide variety
-                      const budgetImages = [
-                        "/attached_assets/generated_images/Budget_food_combo_photo_72d038b1.png",
-                        "/attached_assets/generated_images/Premium_meal_photography_0924ff10.png", 
-                        "/attached_assets/generated_images/Fast_food_spread_fe6113bb.png"
-                      ];
-                      const selectedImage = budgetImages[index % budgetImages.length];
+                      // Use the first menu item's picture from this budget option
+                      const firstMenuItem = option.menuItems[0];
+                      const menuItemImage = firstMenuItem?.picture ? getImageUrl(firstMenuItem.picture) : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200';
                       
                       return (
                         <Card key={index} className="border-2 hover:border-primary/50 transition-colors overflow-hidden shadow-lg">
@@ -861,8 +857,8 @@ export default function RestaurantMenuPage() {
                             {/* Image Section */}
                             <div className="w-48 h-40 flex-shrink-0">
                               <img 
-                                src={selectedImage}
-                                alt={`Budget Option ${index + 1} Food`}
+                                src={menuItemImage}
+                                alt={`${firstMenuItem?.name || 'Budget Option'} Food`}
                                 className="w-full h-full object-cover"
                                 data-testid={`img-budget-option-${index}`}
                               />
