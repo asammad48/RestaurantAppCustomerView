@@ -72,7 +72,6 @@ export default function CartModal() {
 
   // Calculate detailed order summary
   const subtotal = total; // This is the cart total before any additional charges
-  const serviceCharge = serviceType === 'dine-in' ? (selectedBranch?.serviceCharges || 0) : 0; // Service charges only for dine-in
   const deliveryCharge = serviceType === 'delivery' ? (selectedBranch?.deliveryCharges || 0) : 0; // Delivery charges only for delivery
   
   // Calculate maximum discount based on maxAllowedAmount from items
@@ -134,6 +133,10 @@ export default function CartModal() {
   const discountAmount = branchMaxDiscount > 0 
     ? Math.min(calculatedDiscount, branchMaxDiscount)
     : calculatedDiscount;
+
+  // Calculate service charge as percentage applied to (subtotal - discountAmount)
+  const serviceChargePercentage = serviceType === 'dine-in' ? (selectedBranch?.serviceCharges || 0) : 0;
+  const serviceCharge = (subtotal - discountAmount) * (serviceChargePercentage / 100);
   
   // Calculate tax based on branch settings
   const taxPercentage = selectedBranch?.taxPercentage || 0;
