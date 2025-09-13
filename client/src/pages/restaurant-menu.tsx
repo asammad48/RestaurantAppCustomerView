@@ -847,9 +847,31 @@ export default function RestaurantMenuPage() {
                     </div>
                   ) : budgetData?.budgetOptions && budgetData.budgetOptions.length > 0 ? (
                     budgetData.budgetOptions.map((option, index) => {
-                      // Use the first menu item's picture from this budget option
-                      const firstMenuItem = option.menuItems[0];
-                      const menuItemImage = firstMenuItem?.picture ? getImageUrl(firstMenuItem.picture) : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200';
+                      // Smart image selection: prioritize deals/packages, then most expensive menu item
+                      let selectedImage = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200';
+                      let selectedName = 'Budget Option';
+                      
+                      // First, try to use a deal/package image if available
+                      if (option.menuPackages && option.menuPackages.length > 0) {
+                        const firstPackage = option.menuPackages[0];
+                        if (firstPackage.picture) {
+                          selectedImage = getImageUrl(firstPackage.picture);
+                          selectedName = firstPackage.name;
+                        }
+                      } 
+                      // If no packages, find the most expensive menu item (likely the main dish)
+                      else if (option.menuItems && option.menuItems.length > 0) {
+                        const mostExpensiveItem = option.menuItems.reduce((prev, current) => {
+                          const prevPrice = prev.variations?.[0]?.price || 0;
+                          const currentPrice = current.variations?.[0]?.price || 0;
+                          return currentPrice > prevPrice ? current : prev;
+                        });
+                        
+                        if (mostExpensiveItem?.picture) {
+                          selectedImage = getImageUrl(mostExpensiveItem.picture);
+                          selectedName = mostExpensiveItem.name;
+                        }
+                      }
                       
                       return (
                         <Card key={index} className="border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white">
@@ -858,8 +880,8 @@ export default function RestaurantMenuPage() {
                               {/* Small rounded image */}
                               <div className="w-20 h-16 flex-shrink-0">
                                 <img 
-                                  src={menuItemImage}
-                                  alt={`${firstMenuItem?.name || 'Budget Option'} Food`}
+                                  src={selectedImage}
+                                  alt={`${selectedName} Food`}
                                   className="w-full h-full object-cover rounded-lg"
                                   data-testid={`img-budget-option-${index}`}
                                 />
