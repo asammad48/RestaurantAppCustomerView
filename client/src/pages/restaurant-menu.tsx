@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info } from "lucide-react";
@@ -838,133 +838,135 @@ export default function RestaurantMenuPage() {
                   )}
                 </div>
               ) : (
-                /* AI Budget Options Display */
-                <div className="space-y-4 mb-6">
+                /* AI Budget Options Display - Vertical Cards */
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                   {isBudgetLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <span className="ml-2">Generating budget suggestions...</span>
-                    </div>
+                    // Loading skeletons
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <Card key={i} className="animate-pulse">
+                        <CardHeader className="pb-4">
+                          <div className="flex justify-between items-start">
+                            <div className="h-6 bg-gray-200 rounded w-32 mb-2"></div>
+                            <div className="h-5 bg-gray-200 rounded w-20"></div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="h-8 bg-gray-200 rounded w-24"></div>
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-full"></div>
+                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                          </div>
+                        </CardContent>
+                        <CardFooter>
+                          <div className="h-10 bg-gray-200 rounded w-full"></div>
+                        </CardFooter>
+                      </Card>
+                    ))
                   ) : budgetData?.budgetOptions && budgetData.budgetOptions.length > 0 ? (
                     budgetData.budgetOptions.map((option, index) => {
-                      // Smart image selection: prioritize deals/packages, then most expensive menu item
-                      let selectedImage = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200';
-                      let selectedName = 'Budget Option';
-                      
-                      // First, try to use a deal/package image if available
-                      if (option.menuPackages && option.menuPackages.length > 0) {
-                        const firstPackage = option.menuPackages[0];
-                        if (firstPackage.picture) {
-                          selectedImage = getImageUrl(firstPackage.picture);
-                          selectedName = firstPackage.name;
-                        }
-                      } 
-                      // If no packages, find the most expensive menu item (likely the main dish)
-                      else if (option.menuItems && option.menuItems.length > 0) {
-                        const mostExpensiveItem = option.menuItems.reduce((prev, current) => {
-                          const prevPrice = prev.variations?.[0]?.price || 0;
-                          const currentPrice = current.variations?.[0]?.price || 0;
-                          return currentPrice > prevPrice ? current : prev;
-                        });
-                        
-                        if (mostExpensiveItem?.picture) {
-                          selectedImage = getImageUrl(mostExpensiveItem.picture);
-                          selectedName = mostExpensiveItem.name;
-                        }
-                      }
+                      const perPersonCost = option.totalPeopleServed > 0 ? Math.round(option.totalCost / option.totalPeopleServed) : 0;
                       
                       return (
-                        <Card key={index} className="border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white">
-                          <CardContent className="p-6">
-                            <div className="flex items-start gap-4">
-                              {/* Small rounded image */}
-                              <div className="w-20 h-16 flex-shrink-0">
-                                <img 
-                                  src={selectedImage}
-                                  alt={`${selectedName} Food`}
-                                  className="w-full h-full object-cover rounded-lg"
-                                  data-testid={`img-budget-option-${index}`}
-                                />
+                        <Card key={index} className="border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white dark:bg-gray-800 h-full flex flex-col">
+                          <CardHeader className="pb-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100" data-testid={`title-budget-option-${index}`}>
+                                Budget Option {index + 1}
+                              </h3>
+                              <Badge 
+                                className={option.isWithinBudget 
+                                  ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300" 
+                                  : "bg-red-100 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300"
+                                }
+                                data-testid={`badge-budget-status-${index}`}
+                              >
+                                {option.isWithinBudget ? "Within Budget" : "Over Budget"}
+                              </Badge>
+                            </div>
+                            
+                            {/* Price and Serves Info */}
+                            <div className="space-y-2">
+                              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid={`price-total-${index}`}>
+                                PKR {option.totalCost}
                               </div>
-                              
-                              {/* Content Section */}
-                              <div className="flex-1">
-                                <div className="flex justify-between items-start mb-3">
-                                  <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Budget Option {index + 1}</h3>
-                                    <div className="flex items-center gap-4 text-sm">
-                                      <span className="font-bold text-lg text-gray-900">
-                                        PKR {option.totalCost}
-                                      </span>
-                                      <span className="flex items-center text-gray-600">
-                                        <Users className="w-4 h-4 mr-1" />
-                                        Serves {option.totalPeopleServed}
-                                      </span>
-                                      <Badge 
-                                        className={option.isWithinBudget ? "bg-green-100 text-green-700 border-green-200 font-medium" : "bg-red-100 text-red-700 border-red-200"}
-                                      >
-                                        {option.isWithinBudget ? "Within Budget" : "Over Budget"}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    onClick={() => handleAddBudgetOptionToCart(option)}
-                                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 font-medium"
-                                    data-testid={`button-add-budget-option-${index}`}
-                                  >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add to Cart
-                                  </Button>
-                                </div>
-                          
-                                {/* Menu Items in this option */}
-                                <div className="mt-4">
-                                  <h4 className="font-medium text-gray-900 mb-3">Menu Items:</h4>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {option.menuItems.map((item, itemIndex) => (
-                                      <div key={itemIndex} className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                          <div className="font-medium text-gray-900">
-                                            {item.name} {item.variations[0]?.name && (
-                                              <span className="text-gray-600">({item.variations[0].name})</span>
-                                            )}
-                                          </div>
-                                          <div className="text-sm text-gray-600 mt-1">
-                                            Qty: {item.variations[0]?.quantity} • {item.categoryName}
-                                          </div>
-                                        </div>
-                                        <div className="font-semibold text-gray-900 ml-4">
-                                          PKR {item.variations[0]?.price}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                          
-                                {/* Menu Packages in this option */}
-                                {option.menuPackages.length > 0 && (
-                                  <div className="mt-4">
-                                    <h4 className="font-medium text-gray-900 mb-3">Deals & Packages:</h4>
-                                    <div className="grid grid-cols-1 gap-3">
-                                      {option.menuPackages.map((pkg, pkgIndex) => (
-                                        <div key={pkgIndex} className="flex justify-between items-start">
-                                          <div className="flex-1">
-                                            <div className="font-medium text-gray-900">{pkg.name}</div>
-                                            <div className="text-sm text-gray-600 mt-1">
-                                              {pkg.description}
-                                            </div>
-                                          </div>
-                                          <div className="font-semibold text-gray-900 ml-4">
-                                            PKR {pkg.price}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
+                              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                                <span className="flex items-center" data-testid={`serves-info-${index}`}>
+                                  <Users className="w-4 h-4 mr-1" />
+                                  Serves {option.totalPeopleServed}
+                                </span>
+                                {perPersonCost > 0 && (
+                                  <span data-testid={`per-person-cost-${index}`}>
+                                    PKR {perPersonCost} / person
+                                  </span>
                                 )}
                               </div>
                             </div>
+                          </CardHeader>
+                          
+                          <CardContent className="flex-1 space-y-4">
+                            {/* Deals & Packages */}
+                            {option.menuPackages && option.menuPackages.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm flex items-center">
+                                  <Tag className="w-4 h-4 mr-1" />
+                                  Deals & Packages
+                                </h4>
+                                <div className="space-y-2">
+                                  {option.menuPackages.map((pkg, pkgIndex) => (
+                                    <div key={pkgIndex} className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-700 dark:text-gray-300">{pkg.name}</span>
+                                      <span className="font-semibold text-gray-900 dark:text-gray-100">PKR {pkg.price}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Menu Items */}
+                            {option.menuItems && option.menuItems.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm flex items-center">
+                                  <ChefHat className="w-4 h-4 mr-1" />
+                                  Menu Items
+                                </h4>
+                                <div className="space-y-2">
+                                  {option.menuItems.slice(0, 4).map((item, itemIndex) => (
+                                    <div key={itemIndex} className="flex justify-between items-center text-sm">
+                                      <div className="flex-1">
+                                        <span className="text-gray-700 dark:text-gray-300">
+                                          {item.name} {item.variations[0]?.name && (
+                                            <span className="text-gray-500 dark:text-gray-400">({item.variations[0].name})</span>
+                                          )}
+                                        </span>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                          Qty: {item.variations[0]?.quantity}
+                                        </div>
+                                      </div>
+                                      <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                        PKR {item.variations[0]?.price}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {option.menuItems.length > 4 && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      +{option.menuItems.length - 4} more items
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </CardContent>
+                          
+                          <CardFooter className="pt-4">
+                            <Button
+                              onClick={() => handleAddBudgetOptionToCart(option)}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium"
+                              data-testid={`button-add-budget-option-${index}`}
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add to Cart
+                            </Button>
+                          </CardFooter>
                         </Card>
                       );
                     })
