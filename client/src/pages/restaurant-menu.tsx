@@ -869,15 +869,15 @@ export default function RestaurantMenuPage() {
                       return (
                         <Card key={index} className="border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white dark:bg-gray-800 h-full flex flex-col">
                           <CardHeader className="pb-4">
-                            <div className="flex justify-between items-start mb-3">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100" data-testid={`title-budget-option-${index}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                              <h3 className="min-w-0 flex-1 text-base md:text-lg font-semibold leading-tight truncate text-gray-900 dark:text-gray-100" data-testid={`title-budget-option-${index}`}>
                                 Budget Option {index + 1}
                               </h3>
                               <Badge 
-                                className={option.isWithinBudget 
+                                className={`self-start sm:self-auto text-xs px-2 py-0.5 ${option.isWithinBudget 
                                   ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300" 
                                   : "bg-red-100 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300"
-                                }
+                                }`}
                                 data-testid={`badge-budget-status-${index}`}
                               >
                                 {option.isWithinBudget ? "Within Budget" : "Over Budget"}
@@ -886,16 +886,17 @@ export default function RestaurantMenuPage() {
                             
                             {/* Price and Serves Info */}
                             <div className="space-y-2">
-                              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid={`price-total-${index}`}>
+                              <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid={`price-total-${index}`}>
                                 PKR {option.totalCost}
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600 dark:text-gray-400">
                                 <span className="flex items-center" data-testid={`serves-info-${index}`}>
-                                  <Users className="w-4 h-4 mr-1" />
+                                  <Users className="w-4 h-4 mr-1 flex-shrink-0" />
                                   Serves {option.totalPeopleServed}
                                 </span>
                                 {perPersonCost > 0 && (
-                                  <span data-testid={`per-person-cost-${index}`}>
+                                  <span className="flex items-center" data-testid={`per-person-cost-${index}`}>
+                                    <DollarSign className="w-4 h-4 mr-1 flex-shrink-0" />
                                     PKR {perPersonCost} / person
                                   </span>
                                 )}
