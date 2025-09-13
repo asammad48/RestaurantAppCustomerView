@@ -972,18 +972,22 @@ export default function RestaurantMenuPage() {
                       const perPersonCost = option.totalPeopleServed > 0 ? Math.round(option.totalCost / option.totalPeopleServed) : 0;
                       
                       return (
-                        <Card key={index} className="relative border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white dark:bg-gray-800 h-full flex flex-col">
-                          {/* Numbered Badge in Top Left Corner */}
-                          <div className="absolute top-3 left-3 z-10">
-                            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold" data-testid={`badge-option-number-${index}`}>
+                        <Card key={index} className="relative border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white dark:bg-gray-800 h-full flex flex-col overflow-hidden">
+                          {/* Numbered Badge in Top Left Corner - Attached to corner */}
+                          <div className="absolute top-0 left-0 z-10">
+                            <div className="w-7 h-7 bg-primary text-white rounded-br-lg flex items-center justify-center text-sm font-bold" data-testid={`badge-option-number-${index}`}>
                               {index + 1}
                             </div>
                           </div>
                           
-                          <CardHeader className="pb-4 pt-6">
-                            <div className="flex justify-end mb-3">
+                          <CardHeader className="pb-3 pt-8 px-4">
+                            {/* Status Badge and Price Section */}
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid={`price-total-${index}`}>
+                                {formatBranchCurrency(option.totalCost, branchCurrency)}
+                              </div>
                               <Badge 
-                                className={`text-xs px-2 py-0.5 ${option.isWithinBudget 
+                                className={`text-xs px-2 py-1 ${option.isWithinBudget 
                                   ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300" 
                                   : "bg-red-100 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300"
                                 }`}
@@ -993,57 +997,57 @@ export default function RestaurantMenuPage() {
                               </Badge>
                             </div>
                             
-                            {/* Price and Serves Info */}
-                            <div className="space-y-2">
-                              <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid={`price-total-${index}`}>
-                                {formatBranchCurrency(option.totalCost, branchCurrency)}
-                              </div>
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600 dark:text-gray-400">
-                                <span className="flex items-center" data-testid={`serves-info-${index}`}>
-                                  <Users className="w-4 h-4 mr-1 flex-shrink-0" />
-                                  Serves {option.totalPeopleServed}
+                            {/* Serves and Per Person Info */}
+                            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              <span className="flex items-center" data-testid={`serves-info-${index}`}>
+                                <Users className="w-4 h-4 mr-1 flex-shrink-0" />
+                                Serves {option.totalPeopleServed}
+                              </span>
+                              {perPersonCost > 0 && (
+                                <span className="flex items-center" data-testid={`per-person-cost-${index}`}>
+                                  <DollarSign className="w-4 h-4 mr-1 flex-shrink-0" />
+                                  {formatBranchCurrency(perPersonCost, branchCurrency)} / person
                                 </span>
-                                {perPersonCost > 0 && (
-                                  <span className="flex items-center" data-testid={`per-person-cost-${index}`}>
-                                    <DollarSign className="w-4 h-4 mr-1 flex-shrink-0" />
-                                    {formatBranchCurrency(perPersonCost, branchCurrency)} / person
-                                  </span>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </CardHeader>
                           
-                          <CardContent className="flex-1 space-y-4">
-                            {/* Deals & Packages */}
+                          <CardContent className="flex-1 px-4 py-3 space-y-3">
+                            {/* Deals & Packages - More Compact */}
                             {option.menuPackages && option.menuPackages.length > 0 && (
                               <div>
                                 <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm flex items-center">
                                   <Tag className="w-4 h-4 mr-1" />
                                   Deals & Packages
                                 </h4>
-                                <div className="space-y-2">
-                                  {option.menuPackages.map((pkg, pkgIndex) => (
-                                    <div key={pkgIndex} className="flex justify-between items-center text-sm">
-                                      <span className="text-gray-700 dark:text-gray-300">{pkg.name}</span>
-                                      <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBranchCurrency(Number(pkg.price) || 0, branchCurrency)}</span>
+                                <div className="space-y-1">
+                                  {option.menuPackages.slice(0, 2).map((pkg, pkgIndex) => (
+                                    <div key={pkgIndex} className="flex justify-between items-center text-sm py-1">
+                                      <span className="text-gray-700 dark:text-gray-300 text-xs truncate">{pkg.name}</span>
+                                      <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs">{formatBranchCurrency(Number(pkg.price) || 0, branchCurrency)}</span>
                                     </div>
                                   ))}
+                                  {option.menuPackages.length > 2 && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      +{option.menuPackages.length - 2} more deals
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
                             
-                            {/* Menu Items */}
+                            {/* Menu Items - More Compact */}
                             {option.menuItems && option.menuItems.length > 0 && (
                               <div>
                                 <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm flex items-center">
                                   <ChefHat className="w-4 h-4 mr-1" />
                                   Menu Items
                                 </h4>
-                                <div className="space-y-2">
-                                  {option.menuItems.slice(0, 4).map((item, itemIndex) => (
-                                    <div key={itemIndex} className="flex justify-between items-center text-sm">
-                                      <div className="flex-1">
-                                        <span className="text-gray-700 dark:text-gray-300">
+                                <div className="space-y-1">
+                                  {option.menuItems.slice(0, 3).map((item, itemIndex) => (
+                                    <div key={itemIndex} className="flex justify-between items-start text-sm py-1">
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-gray-700 dark:text-gray-300 text-xs block truncate">
                                           {item.name} {item.variations[0]?.name && (
                                             <span className="text-gray-500 dark:text-gray-400">({item.variations[0].name})</span>
                                           )}
@@ -1052,14 +1056,14 @@ export default function RestaurantMenuPage() {
                                           Qty: {item.variations[0]?.quantity}
                                         </div>
                                       </div>
-                                      <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                      <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs ml-2">
                                         {formatBranchCurrency(item.variations[0]?.price || 0, branchCurrency)}
                                       </span>
                                     </div>
                                   ))}
-                                  {option.menuItems.length > 4 && (
+                                  {option.menuItems.length > 3 && (
                                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                                      +{option.menuItems.length - 4} more items
+                                      +{option.menuItems.length - 3} more items
                                     </div>
                                   )}
                                 </div>
@@ -1067,10 +1071,10 @@ export default function RestaurantMenuPage() {
                             )}
                           </CardContent>
                           
-                          <CardFooter className="pt-4">
+                          <CardFooter className="pt-3 px-4 pb-4">
                             <Button
                               onClick={() => handleAddBudgetOptionToCart(option)}
-                              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium"
+                              className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2"
                               data-testid={`button-add-budget-option-${index}`}
                             >
                               <Plus className="w-4 h-4 mr-2" />
