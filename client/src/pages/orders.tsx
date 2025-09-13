@@ -8,7 +8,8 @@ import FoodCard from "@/components/food-card";
 import Footer from "@/components/footer";
 import FloatingButtons from "@/components/floating-buttons";
 import ThemeSwitcher from "@/components/theme-switcher";
-import { Order, MenuItem } from "@shared/schema";
+import { Order } from "@/types/order-history";
+import { MenuItem } from "@/lib/mock-data";
 import { useCartStore } from "@/lib/store";
 import { applyBranchPrimaryColor } from "@/lib/colors";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
@@ -26,8 +27,8 @@ export default function Orders() {
 
   // Apply branch-specific theming
   useEffect(() => {
-    if (selectedBranch?.branchPrimaryColor) {
-      applyBranchPrimaryColor(selectedBranch.branchPrimaryColor);
+    if (selectedBranch?.primaryColor) {
+      applyBranchPrimaryColor(selectedBranch.primaryColor);
     }
   }, [selectedBranch]);
 
@@ -39,8 +40,8 @@ export default function Orders() {
     queryKey: ["/api/menu-items"],
   });
 
-  const liveOrders = orders.filter(order => order.status !== 'completed');
-  const completedOrders = orders.filter(order => order.status === 'completed');
+  const liveOrders = orders.filter(order => order.orderStatus !== 'completed');
+  const completedOrders = orders.filter(order => order.orderStatus === 'completed');
   const recommendedItems = menuItems.filter(item => item.isRecommended || (item.discount && item.discount > 0)).slice(0, 4);
 
   // Live orders data

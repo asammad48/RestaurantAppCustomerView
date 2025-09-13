@@ -1,5 +1,5 @@
 // Generic API client with status code handling
-const BASE_URL = 'https://5dtrtpzg-7261.inc1.devtunnels.ms';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://5dtrtpzg-7261.inc1.devtunnels.ms';
 
 // Order API Types
 export interface OrderModifier {

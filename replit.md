@@ -2,7 +2,25 @@
 
 ## Overview
 
-This is a comprehensive restaurant ordering and service request system built with React, Express, and PostgreSQL. The application provides a full-featured dining experience with table-based ordering, real-time order tracking, payment processing with bill splitting options, and service requests. The system is designed to be responsive and mobile-friendly, supporting various screen sizes and touch interactions.
+This is a comprehensive restaurant ordering and service request system built with React and TypeScript. This is a frontend-only application that connects to an external API for all backend functionality. The application provides a full-featured dining experience with ordering, real-time order tracking, payment processing with bill splitting options, and service requests. The system is designed to be responsive and mobile-friendly, supporting various screen sizes and touch interactions.
+
+## Recent Changes
+
+**September 13, 2025 - Project Import Setup Completed**
+- Successfully imported GitHub project into Replit environment
+- Configured Vite development server to run on port 5000 with proper host settings
+- Set up workflow for frontend application with webview output
+- Configured deployment settings for autoscale deployment target
+- Externalized API base URL using VITE_API_BASE_URL environment variable
+- Cleaned up documentation to remove backend references
+- Verified application runs correctly and responds with HTTP 200
+- All dependencies installed and working properly
+
+### Environment Variables Setup
+For production deployment, set the following environment variables:
+- **VITE_API_BASE_URL**: The base URL for the external restaurant API (required for production)
+  - Example: `https://api.your-restaurant-system.com`
+  - Default development fallback: Uses development tunnel if not set
 
 ## User Preferences
 
@@ -19,17 +37,17 @@ Preferred communication style: Simple, everyday language.
 - **Styling**: Tailwind CSS with custom CSS variables for theming
 - **Data Fetching**: TanStack Query (React Query) for server state management
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js framework
-- **Language**: TypeScript with ES modules
-- **API Design**: RESTful API with JSON responses
-- **Development**: Hot reload with tsx and Vite middleware integration
+### External API Integration
+- **External API**: Connects to external restaurant management API
+- **Base URL**: Configurable via VITE_API_BASE_URL environment variable
+- **API Client**: Custom TypeScript API client with comprehensive error handling
+- **Data Types**: Strongly typed interfaces for all API requests and responses
 
-### Data Storage Solutions
-- **Database**: PostgreSQL with Neon serverless database
-- **ORM**: Drizzle ORM for type-safe database operations
-- **Schema**: Shared TypeScript schema definitions between client and server
-- **Migrations**: Drizzle Kit for database schema management
+### Project Structure
+- **Frontend Only**: No backend components in this project
+- **Client Code**: All application code located in `client/` directory
+- **Build Tool**: Vite configured for frontend development and production builds
+- **Development**: Hot reload with Vite development server on port 5000
 
 ## Key Components
 
@@ -43,18 +61,17 @@ Preferred communication style: Simple, everyday language.
   - Floating service request button
 - **Modal System**: Complete modal flow for cart, payment, bill splitting, reviews, service requests, and order confirmation
 
-### Backend API Endpoints
-- **Menu Items**: GET /api/menu-items, GET /api/menu-items/:id
-- **Orders**: GET /api/orders, POST /api/orders, PATCH /api/orders/:id/status
-- **Service Requests**: GET /api/service-requests, POST /api/service-requests
-- **Reviews**: GET /api/reviews, POST /api/reviews
+### External API Endpoints
+- **Orders**: POST /api/Order - Create new orders
+- **Budget Estimator**: POST /api/customer-search/estimate - AI budget estimation
+- **Allergens**: GET /api/Generic/allergens - Get allergen information
+- **Order History**: GET /api/Order/ByUserAndDevice - Get user order history
 
-### Database Schema
-- **Users**: Authentication and user management
-- **Menu Items**: Product catalog with categories, pricing, discounts, and recommendations
-- **Orders**: Order management with status tracking and table assignment
-- **Service Requests**: Water bottle requests, music requests, and other table services
-- **Reviews**: Order feedback and ratings system
+### API Configuration
+- **Base URL**: Configurable via VITE_API_BASE_URL environment variable
+- **Default URL**: Falls back to development tunnel if env var not set
+- **Error Handling**: Comprehensive API error handling with status code management
+- **TypeScript**: Fully typed API requests and responses
 
 ## Data Flow
 
@@ -79,46 +96,48 @@ Preferred communication style: Simple, everyday language.
 - Cart state persisted across page navigation
 - Service request status updates
 
-## External Dependencies
+## Dependencies
 
 ### Core Dependencies
-- **@neondatabase/serverless**: Neon PostgreSQL database client
-- **drizzle-orm**: Type-safe ORM with PostgreSQL support
-- **@tanstack/react-query**: Server state management
-- **zustand**: Client state management
-- **wouter**: Lightweight routing
-- **@radix-ui/***: Accessible UI primitives
+- **@tanstack/react-query**: Server state management and API caching
+- **zustand**: Client state management for cart and UI state
+- **wouter**: Lightweight routing for single-page application
+- **@radix-ui/***: Accessible UI primitives for components
 - **tailwindcss**: Utility-first CSS framework
+- **react**: React 18 with TypeScript support
+- **leaflet**: Interactive mapping for location selection
+- **framer-motion**: Animation library for smooth UI transitions
 
 ### Development Tools
 - **vite**: Fast build tool and development server
-- **tsx**: TypeScript execution for Node.js
-- **drizzle-kit**: Database migration and schema management
+- **typescript**: Type safety throughout the application
 - **@replit/vite-plugin-runtime-error-modal**: Development error handling
+- **@replit/vite-plugin-cartographer**: Code analysis (development only)
 
-### Payment and Services
-- Currently uses mock payment processing
-- Service requests stored in database for staff management
-- Future integration points available for payment processors
+### External Services
+- **OpenStreetMap**: Free mapping service for location features
+- **Nominatim API**: Reverse geocoding for address resolution
+- **External Restaurant API**: All backend functionality provided via external API
 
 ## Deployment Strategy
 
 ### Development Environment
-- Vite development server with HMR
-- Express server with middleware integration
+- Vite development server with HMR on port 5000
+- Host configured as 0.0.0.0 with allowedHosts: true for Replit proxy
 - TypeScript compilation with incremental builds
-- Environment variable configuration for database connection
+- Environment variable configuration for API endpoints
 
 ### Production Build
 - Vite builds optimized React application to dist/public
-- esbuild bundles Express server to dist/index.js
-- Static file serving from built React application
-- Database migrations applied via drizzle-kit push
+- Static file serving using 'serve' package on port 5000
+- Autoscale deployment target for Replit Deploy
+- All assets bundled and optimized for production
 
 ### Configuration Management
-- Environment variables for database URL and secrets
+- Environment variables for API base URL (VITE_API_BASE_URL)
 - Configurable theming through CSS variables
-- Path aliases for clean imports (@/, @shared/, @assets/)
+- Path aliases for clean imports (@/, @assets/)
+- CORS handling managed by external API service
 
 ### Responsive Design
 - Mobile-first responsive design approach
@@ -130,11 +149,11 @@ The application implements a complete restaurant ordering ecosystem with emphasi
 
 ## Color Configuration System
 
-### API-Driven Color Management
+### Color Management System
 - **Centralized Configuration**: All colors are managed through a shared color system in `client/src/lib/colors.ts`
-- **API Integration**: Colors are fetched from `/api/colors` endpoint with theme parameter support
 - **CSS Variables**: All colors are applied as CSS variables for dynamic updates without page refresh
 - **Theme Switching**: Support for multiple themes (default, blue, purple) with real-time switching
+- **Responsive Design**: Colors adapt to light and dark mode preferences
 
 ### Available Color Classes
 - **Primary Colors**: `.configurable-primary`, `.configurable-primary-hover`, `.configurable-secondary`
@@ -144,18 +163,18 @@ The application implements a complete restaurant ordering ecosystem with emphasi
 - **Surface Colors**: `.configurable-surface`, `.configurable-background`, `.configurable-border`
 
 ### Implementation Details
-- **Color API**: Backend endpoints at `/api/colors` and `/api/themes` for dynamic color management
 - **Theme Switcher**: UI component for testing different color schemes (bottom-left corner)
-- **Fallback System**: Automatic fallback to default colors if API fails
+- **Fallback System**: Automatic fallback to default colors for consistent experience
 - **Type Safety**: Full TypeScript support with ColorConfig interface
+- **Performance**: Colors are cached and applied efficiently via CSS custom properties
 
-### Future API Integration
-The system is designed to be easily replaced with external API calls. Simply update the `getColors()` function in `client/src/lib/colors.ts` to fetch from your restaurant management system's color configuration API.
+### Customization
+The color system can be easily customized by modifying the color definitions in `client/src/lib/colors.ts`. All components automatically inherit the new color scheme through CSS custom properties.
 
 ## Order History Integration
 
 ### API Integration
-- **External API**: Integrated with order history API at `https://5dtrtpzg-7261.inc1.devtunnels.ms/api/Order/ByUserAndDevice`
+- **External API**: Integrated with order history API endpoint `/api/Order/ByUserAndDevice`
 - **Parameters**: Supports UserId (when logged in), DeviceId (persistent), PageNumber, and PageSize for pagination
 - **Response**: Comprehensive order data including items, delivery details, split bills, and order status tracking
 
