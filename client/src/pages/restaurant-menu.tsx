@@ -846,34 +846,58 @@ export default function RestaurantMenuPage() {
                       <span className="ml-2">Generating budget suggestions...</span>
                     </div>
                   ) : budgetData?.budgetOptions && budgetData.budgetOptions.length > 0 ? (
-                    budgetData.budgetOptions.map((option, index) => (
-                      <Card key={index} className="border-2 hover:border-primary/50 transition-colors">
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="text-lg font-semibold">Budget Option {index + 1}</h3>
-                              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                                <span className="flex items-center">
-                                  PKR {option.totalCost}
-                                </span>
-                                <span className="flex items-center">
-                                  <Users className="w-4 h-4 mr-1" />
-                                  Serves {option.totalPeopleServed}
-                                </span>
-                                <Badge variant={option.isWithinBudget ? "default" : "destructive"}>
-                                  {option.isWithinBudget ? "Within Budget" : "Over Budget"}
-                                </Badge>
-                              </div>
+                    budgetData.budgetOptions.map((option, index) => {
+                      // Select image based on index to provide variety
+                      const budgetImages = [
+                        "/attached_assets/generated_images/Budget_food_combo_photo_72d038b1.png",
+                        "/attached_assets/generated_images/Premium_meal_photography_0924ff10.png", 
+                        "/attached_assets/generated_images/Fast_food_spread_fe6113bb.png"
+                      ];
+                      const selectedImage = budgetImages[index % budgetImages.length];
+                      
+                      return (
+                        <Card key={index} className="border-2 hover:border-primary/50 transition-colors overflow-hidden shadow-lg">
+                          <div className="flex">
+                            {/* Image Section */}
+                            <div className="w-48 h-40 flex-shrink-0">
+                              <img 
+                                src={selectedImage}
+                                alt={`Budget Option ${index + 1} Food`}
+                                className="w-full h-full object-cover"
+                                data-testid={`img-budget-option-${index}`}
+                              />
                             </div>
-                            <Button
-                              onClick={() => handleAddBudgetOptionToCart(option)}
-                              className="configurable-primary hover:configurable-primary-hover text-white"
-                              data-testid={`button-add-budget-option-${index}`}
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              Add to Cart
-                            </Button>
-                          </div>
+                            
+                            {/* Content Section */}
+                            <CardContent className="flex-1 p-6">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h3 className="text-lg font-semibold text-gray-800">Budget Option {index + 1}</h3>
+                                  <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                                    <span className="flex items-center font-semibold text-green-600">
+                                      PKR {option.totalCost}
+                                    </span>
+                                    <span className="flex items-center">
+                                      <Users className="w-4 h-4 mr-1" />
+                                      Serves {option.totalPeopleServed}
+                                    </span>
+                                    <Badge 
+                                      variant={option.isWithinBudget ? "default" : "destructive"}
+                                      className={option.isWithinBudget ? "bg-green-100 text-green-800 border-green-200" : ""}
+                                    >
+                                      {option.isWithinBudget ? "Within Budget" : "Over Budget"}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <Button
+                                  onClick={() => handleAddBudgetOptionToCart(option)}
+                                  className="configurable-primary hover:configurable-primary-hover text-white shadow-md"
+                                  data-testid={`button-add-budget-option-${index}`}
+                                >
+                                  <Plus className="w-4 h-4 mr-1" />
+                                  Add to Cart
+                                </Button>
+                              </div>
                           
                           {/* Menu Items in this option */}
                           {option.menuItems.length > 0 && (
@@ -919,8 +943,10 @@ export default function RestaurantMenuPage() {
                             </div>
                           )}
                         </CardContent>
+                          </div>
                       </Card>
-                    ))
+                      );
+                    })
                   ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-12" data-testid="status-menu-loading">
                       <div className="relative">
