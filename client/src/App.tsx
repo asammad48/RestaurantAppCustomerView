@@ -13,6 +13,7 @@ import NotFound from "@/pages/not-found";
 import InitialServiceModal from "@/components/modals/initial-service-modal";
 import { LoginModal } from "@/components/modals/login-modal";
 import { SignupModal } from "@/components/modals/signup-modal";
+import CartModal from "@/components/modals/cart-modal";
 
 function Router() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <InitialServiceModal />
         <LoginModal />
         <SignupModal />
+        <CartModal />
       </TooltipProvider>
     </QueryClientProvider>
   );
