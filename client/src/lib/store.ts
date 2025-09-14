@@ -79,6 +79,9 @@ export interface CartItem {
   dealEndDate?: string;
   menuItems?: { menuItemId: number; name: string; }[];
   subMenuItems?: { subMenuItemId: number; name: string; quantity: number; }[];
+  // Branch info for multi-branch support
+  branchId: number;
+  branchName?: string;
 }
 
 interface CartStore {
@@ -112,8 +115,12 @@ interface CartStore {
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
+  clearCartForBranch: (branchId: number) => void;
   getCartTotal: () => number;
   getCartCount: () => number;
+  getItemsForBranch: (branchId: number) => CartItem[];
+  getBranchSummary: () => { branchId: number; branchName: string; count: number; total: number; }[];
+  getUniqueBranchCount: () => number;
   setCartOpen: (open: boolean) => void;
   setServiceModalOpen: (open: boolean) => void;
   setServiceSelectionOpen: (open: boolean) => void;
@@ -182,27 +189,24 @@ export const useCartStore = create<CartStore>()(
       itemDetails: item
     });
     
-    // Check if adding item from different restaurant - clear cart if so
-    if (state.items.length > 0 && state.selectedBranch && state.cartBranchId !== null) {
-      const currentRestaurant = state.selectedBranch.branchId;
-      if (state.cartBranchId !== currentRestaurant) {
-        console.debug('🛒 Cart Debug: Clearing cart - switching restaurants', {
-          oldBranchId: state.cartBranchId,
-          newBranchId: currentRestaurant
-        });
-        set({ items: [], cartBranchId: currentRestaurant });
-      }
-    } else if (state.selectedBranch && state.cartBranchId === null) {
+    // No longer clear cart - allow multiple branches
+    if (state.selectedBranch && state.cartBranchId === null) {
       // Set cart branch ID when adding first item
       console.debug('🛒 Cart Debug: Setting cart branch ID', state.selectedBranch.branchId);
       set({ cartBranchId: state.selectedBranch.branchId });
     }
     
-    // Create a unique key that includes variant information
-    const itemVariantKey = `${itemId}-${variation || 'default'}`;
+    // Create a unique key that includes variant information and branch
+    const currentBranchId = state.selectedBranch?.branchId;
+    if (!currentBranchId) {
+      console.error('No branch selected when adding item to cart');
+      return;
+    }
+    
+    const itemVariantKey = `${itemId}-${variation || 'default'}-${currentBranchId}`;
     const existingItemIndex = state.items.findIndex(
       (cartItem) => {
-        const cartVariantKey = `${cartItem.id}-${cartItem.variation || 'default'}`;
+        const cartVariantKey = `${cartItem.id}-${cartItem.variation || 'default'}-${cartItem.branchId}`;
         return cartVariantKey === itemVariantKey;
       }
     );
@@ -226,6 +230,8 @@ export const useCartStore = create<CartStore>()(
         id: itemId,
         quantity: 1,
         variation,
+        branchId: currentBranchId,
+        branchName: state.selectedBranch?.branchName,
         // Use variant price if available, otherwise fall back to base price
         price: ('selectedVariantId' in item && 'variantPrice' in item && item.variantPrice) 
           ? item.variantPrice 
@@ -296,6 +302,12 @@ export const useCartStore = create<CartStore>()(
   clearCart: () => {
     set({ items: [], cartBranchId: null, selectedAllergens: [] });
   },
+
+  clearCartForBranch: (branchId: number) => {
+    set((state) => ({
+      items: state.items.filter(item => item.branchId !== branchId)
+    }));
+  },
   
   getCartTotal: () => {
     return get().items.reduce((total, item) => {
@@ -316,6 +328,45 @@ export const useCartStore = create<CartStore>()(
   
   getCartCount: () => {
     return get().items.reduce((count, item) => count + item.quantity, 0);
+  },
+
+  getItemsForBranch: (branchId: number) => {
+    return get().items.filter(item => item.branchId === branchId);
+  },
+
+  getBranchSummary: () => {
+    const items = get().items;
+    const branches = new Map<number, { branchId: number; branchName: string; count: number; total: number; }>();
+    
+    items.forEach(item => {
+      const branchId = item.branchId;
+      const branchName = item.branchName || 'Unknown Branch';
+      
+      if (!branches.has(branchId)) {
+        branches.set(branchId, { branchId, branchName, count: 0, total: 0 });
+      }
+      
+      const branch = branches.get(branchId)!;
+      branch.count += item.quantity;
+      
+      const basePrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0;
+      let modifierPrice = 0;
+      if (item.customization?.selectedModifiers && item.modifiers) {
+        modifierPrice = Object.entries(item.customization.selectedModifiers).reduce((modTotal, [modifierId, qty]) => {
+          const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+          return modTotal + (modifier ? modifier.price * qty : 0);
+        }, 0);
+      }
+      
+      branch.total += (basePrice + modifierPrice) * item.quantity;
+    });
+    
+    return Array.from(branches.values());
+  },
+
+  getUniqueBranchCount: () => {
+    const branchIds = new Set(get().items.map(item => item.branchId));
+    return branchIds.size;
   },
   
   setCartOpen: (open: boolean) => set({ isCartOpen: open }),
