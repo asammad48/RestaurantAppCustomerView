@@ -1,4 +1,4 @@
-import { HubConnectionBuilder, HubConnection, HubConnectionState } from '@microsoft/signalr';
+import { HubConnectionBuilder, HubConnection, HubConnectionState, HttpTransportType } from '@microsoft/signalr';
 import { AuthService } from './auth-service';
 import { toast } from '@/hooks/use-toast';
 
@@ -28,7 +28,8 @@ export class SignalRService {
       this.connection = new HubConnectionBuilder()
         .withUrl(this.hubUrl, {
           accessTokenFactory: () => token,
-          headers: AuthService.getAuthHeaders(token)
+          transport: HttpTransportType.WebSockets,
+          skipNegotiation: true
         })
         .withAutomaticReconnect([0, 2000, 10000, 30000]) // Retry intervals in milliseconds
         .build();
