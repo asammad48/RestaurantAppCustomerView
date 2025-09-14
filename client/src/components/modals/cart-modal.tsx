@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2, ChevronDown, Check } from "lucide-react";
+import { Minus, Plus, Trash2, ChevronDown, Check, Store, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,57 @@ import { getImageUrl } from "@/lib/config";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient, Allergen } from "@/lib/api-client";
 import { formatBranchCurrency } from "@/lib/utils";
+import { useLocation } from "wouter";
+import { useState } from "react";
 
 export default function CartModal() {
-  const { isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, serviceType, removeItem, selectedBranch, branchCurrency, specialInstructions, setSpecialInstructions, selectedAllergens, setSelectedAllergens } = useCartStore();
-  const { items, updateQuantity, clearCart, total } = useCart();
+  const { 
+    isCartOpen, setCartOpen, setPaymentModalOpen, setDeliveryDetailsModalOpen, setTakeawayDetailsModalOpen, 
+    serviceType, removeItem, selectedBranch, branchCurrency, specialInstructions, setSpecialInstructions, 
+    selectedAllergens, setSelectedAllergens, clearCart: clearAllCart, clearCartForBranch,
+    getUniqueBranchCount, getBranchSummary, getItemsForBranch 
+  } = useCartStore();
+  const { items, updateQuantity, total } = useCart();
   const { user, setLoginModalOpen } = useAuthStore();
   const { toast } = useToast();
+  const [location] = useLocation();
+  const [selectedBranchView, setSelectedBranchView] = useState<number | null>(null);
+
+  // Determine display mode
+  const isRestaurantMenuPage = location === '/restaurant-menu';
+  const uniqueBranchCount = getUniqueBranchCount();
+  const branchSummary = getBranchSummary();
+  
+  // Get items to display based on mode
+  const getDisplayItems = () => {
+    if (isRestaurantMenuPage) {
+      // Restaurant menu: show only current branch items
+      return selectedBranch ? getItemsForBranch(selectedBranch.branchId) : [];
+    } else if (uniqueBranchCount <= 1 || selectedBranchView !== null) {
+      // Other pages: show all items if single branch, or specific branch if selected
+      return selectedBranchView !== null ? getItemsForBranch(selectedBranchView) : items;
+    } else {
+      // Multiple branches: show summary (no items, handled separately)
+      return [];
+    }
+  };
+
+  const displayItems = getDisplayItems();
+  const showBranchSummary = !isRestaurantMenuPage && uniqueBranchCount > 1 && selectedBranchView === null;
+
+  // Clear cart function
+  const clearCart = () => {
+    if (isRestaurantMenuPage && selectedBranch) {
+      // Restaurant menu page: clear current branch
+      clearCartForBranch(selectedBranch.branchId);
+    } else if (selectedBranchView !== null) {
+      // Non-restaurant page with specific branch selected: clear that branch
+      clearCartForBranch(selectedBranchView);
+    } else {
+      // Multi-branch summary: clear all branches
+      clearAllCart();
+    }
+  };
 
   // Fetch allergens data
   const { data: allergensResponse, isLoading: allergensLoading, error: allergensError } = useQuery({
@@ -70,16 +115,23 @@ export default function CartModal() {
     return item.image || getImageUrl(null);
   };
 
-  // Calculate detailed order summary
-  const subtotal = total; // This is the cart total before any additional charges
-  const deliveryCharge = serviceType === 'delivery' ? (selectedBranch?.deliveryCharges || 0) : 0; // Delivery charges only for delivery
+  // Calculate detailed order summary based on displayed items
+  const subtotal = displayItems.reduce((sum, item) => {
+    const basePrice = parseFloat(item.price.toString()) || 0;
+    const modifiersPrice = (item.modifiers || []).reduce((modSum, mod) => modSum + (mod.price || 0), 0);
+    return sum + ((basePrice + modifiersPrice) * item.quantity);
+  }, 0);
+  // Only show branch fees when viewing current branch on restaurant menu page
+  const showBranchFees = isRestaurantMenuPage && selectedBranch && 
+                         (!selectedBranchView || selectedBranchView === selectedBranch.branchId);
+  const deliveryCharge = showBranchFees && serviceType === 'delivery' ? (selectedBranch?.deliveryCharges || 0) : 0;
   
   // Calculate maximum discount based on maxAllowedAmount from items
-  const calculateMaxDiscount = () => {
+  const calculateMaxDiscount = (itemsList = displayItems) => {
     let totalMaxAllowed = 0;
     let totalDiscountAmount = 0;
     
-    items.forEach(item => {
+    itemsList.forEach(item => {
       // Get base price for calculation
       const basePrice = parseFloat(item.price.toString());
       
@@ -135,7 +187,7 @@ export default function CartModal() {
     : calculatedDiscount;
 
   // Calculate service charge as percentage applied to (subtotal - discountAmount)
-  const serviceChargePercentage = serviceType === 'dine-in' ? (selectedBranch?.serviceCharges || 0) : 0;
+  const serviceChargePercentage = showBranchFees && serviceType === 'dine-in' ? (selectedBranch?.serviceCharges || 0) : 0;
   const serviceCharge = (subtotal - discountAmount) * (serviceChargePercentage / 100);
   
   // Calculate tax based on branch settings
@@ -156,6 +208,16 @@ export default function CartModal() {
   const grandTotal = subtotal + serviceCharge + deliveryCharge + taxAmount - discountAmount;
 
   const handleProceedToPayment = () => {
+    // Prevent checkout for multi-branch summary view
+    if (showBranchSummary) {
+      toast({
+        title: "Select a Branch",
+        description: "Please select a specific branch to proceed with checkout.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Check if user is logged in for delivery orders
     if (serviceType === 'delivery' && !user) {
       setCartOpen(false);
@@ -185,18 +247,84 @@ export default function CartModal() {
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-black">Your cart</DialogTitle>
-            <Button variant="ghost" onClick={clearCart} className="configurable-primary-text font-medium hover:configurable-primary-hover hover:text-white">
-              Clear Cart
+            <div className="flex items-center gap-2">
+              {selectedBranchView !== null && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedBranchView(null)}
+                  className="p-1"
+                  data-testid="button-back-to-summary"
+                >
+                  <ArrowLeft size={16} />
+                </Button>
+              )}
+              <DialogTitle className="text-xl font-bold text-black">
+                {selectedBranchView !== null
+                  ? branchSummary.find(b => b.branchId === selectedBranchView)?.branchName || 'Branch Cart'
+                  : 'Your cart'
+                }
+              </DialogTitle>
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={clearCart} 
+              className="configurable-primary-text font-medium hover:configurable-primary-hover hover:text-white"
+              data-testid="button-clear-cart"
+            >
+              {showBranchSummary ? 'Clear All' : 
+               selectedBranchView !== null ? 'Clear Branch' : 'Clear Cart'}
             </Button>
           </div>
+          {isRestaurantMenuPage && selectedBranch && (
+            <p className="text-sm text-gray-600 mt-2" data-testid="text-restaurant-cart-info">
+              <Store size={14} className="inline mr-1" />
+              You are seeing only the cart of this restaurant
+            </p>
+          )}
         </DialogHeader>
         
         <div className="space-y-6 pt-4">
+          {/* Branch Summary View */}
+          {showBranchSummary && (
+            <div className="space-y-4">
+              <h4 className="font-bold text-black text-base mb-3">Cart Summary by Restaurant</h4>
+              {branchSummary.map((branch) => (
+                <div 
+                  key={branch.branchId} 
+                  className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setSelectedBranchView(branch.branchId)}
+                  data-testid={`card-branch-summary-${branch.branchId}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h5 className="font-semibold text-black text-base">{branch.branchName}</h5>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {branch.count} item{branch.count > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-black text-lg">{formatBranchCurrency(branch.total, branchCurrency)}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        data-testid={`button-view-branch-${branch.branchId}`}
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Cart Items */}
-          <div className="space-y-4">
-            {items.map((item) => (
-              <div key={`${item.id}-${item.variation}`} className="border-b border-gray-100 pb-4 last:border-b-0">
+          {!showBranchSummary && (
+            <div className="space-y-4">
+              {displayItems.map((item) => (
+              <div key={`${item.id}-${item.variation || 'default'}-${item.branchId}`} className="border-b border-gray-100 pb-4 last:border-b-0">
                 <div className="flex gap-4">
                   {/* Item Image */}
                   <div className="w-20 h-20 flex-shrink-0">
@@ -301,14 +429,20 @@ export default function CartModal() {
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => updateQuantity(item.id.toString(), item.quantity - 1)}
+                      onClick={() => {
+                        const compositeKey = `${item.id}-${item.variation || 'default'}-${item.branchId}`;
+                        updateQuantity(compositeKey, item.quantity - 1);
+                      }}
                       className="w-8 h-8 configurable-primary text-white rounded flex items-center justify-center hover:configurable-primary-hover"
                     >
                       <Minus size={14} />
                     </button>
                     <span className="w-12 text-center font-medium text-black">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.id.toString(), item.quantity + 1)}
+                      onClick={() => {
+                        const compositeKey = `${item.id}-${item.variation || 'default'}-${item.branchId}`;
+                        updateQuantity(compositeKey, item.quantity + 1);
+                      }}
                       className="w-8 h-8 configurable-primary text-white rounded flex items-center justify-center hover:configurable-primary-hover"
                     >
                       <Plus size={14} />
@@ -316,32 +450,38 @@ export default function CartModal() {
                   </div>
                   
                   <button
-                    onClick={() => removeItem(item.id.toString())}
+                    onClick={() => {
+                      const compositeKey = `${item.id}-${item.variation || 'default'}-${item.branchId}`;
+                      removeItem(compositeKey);
+                    }}
                     className="p-2 text-red-500 hover:text-red-700"
                   >
                     <Trash2 size={18} />
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           
           {/* Promo Code */}
-          <div className="pt-4">
-            <h4 className="font-bold text-black text-base mb-3">Promo code</h4>
-            <div className="flex gap-2">
-              <Input 
-                placeholder="" 
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2" 
-              />
-              <Button className="configurable-primary text-white px-6 py-2 rounded-lg hover:configurable-primary-hover font-medium">
-                Apply
-              </Button>
-            </div>
-          </div>
-          
-          {/* Order Summary */}
-          <div className="pt-6">
+          {!showBranchSummary && (
+            <>
+              <div className="pt-4">
+                <h4 className="font-bold text-black text-base mb-3">Promo code</h4>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="" 
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2" 
+                  />
+                  <Button className="configurable-primary text-white px-6 py-2 rounded-lg hover:configurable-primary-hover font-medium">
+                    Apply
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Order Summary */}
+              <div className="pt-6">
             <h4 className="font-bold text-black text-base mb-4">Order Summary</h4>
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
@@ -454,16 +594,20 @@ export default function CartModal() {
               className="min-h-[80px] resize-none"
               data-testid="textarea-cart-special-instructions"
             />
-          </div>
-          
-          <Button 
-            onClick={handleProceedToPayment}
-            className="w-full configurable-primary text-white py-4 text-base font-medium hover:configurable-primary-hover rounded-lg mt-6"
-            disabled={items.length === 0}
-          >
-            {serviceType === 'delivery' ? 'Enter Delivery Details' : 
-             serviceType === 'takeaway' ? 'Enter Pickup Details' : 'Proceed to Payment'}
-          </Button>
+              </div>
+              
+              <Button 
+                onClick={handleProceedToPayment}
+                className="w-full configurable-primary text-white py-4 text-base font-medium hover:configurable-primary-hover rounded-lg mt-6"
+                disabled={displayItems.length === 0 || showBranchSummary}
+                data-testid="button-proceed-to-payment"
+              >
+                {showBranchSummary ? 'Select a branch to proceed' :
+                 serviceType === 'delivery' ? 'Enter Delivery Details' : 
+                 serviceType === 'takeaway' ? 'Enter Pickup Details' : 'Proceed to Payment'}
+              </Button>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
