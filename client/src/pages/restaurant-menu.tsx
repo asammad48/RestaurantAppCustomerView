@@ -56,8 +56,8 @@ export default function RestaurantMenuPage() {
   
   // AI Estimator state
   const [aiStep, setAiStep] = useState<'input' | 'suggestions'>('input');
-  const [aiGroupSize, setAiGroupSize] = useState<number>(2);
-  const [aiBudget, setAiBudget] = useState<number>(5000);
+  const [aiGroupSize, setAiGroupSize] = useState<string>('2');
+  const [aiBudget, setAiBudget] = useState<string>('5000');
   const [aiSelectedCategories, setAiSelectedCategories] = useState<string[]>([]);
   const [budgetEstimateData, setBudgetEstimateData] = useState<BudgetEstimateRequest | null>(null);
   const itemsPerPage = 10;
@@ -253,6 +253,17 @@ export default function RestaurantMenuPage() {
     }
   };
 
+  // Helper functions to safely convert string inputs to numbers
+  const getGroupSizeNumber = () => {
+    const num = parseInt(aiGroupSize);
+    return isNaN(num) || num < 1 ? 1 : num;
+  };
+
+  const getBudgetNumber = () => {
+    const num = parseInt(aiBudget);
+    return isNaN(num) || num < 500 ? 500 : num;
+  };
+
   const handleGenerateBudgetEstimate = () => {
     // Guard against missing branchId
     if (!branchId) {
@@ -267,8 +278,8 @@ export default function RestaurantMenuPage() {
 
     const estimateRequest: BudgetEstimateRequest = {
       branchId,
-      groupSize: aiGroupSize,
-      maxPrice: aiBudget,
+      groupSize: getGroupSizeNumber(),
+      maxPrice: getBudgetNumber(),
       categories: aiSelectedCategories
     };
     
@@ -482,7 +493,7 @@ export default function RestaurantMenuPage() {
     if (!apiMenuData?.menuItems) return [];
 
     const categoriesData = aiSelectedCategories.length > 0 ? aiSelectedCategories : uniqueCategories;
-    const budgetPerCategory = Math.floor(aiBudget / categoriesData.length);
+    const budgetPerCategory = Math.floor(getBudgetNumber() / categoriesData.length);
 
     const suggestions: any[] = [];
 
@@ -514,7 +525,7 @@ export default function RestaurantMenuPage() {
                            !categoryName.toLowerCase().includes('side');
 
       if (isMainCategory) {
-        for (let person = 0; person < aiGroupSize && currentIndex < sortedItems.length; person++) {
+        for (let person = 0; person < getGroupSizeNumber() && currentIndex < sortedItems.length; person++) {
           const item = sortedItems[currentIndex];
           const itemPrice = item.variations?.[0]?.price || 0;
           
@@ -568,7 +579,7 @@ export default function RestaurantMenuPage() {
   };
 
   const handleGenerateAiSuggestions = () => {
-    if (aiGroupSize > 0 && aiBudget > 0) {
+    if (getGroupSizeNumber() > 0 && getBudgetNumber() > 0) {
       setAiStep('suggestions');
     }
   };
@@ -1189,7 +1200,8 @@ export default function RestaurantMenuPage() {
                     min="1"
                     max="20"
                     value={aiGroupSize}
-                    onChange={(e) => setAiGroupSize(parseInt(e.target.value) || 1)}
+                    onChange={(e) => setAiGroupSize(e.target.value)}
+                    placeholder="Enter group size (1-20)"
                     className="h-12 text-lg bg-white/80 border-slate-200 focus:border-[var(--color-primary)] focus:ring-[var(--configurable-primary-alpha-20)] rounded-xl"
                     data-testid="input-group-size"
                   />
@@ -1208,13 +1220,14 @@ export default function RestaurantMenuPage() {
                     min="500"
                     step="100"
                     value={aiBudget}
-                    onChange={(e) => setAiBudget(parseInt(e.target.value) || 500)}
+                    onChange={(e) => setAiBudget(e.target.value)}
+                    placeholder="Enter budget amount (min 500)"
                     className="h-12 text-lg bg-white/80 border-slate-200 focus:border-[var(--color-primary)] focus:ring-[var(--configurable-primary-alpha-20)] rounded-xl"
                     data-testid="input-budget"
                   />
                   <div className="flex items-center justify-center gap-2 text-sm text-slate-500 bg-white/60 rounded-lg py-2 px-3">
                     <span className="w-1.5 h-1.5 bg-[var(--color-primary)] rounded-full"></span>
-                    <span>{formatBranchCurrency(Math.round(aiBudget / aiGroupSize), branchCurrency)} per person</span>
+                    <span>{formatBranchCurrency(Math.round(getBudgetNumber() / getGroupSizeNumber()), branchCurrency)} per person</span>
                   </div>
                 </div>
 
@@ -1259,31 +1272,31 @@ export default function RestaurantMenuPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <button
-                      onClick={() => setAiBudget(1500)}
+                      onClick={() => setAiBudget('1500')}
                       className="group bg-white/80 hover:bg-white border border-slate-200 hover:border-[var(--color-primary)] rounded-xl p-3 text-center transition-all duration-200 hover:shadow-md hover:scale-105"
                       data-testid="button-range-light"
                     >
                       <div className="text-xs font-medium text-slate-600 mb-1">Light</div>
                       <div className="text-lg font-bold text-[var(--color-primary)] group-hover:text-[var(--color-primary-hover)]">1500</div>
-                      <div className="text-xs text-slate-400">{Math.round(1500 / aiGroupSize)}/person</div>
+                      <div className="text-xs text-slate-400">{Math.round(1500 / getGroupSizeNumber())}/person</div>
                     </button>
                     <button
-                      onClick={() => setAiBudget(3000)}
+                      onClick={() => setAiBudget('3000')}
                       className="group bg-white/80 hover:bg-white border border-slate-200 hover:border-[var(--color-primary)] rounded-xl p-3 text-center transition-all duration-200 hover:shadow-md hover:scale-105"
                       data-testid="button-range-standard"
                     >
                       <div className="text-xs font-medium text-slate-600 mb-1">Standard</div>
                       <div className="text-lg font-bold text-[var(--color-primary)] group-hover:text-[var(--color-primary-hover)]">3000</div>
-                      <div className="text-xs text-slate-400">{Math.round(3000 / aiGroupSize)}/person</div>
+                      <div className="text-xs text-slate-400">{Math.round(3000 / getGroupSizeNumber())}/person</div>
                     </button>
                     <button
-                      onClick={() => setAiBudget(6000)}
+                      onClick={() => setAiBudget('6000')}
                       className="group bg-white/80 hover:bg-white border border-slate-200 hover:border-[var(--color-primary)] rounded-xl p-3 text-center transition-all duration-200 hover:shadow-md hover:scale-105"
                       data-testid="button-range-premium"
                     >
                       <div className="text-xs font-medium text-slate-600 mb-1">Premium</div>
                       <div className="text-lg font-bold text-[var(--color-primary)] group-hover:text-[var(--color-primary-hover)]">6000</div>
-                      <div className="text-xs text-slate-400">{Math.round(6000 / aiGroupSize)}/person</div>
+                      <div className="text-xs text-slate-400">{Math.round(6000 / getGroupSizeNumber())}/person</div>
                     </button>
                   </div>
                 </div>
@@ -1346,7 +1359,7 @@ export default function RestaurantMenuPage() {
                 {/* Generate Button */}
                 <Button
                   onClick={handleGenerateBudgetEstimate}
-                  disabled={aiGroupSize <= 0 || aiBudget <= 0 || isBudgetLoading}
+                  disabled={getGroupSizeNumber() <= 0 || getBudgetNumber() <= 0 || isBudgetLoading}
                   className="w-full h-14 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="button-generate-estimate"
                 >
