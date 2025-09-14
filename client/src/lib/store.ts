@@ -282,7 +282,11 @@ export const useCartStore = create<CartStore>()(
   
   removeItem: (itemId: string) => {
     set((state) => ({
-      items: state.items.filter((item) => item.id !== itemId),
+      items: state.items.filter((item) => {
+        // Support both simple ID and composite key
+        const itemCompositeKey = `${item.id}-${item.variation || 'default'}-${item.branchId}`;
+        return item.id !== itemId && itemCompositeKey !== itemId;
+      }),
     }));
   },
   
@@ -293,9 +297,13 @@ export const useCartStore = create<CartStore>()(
     }
     
     set((state) => ({
-      items: state.items.map((item) =>
-        item.id === itemId ? { ...item, quantity } : item
-      ),
+      items: state.items.map((item) => {
+        // Support both simple ID and composite key
+        const itemCompositeKey = `${item.id}-${item.variation || 'default'}-${item.branchId}`;
+        return (item.id === itemId || itemCompositeKey === itemId) 
+          ? { ...item, quantity } 
+          : item;
+      }),
     }));
   },
   
