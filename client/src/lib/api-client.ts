@@ -206,7 +206,7 @@ export interface Notification {
 }
 
 export interface NotificationAcknowledgeRequest {
-  notificationId: number;
+  notificationIds: number[];
 }
 
 export interface ApiResponse<T = any> {
@@ -401,13 +401,13 @@ class ApiClient {
     return this.getWithAuth<Notification[]>('/api/Notification/GetUserNotifications', token);
   }
 
-  async acknowledgeNotification(token: string, notificationId: number): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/Notification/AcknowledgeNotification', {
-      method: 'POST',
+  async acknowledgeNotification(token: string, notificationIds: number[]): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/Notification/UpdateNotificationAcknowledgeStatus', {
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ notificationId })
+      body: JSON.stringify({ notificationIds })
     });
   }
 }

@@ -1,4 +1,5 @@
 import { useNotificationStore } from "@/lib/store";
+import { useNotifications } from "@/hooks/use-notifications";
 import OrderNotificationModal from "@/components/modals/order-notification-modal";
 import ReservationNotificationModal from "@/components/modals/reservation-notification-modal";
 import { OrderNotificationContent, ReservationNotificationContent } from "@/lib/api-client";
@@ -11,9 +12,11 @@ import { OrderNotificationContent, ReservationNotificationContent } from "@/lib/
 export default function NotificationModals() {
   const {
     selectedNotification,
-    closeNotification,
-    acknowledgeNotification
+    closeNotification
   } = useNotificationStore();
+  
+  // Use the API-enabled acknowledgement from the hook
+  const { acknowledgeNotification } = useNotifications();
 
   console.log('📱 NotificationModals render - selectedNotification:', selectedNotification);
   

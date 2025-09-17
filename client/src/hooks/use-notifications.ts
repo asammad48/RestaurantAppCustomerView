@@ -81,12 +81,29 @@ export function useNotifications() {
     storeCloseNotification();
   }, [storeCloseNotification]);
 
-  // Function to acknowledge notification (simplified - no API call)
+  // Function to acknowledge notification with API call
   const acknowledgeNotification = useCallback(async (notificationId: number) => {
-    // Since there's no acknowledgment API, we just locally mark it as acknowledged
-    // This allows the notification to be displayed without API errors
-    console.log('Notification viewed:', notificationId);
-  }, []);
+    if (!token || !isAuthenticated) {
+      console.warn('Cannot acknowledge notification: No authentication token');
+      return;
+    }
+
+    try {
+      console.log('Acknowledging notification:', notificationId);
+      await apiClient.acknowledgeNotification(token, [notificationId]);
+      console.log('Notification acknowledged successfully:', notificationId);
+      
+      // Invalidate notifications query to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    } catch (error) {
+      console.error('Failed to acknowledge notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to acknowledge notification. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [token, isAuthenticated, queryClient, toast]);
 
   // Function to toggle notification tray
   const toggleNotificationTray = useCallback(() => {
