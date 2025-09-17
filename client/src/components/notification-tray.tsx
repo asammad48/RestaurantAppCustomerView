@@ -1,4 +1,4 @@
-import { Bell, Clock, Package, Calendar } from "lucide-react";
+import { Bell, Package, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -9,28 +9,20 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useNotifications } from "@/hooks/use-notifications";
-import { ParsedNotification } from "@/lib/store";
+import { useNotificationStore, ParsedNotification } from "@/lib/store";
 import { OrderNotificationContent, ReservationNotificationContent } from "@/lib/api-client";
 import { formatDistanceToNow } from "date-fns";
-import { useNotificationStore } from "@/lib/store";
 
 interface NotificationItemProps {
   notification: ParsedNotification;
   onNotificationClick: (notification: ParsedNotification) => void;
-  onAcknowledge: (id: number) => void;
 }
 
-function NotificationItem({ notification, onNotificationClick, onAcknowledge }: NotificationItemProps) {
+function NotificationItem({ notification, onNotificationClick }: NotificationItemProps) {
   const { id, notificationType, createdDate, isNotificationAcknowledged, parsedContent } = notification;
   
   const handleClick = () => {
-    console.log('Notification clicked:', notification);
-    console.log('Parsed content:', parsedContent);
     onNotificationClick(notification);
-    if (!isNotificationAcknowledged) {
-      onAcknowledge(id);
-    }
   };
 
   const getNotificationIcon = () => {
@@ -107,20 +99,24 @@ function NotificationItem({ notification, onNotificationClick, onAcknowledge }: 
 export default function NotificationTray() {
   const {
     notifications,
-    unreadCount,
     isNotificationTrayOpen,
     toggleNotificationTray,
-    setIsNotificationTrayOpen,
+    setNotificationTrayOpen,
     showNotification,
-    acknowledgeNotification
-  } = useNotifications();
+    clearAllNotifications,
+    addNotification,
+    getUnreadCount
+  } = useNotificationStore();
 
-  const { showNotification: storeShowNotification } = useNotificationStore();
+  const unreadCount = getUnreadCount();
 
-  // Test function to create sample notifications
+  // Test function to create sample notifications and add them to the store
   const createTestNotifications = () => {
+    console.log('Creating test notifications...');
+    
+    // Create test order notification
     const testOrderNotification: ParsedNotification = {
-      id: 1,
+      id: Date.now(), // Use timestamp as unique ID
       notificationContent: JSON.stringify({
         OrderId: 123,
         OrderNumber: "ORD-2025-001",
@@ -144,15 +140,16 @@ export default function NotificationTray() {
       }
     };
 
+    // Create test reservation notification
     const testReservationNotification: ParsedNotification = {
-      id: 2,
+      id: Date.now() + 1, // Use timestamp + 1 as unique ID
       notificationContent: JSON.stringify({
         ReservationId: 456,
         ReservationName: "John Smith",
         ReservationStatus: "Confirmed"
       }),
       notificationType: 'Reservation',
-      createdDate: new Date().toISOString(),
+      createdDate: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
       isNotificationAcknowledged: false,
       parsedContent: {
         ReservationId: 456,
@@ -161,13 +158,15 @@ export default function NotificationTray() {
       }
     };
 
-    console.log('Creating test notifications...');
-    // Test the modal directly
-    storeShowNotification(testOrderNotification);
+    // Add notifications to the store
+    addNotification(testOrderNotification);
+    addNotification(testReservationNotification);
+    
+    console.log('Test notifications added to store');
   };
 
   return (
-    <DropdownMenu open={isNotificationTrayOpen} onOpenChange={setIsNotificationTrayOpen}>
+    <DropdownMenu open={isNotificationTrayOpen} onOpenChange={setNotificationTrayOpen}>
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
@@ -199,6 +198,15 @@ export default function NotificationTray() {
           <div className="px-3 py-8 text-center">
             <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No notifications yet</p>
+            <Button 
+              variant="outline" 
+              className="mt-3 text-xs" 
+              size="sm"
+              onClick={createTestNotifications}
+              data-testid="button-add-test-notifications"
+            >
+              Add Test Notifications
+            </Button>
           </div>
         ) : (
           <ScrollArea className="max-h-80">
@@ -207,7 +215,6 @@ export default function NotificationTray() {
                 <NotificationItem
                   notification={notification}
                   onNotificationClick={showNotification}
-                  onAcknowledge={acknowledgeNotification}
                 />
                 {index < notifications.length - 1 && <DropdownMenuSeparator />}
               </div>
@@ -215,23 +222,31 @@ export default function NotificationTray() {
           </ScrollArea>
         )}
         
-        <DropdownMenuSeparator />
-        <div className="px-3 py-2 space-y-2">
-          {notifications.length > 0 && (
-            <Button variant="ghost" className="w-full text-xs" size="sm">
-              View All Notifications
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            className="w-full text-xs" 
-            size="sm"
-            onClick={createTestNotifications}
-            data-testid="button-test-notification"
-          >
-            Test Order Modal
-          </Button>
-        </div>
+        {notifications.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-3 py-2 space-y-2">
+              <Button 
+                variant="outline" 
+                className="w-full text-xs" 
+                size="sm"
+                onClick={clearAllNotifications}
+                data-testid="button-clear-notifications"
+              >
+                Clear All Notifications
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full text-xs" 
+                size="sm"
+                onClick={createTestNotifications}
+                data-testid="button-add-test-notifications"
+              >
+                Add Test Notifications
+              </Button>
+            </div>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
