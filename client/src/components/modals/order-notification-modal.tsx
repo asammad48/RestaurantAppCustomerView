@@ -33,12 +33,14 @@ function StarRating({ rating, onRatingChange }: StarRatingProps) {
           key={star}
           type="button"
           onClick={() => onRatingChange(star)}
-          className={`p-1 rounded ${
-            star <= rating ? 'text-yellow-400' : 'text-gray-300'
-          } hover:text-yellow-400 transition-colors`}
+          className={`p-1 rounded transition-colors ${
+            star <= rating 
+              ? 'text-yellow-400 hover:text-yellow-500' 
+              : 'text-gray-300 hover:text-yellow-400'
+          }`}
           data-testid={`star-rating-${star}`}
         >
-          <Star className="w-6 h-6 fill-current" />
+          <Star className={`w-6 h-6 ${star <= rating ? 'fill-current' : ''}`} />
         </button>
       ))}
     </div>
@@ -60,13 +62,13 @@ export default function OrderNotificationModal({
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'paid':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
     }
   };
 
@@ -80,14 +82,14 @@ export default function OrderNotificationModal({
   const handleSubmit = async () => {
     setIsSubmitting(true);
     
-    // Here you would normally submit the data to your API
-    // For now, we'll just simulate a submission
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Simulate API submission
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       console.log('Submitting order response:', {
+        orderNumber: content.OrderNumber,
         tipAmount: content.IsTipNeeded ? tipAmount : null,
-        screenshot: content.IsScreenshotNeeded ? screenshot : null,
+        screenshot: content.IsScreenshotNeeded ? screenshot?.name : null,
         feedback: content.IsFeedbackNeeded ? feedback : null,
         rating: content.IsFeedbackNeeded ? rating : null
       });
@@ -111,146 +113,165 @@ export default function OrderNotificationModal({
   };
 
   const isFormValid = () => {
-    if (content.IsTipNeeded && !tipAmount.trim()) return false;
+    if (content.IsTipNeeded && (!tipAmount.trim() || parseFloat(tipAmount) < 0)) return false;
     if (content.IsScreenshotNeeded && !screenshot) return false;
     if (content.IsFeedbackNeeded && (!feedback.trim() || rating === 0)) return false;
     return true;
   };
+
+  const hasRequiredFields = content.IsTipNeeded || content.IsScreenshotNeeded || content.IsFeedbackNeeded;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" data-testid="modal-order-notification">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Package className="w-5 h-5" />
-            <span>Order Update</span>
+            <Package className="w-5 h-5 text-blue-600" />
+            <span>Order Notification Details</span>
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Order Details */}
+          {/* Order Information */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-white border rounded-lg">
-              <Package className="w-5 h-5 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Order Number</p>
-                <p className="font-semibold" data-testid="text-order-number">
-                  {content.OrderNumber}
-                </p>
+            <div className="p-4 bg-gray-50 rounded-lg border">
+              <div className="flex items-center space-x-3 mb-3">
+                <Package className="w-5 h-5 text-gray-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Order Number</p>
+                  <p className="text-lg font-bold text-gray-900" data-testid="text-order-number">
+                    {content.OrderNumber}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center space-x-3 p-3 bg-white border rounded-lg">
-              <CreditCard className="w-5 h-5 text-gray-400" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Payment Status</p>
-                <Badge className={`${getStatusColor(content.PaymentStatus)} mt-1`} data-testid="badge-payment-status">
-                  {content.PaymentStatus}
-                </Badge>
+              <div className="flex items-center space-x-3">
+                <CreditCard className="w-5 h-5 text-gray-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Payment Status</p>
+                  <Badge 
+                    className={`${getStatusColor(content.PaymentStatus)} mt-1 font-medium`}
+                    data-testid="badge-payment-status"
+                  >
+                    {content.PaymentStatus}
+                  </Badge>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Conditional Fields */}
-          {(content.IsTipNeeded || content.IsScreenshotNeeded || content.IsFeedbackNeeded) && (
+          {/* Conditional Fields Section */}
+          {hasRequiredFields && (
             <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Additional Information Required</h4>
-              
-              {/* Tip Field */}
-              {content.IsTipNeeded && (
-                <div className="space-y-2">
-                  <Label htmlFor="tipAmount" className="flex items-center space-x-2">
-                    <DollarSign className="w-4 h-4" />
-                    <span>Tip Amount ({content.Currency})</span>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="tipAmount"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={tipAmount}
-                      onChange={(e) => setTipAmount(e.target.value)}
-                      className="pl-8"
-                      data-testid="input-tip-amount"
-                    />
-                    <DollarSign className="w-4 h-4 text-gray-400 absolute left-2 top-3" />
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-4">Additional Information Required</h4>
+                
+                {/* Tip Field */}
+                {content.IsTipNeeded && (
+                  <div className="space-y-2 mb-4">
+                    <Label htmlFor="tipAmount" className="flex items-center space-x-2 font-medium">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      <span>Tip Amount ({content.Currency})</span>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="tipAmount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter tip amount (e.g. 5.00)"
+                        value={tipAmount}
+                        onChange={(e) => setTipAmount(e.target.value)}
+                        className="pl-10"
+                        data-testid="input-tip-amount"
+                      />
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        {content.Currency === 'USD' ? '$' : content.Currency}
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500">Enter the tip amount you'd like to provide</p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Screenshot Upload */}
-              {content.IsScreenshotNeeded && (
-                <div className="space-y-2">
-                  <Label htmlFor="screenshot" className="flex items-center space-x-2">
-                    <Camera className="w-4 h-4" />
-                    <span>Payment Screenshot</span>
-                  </Label>
-                  <div className="flex items-center space-x-2">
+                {/* Screenshot Upload */}
+                {content.IsScreenshotNeeded && (
+                  <div className="space-y-2 mb-4">
+                    <Label htmlFor="screenshot" className="flex items-center space-x-2 font-medium">
+                      <Camera className="w-4 h-4 text-blue-600" />
+                      <span>Payment Screenshot</span>
+                    </Label>
                     <Input
                       id="screenshot"
                       type="file"
                       accept="image/*"
                       onChange={handleScreenshotUpload}
-                      className="flex-1"
+                      className="file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                       data-testid="input-payment-screenshot"
                     />
                     {screenshot && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        Uploaded
-                      </Badge>
+                      <div className="mt-3">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Badge variant="secondary" className="bg-green-100 text-green-800">
+                            File uploaded: {screenshot.name}
+                          </Badge>
+                        </div>
+                        <img
+                          src={URL.createObjectURL(screenshot)}
+                          alt="Payment screenshot preview"
+                          className="max-w-full h-40 object-contain rounded border bg-gray-50"
+                        />
+                      </div>
                     )}
+                    <p className="text-xs text-gray-500">Upload a screenshot of your payment confirmation</p>
                   </div>
-                  {screenshot && (
-                    <div className="mt-2">
-                      <img
-                        src={URL.createObjectURL(screenshot)}
-                        alt="Payment screenshot preview"
-                        className="max-w-full h-32 object-contain rounded border"
+                )}
+
+                {/* Feedback and Rating */}
+                {content.IsFeedbackNeeded && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center space-x-2 font-medium">
+                        <Star className="w-4 h-4 text-yellow-600" />
+                        <span>Rate Your Experience</span>
+                      </Label>
+                      <div className="flex items-center space-x-3">
+                        <StarRating rating={rating} onRatingChange={setRating} />
+                        <span className="text-sm text-gray-600 min-w-[100px]">
+                          {rating === 0 && 'No rating selected'}
+                          {rating === 1 && '1 star - Poor'}
+                          {rating === 2 && '2 stars - Fair'}
+                          {rating === 3 && '3 stars - Good'}
+                          {rating === 4 && '4 stars - Very Good'}
+                          {rating === 5 && '5 stars - Excellent'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="feedback" className="flex items-center space-x-2 font-medium">
+                        <MessageCircle className="w-4 h-4 text-purple-600" />
+                        <span>Feedback</span>
+                      </Label>
+                      <Textarea
+                        id="feedback"
+                        placeholder="Please share your feedback about the order experience..."
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                        rows={4}
+                        className="resize-none"
+                        data-testid="textarea-feedback"
                       />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Feedback and Rating */}
-              {content.IsFeedbackNeeded && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="flex items-center space-x-2">
-                      <Star className="w-4 h-4" />
-                      <span>Rate your experience</span>
-                    </Label>
-                    <div className="flex items-center space-x-2">
-                      <StarRating rating={rating} onRatingChange={setRating} />
-                      <span className="text-sm text-gray-500">
-                        {rating > 0 ? `${rating} star${rating > 1 ? 's' : ''}` : 'No rating'}
-                      </span>
+                      <p className="text-xs text-gray-500">Your feedback helps us improve our service</p>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="feedback" className="flex items-center space-x-2">
-                      <MessageCircle className="w-4 h-4" />
-                      <span>Feedback</span>
-                    </Label>
-                    <Textarea
-                      id="feedback"
-                      placeholder="Please share your feedback about the order..."
-                      value={feedback}
-                      onChange={(e) => setFeedback(e.target.value)}
-                      rows={3}
-                      data-testid="textarea-feedback"
-                    />
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        <div className="flex justify-end space-x-2 pt-4">
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 pt-4 border-t">
           <Button 
             variant="outline"
             onClick={handleClose}
@@ -259,14 +280,14 @@ export default function OrderNotificationModal({
           >
             Close
           </Button>
-          {(content.IsTipNeeded || content.IsScreenshotNeeded || content.IsFeedbackNeeded) && (
+          {hasRequiredFields && (
             <Button 
               onClick={handleSubmit}
               disabled={isSubmitting || !isFormValid()}
-              className="min-w-[100px]"
+              className="min-w-[120px]"
               data-testid="button-submit-order-response"
             >
-              {isSubmitting ? 'Submitting...' : 'Submit'}
+              {isSubmitting ? 'Submitting...' : 'Submit Response'}
             </Button>
           )}
         </div>
