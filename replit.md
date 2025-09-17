@@ -33,6 +33,7 @@ Preferred communication style: Simple, everyday language.
 - **Order History**: Displays past orders with pagination, detailed order information (items, delivery, split bills, status), and color-coded status badges. Integrated for both logged-in users and device-specific guest orders.
 - **AI Budget Estimator**: Inline component for budget estimation based on group size and total budget, with preset options and smart tips. Integrates with existing backend API.
 - **Notification System**: Notifications acknowledged via API upon clicking or opening modals, with real-time updates and error feedback.
+- **Order Feedback System**: Order-type notifications include integrated feedback submission with star ratings, comments, and payment receipt uploads via PUT `/api/Order/Feedback` API endpoint.
 
 ### System Design Choices
 - **Frontend Only**: This project focuses solely on the frontend, with all backend logic handled by an external API.
