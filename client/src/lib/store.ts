@@ -2,7 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { MenuItem, ApiMenuItem, ApiDeal } from './mock-data';
 import { Branch } from '../types/branch';
-import { OrderResponse } from './api-client';
+import { OrderResponse, Notification, OrderNotificationContent, ReservationNotificationContent } from './api-client';
+
+export interface ParsedNotification extends Notification {
+  parsedContent: OrderNotificationContent | ReservationNotificationContent;
+}
 
 export type ServiceType = 'dine-in' | 'delivery' | 'takeaway' | 'reservation' | 'qr';
 
@@ -419,3 +423,34 @@ export const useCartStore = create<CartStore>()(
     }
   )
 );
+
+// Notification Store
+interface NotificationStore {
+  selectedNotification: ParsedNotification | null;
+  isNotificationTrayOpen: boolean;
+  setSelectedNotification: (notification: ParsedNotification | null) => void;
+  setNotificationTrayOpen: (open: boolean) => void;
+  showNotification: (notification: ParsedNotification) => void;
+  closeNotification: () => void;
+  toggleNotificationTray: () => void;
+}
+
+export const useNotificationStore = create<NotificationStore>((set) => ({
+  selectedNotification: null,
+  isNotificationTrayOpen: false,
+  
+  setSelectedNotification: (notification: ParsedNotification | null) => 
+    set({ selectedNotification: notification }),
+  
+  setNotificationTrayOpen: (open: boolean) => 
+    set({ isNotificationTrayOpen: open }),
+  
+  showNotification: (notification: ParsedNotification) => 
+    set({ selectedNotification: notification }),
+  
+  closeNotification: () => 
+    set({ selectedNotification: null }),
+  
+  toggleNotificationTray: () => 
+    set((state) => ({ isNotificationTrayOpen: !state.isNotificationTrayOpen })),
+}));

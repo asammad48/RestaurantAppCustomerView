@@ -1,19 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, Notification, OrderNotificationContent, ReservationNotificationContent } from '@/lib/api-client';
 import { useAuthStore } from '@/lib/auth-store';
 import { useToast } from '@/hooks/use-toast';
-
-export interface ParsedNotification extends Notification {
-  parsedContent: OrderNotificationContent | ReservationNotificationContent;
-}
+import { useNotificationStore, ParsedNotification } from '@/lib/store';
 
 export function useNotifications() {
   const { isAuthenticated, token } = useAuthStore();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedNotification, setSelectedNotification] = useState<ParsedNotification | null>(null);
-  const [isNotificationTrayOpen, setIsNotificationTrayOpen] = useState(false);
+  
+  // Use shared notification store
+  const {
+    selectedNotification,
+    isNotificationTrayOpen,
+    setSelectedNotification,
+    setNotificationTrayOpen,
+    showNotification: storeShowNotification,
+    closeNotification: storeCloseNotification,
+    toggleNotificationTray: storeToggleNotificationTray
+  } = useNotificationStore();
 
   // Query to fetch notifications
   const { data: notificationsResponse, error } = useQuery({
@@ -36,45 +42,77 @@ export function useNotifications() {
 
   const notifications = notificationsResponse?.data || [];
 
-  // Parse notification content and count unread
-  const parsedNotifications: ParsedNotification[] = notifications.map(notification => ({
-    ...notification,
-    parsedContent: JSON.parse(notification.notificationContent)
-  }));
+  // Parse notification content and count unread with error handling
+  const parsedNotifications: ParsedNotification[] = notifications.map(notification => {
+    try {
+      return {
+        ...notification,
+        parsedContent: JSON.parse(notification.notificationContent)
+      };
+    } catch (error) {
+      console.error('Failed to parse notification content:', error, notification);
+      // Return a safe fallback
+      return {
+        ...notification,
+        parsedContent: {
+          OrderId: 0,
+          OrderNumber: 'N/A',
+          PaymentStatus: 'Unknown',
+          IsScreenshotNeeded: false,
+          IsFeedbackNeeded: false,
+          IsTipNeeded: false,
+          Currency: 'USD'
+        } as OrderNotificationContent
+      };
+    }
+  }).filter(n => n.parsedContent); // Filter out any that failed to parse
 
   const unreadCount = parsedNotifications.filter(n => !n.isNotificationAcknowledged).length;
 
   // Function to show notification modal
   const showNotification = useCallback((notification: ParsedNotification) => {
-    setSelectedNotification(notification);
-  }, []);
+    storeShowNotification(notification);
+  }, [storeShowNotification]);
 
   // Function to close notification modal
   const closeNotification = useCallback(() => {
-    setSelectedNotification(null);
-  }, []);
+    storeCloseNotification();
+  }, [storeCloseNotification]);
 
   // Function to acknowledge notification
   const acknowledgeNotification = useCallback(async (notificationId: number) => {
-    if (!token) return;
+    if (!token) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please log in to acknowledge notifications"
+      });
+      return;
+    }
     
     try {
       await apiClient.acknowledgeNotification(token, notificationId);
       // Invalidate notifications query to refetch
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      
+      toast({
+        title: "Success",
+        description: "Notification acknowledged"
+      });
     } catch (error) {
+      console.error('Failed to acknowledge notification:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to acknowledge notification"
+        description: "Failed to acknowledge notification. Please try again."
       });
     }
   }, [token, queryClient, toast]);
 
   // Function to toggle notification tray
   const toggleNotificationTray = useCallback(() => {
-    setIsNotificationTrayOpen(prev => !prev);
-  }, []);
+    storeToggleNotificationTray();
+  }, [storeToggleNotificationTray]);
 
   // Show toast for new unread notifications
   useEffect(() => {
@@ -112,7 +150,7 @@ export function useNotifications() {
     closeNotification,
     acknowledgeNotification,
     toggleNotificationTray,
-    setIsNotificationTrayOpen,
+    setIsNotificationTrayOpen: setNotificationTrayOpen,
     isLoading: false, // Since we're using background polling
     error
   };

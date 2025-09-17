@@ -9,7 +9,8 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useNotifications, ParsedNotification } from "@/hooks/use-notifications";
+import { useNotifications } from "@/hooks/use-notifications";
+import { ParsedNotification } from "@/lib/store";
 import { OrderNotificationContent, ReservationNotificationContent } from "@/lib/api-client";
 import { formatDistanceToNow } from "date-fns";
 

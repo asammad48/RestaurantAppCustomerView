@@ -1,5 +1,6 @@
 import { useNotifications } from "@/hooks/use-notifications";
 import { OrderNotificationContent, ReservationNotificationContent } from "@/lib/api-client";
+import { ParsedNotification } from "@/lib/store";
 import OrderNotificationModal from "./modals/order-notification-modal";
 import ReservationNotificationModal from "./modals/reservation-notification-modal";
 
