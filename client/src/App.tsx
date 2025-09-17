@@ -14,6 +14,7 @@ import InitialServiceModal from "@/components/modals/initial-service-modal";
 import { LoginModal } from "@/components/modals/login-modal";
 import { SignupModal } from "@/components/modals/signup-modal";
 import CartModal from "@/components/modals/cart-modal";
+import NotificationModals from "@/components/notification-modals";
 import { useSignalR } from "@/hooks/use-signalr";
 
 function Router() {
@@ -44,6 +45,7 @@ function App() {
         <LoginModal />
         <SignupModal />
         <CartModal />
+        <NotificationModals />
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -11,6 +11,7 @@ import { useCartStore } from "@/lib/store";
 import { useAuthStore } from "@/lib/auth-store";
 import { Link, useLocation } from "wouter";
 import { getImageUrl } from "@/lib/config";
+import NotificationTray from "./notification-tray";
 
 export default function Navbar() {
   const { setCartOpen, items, selectedBranch } = useCartStore();
@@ -86,6 +87,9 @@ export default function Navbar() {
                 </span>
               )}
             </Button>
+
+            {/* Notification Tray - Only show when authenticated */}
+            {isAuthenticated && <NotificationTray />}
             
             {/* Authentication Section */}
             {isAuthenticated ? (
