@@ -13,6 +13,7 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { ParsedNotification } from "@/lib/store";
 import { OrderNotificationContent, ReservationNotificationContent } from "@/lib/api-client";
 import { formatDistanceToNow } from "date-fns";
+import { useNotificationStore } from "@/lib/store";
 
 interface NotificationItemProps {
   notification: ParsedNotification;
@@ -24,6 +25,8 @@ function NotificationItem({ notification, onNotificationClick, onAcknowledge }: 
   const { id, notificationType, createdDate, isNotificationAcknowledged, parsedContent } = notification;
   
   const handleClick = () => {
+    console.log('Notification clicked:', notification);
+    console.log('Parsed content:', parsedContent);
     onNotificationClick(notification);
     if (!isNotificationAcknowledged) {
       onAcknowledge(id);
@@ -112,6 +115,57 @@ export default function NotificationTray() {
     acknowledgeNotification
   } = useNotifications();
 
+  const { showNotification: storeShowNotification } = useNotificationStore();
+
+  // Test function to create sample notifications
+  const createTestNotifications = () => {
+    const testOrderNotification: ParsedNotification = {
+      id: 1,
+      notificationContent: JSON.stringify({
+        OrderId: 123,
+        OrderNumber: "ORD-2025-001",
+        PaymentStatus: "Paid",
+        IsScreenshotNeeded: true,
+        IsFeedbackNeeded: true,
+        IsTipNeeded: true,
+        Currency: "USD"
+      }),
+      notificationType: 'Order',
+      createdDate: new Date().toISOString(),
+      isNotificationAcknowledged: false,
+      parsedContent: {
+        OrderId: 123,
+        OrderNumber: "ORD-2025-001",
+        PaymentStatus: "Paid",
+        IsScreenshotNeeded: true,
+        IsFeedbackNeeded: true,
+        IsTipNeeded: true,
+        Currency: "USD"
+      }
+    };
+
+    const testReservationNotification: ParsedNotification = {
+      id: 2,
+      notificationContent: JSON.stringify({
+        ReservationId: 456,
+        ReservationName: "John Smith",
+        ReservationStatus: "Confirmed"
+      }),
+      notificationType: 'Reservation',
+      createdDate: new Date().toISOString(),
+      isNotificationAcknowledged: false,
+      parsedContent: {
+        ReservationId: 456,
+        ReservationName: "John Smith",
+        ReservationStatus: "Confirmed"
+      }
+    };
+
+    console.log('Creating test notifications...');
+    // Test the modal directly
+    storeShowNotification(testOrderNotification);
+  };
+
   return (
     <DropdownMenu open={isNotificationTrayOpen} onOpenChange={setIsNotificationTrayOpen}>
       <DropdownMenuTrigger asChild>
@@ -161,16 +215,23 @@ export default function NotificationTray() {
           </ScrollArea>
         )}
         
-        {notifications.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <div className="px-3 py-2">
-              <Button variant="ghost" className="w-full text-xs" size="sm">
-                View All Notifications
-              </Button>
-            </div>
-          </>
-        )}
+        <DropdownMenuSeparator />
+        <div className="px-3 py-2 space-y-2">
+          {notifications.length > 0 && (
+            <Button variant="ghost" className="w-full text-xs" size="sm">
+              View All Notifications
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            className="w-full text-xs" 
+            size="sm"
+            onClick={createTestNotifications}
+            data-testid="button-test-notification"
+          >
+            Test Order Modal
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

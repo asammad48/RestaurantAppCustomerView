@@ -7,6 +7,8 @@ import ReservationNotificationModal from "./modals/reservation-notification-moda
 export default function NotificationModals() {
   const { selectedNotification, closeNotification } = useNotifications();
 
+  console.log('NotificationModals - selectedNotification:', selectedNotification);
+
   if (!selectedNotification) return null;
 
   if (selectedNotification.notificationType === 'Order') {
