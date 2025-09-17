@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotificationStore, ParsedNotification } from "@/lib/store";
 import { OrderNotificationContent, ReservationNotificationContent } from "@/lib/api-client";
 import { formatDistanceToNow } from "date-fns";
+import { useNotifications } from "@/hooks/use-notifications";
 
 interface NotificationItemProps {
   notification: ParsedNotification;
@@ -97,18 +98,22 @@ function NotificationItem({ notification, onNotificationClick }: NotificationIte
 }
 
 export default function NotificationTray() {
+  // Use the notifications hook to fetch data from API
   const {
     notifications,
+    unreadCount,
     isNotificationTrayOpen,
     toggleNotificationTray,
-    setNotificationTrayOpen,
     showNotification,
+    isLoading,
+    error
+  } = useNotifications();
+  
+  const {
     clearAllNotifications,
     addNotification,
-    getUnreadCount
+    setNotificationTrayOpen
   } = useNotificationStore();
-
-  const unreadCount = getUnreadCount();
 
   // Test function to create sample notifications and add them to the store
   const createTestNotifications = () => {
@@ -194,7 +199,18 @@ export default function NotificationTray() {
           </div>
         </div>
         
-        {notifications.length === 0 ? (
+        {isLoading ? (
+          <div className="px-3 py-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+            <p className="text-sm text-gray-500">Loading notifications...</p>
+          </div>
+        ) : error ? (
+          <div className="px-3 py-8 text-center">
+            <Bell className="w-8 h-8 text-red-300 mx-auto mb-2" />
+            <p className="text-sm text-red-500">Failed to load notifications</p>
+            <p className="text-xs text-gray-500 mt-1">Please try again later</p>
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="px-3 py-8 text-center">
             <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No notifications yet</p>

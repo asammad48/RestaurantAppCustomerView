@@ -14,7 +14,6 @@ export function useNotifications() {
   const {
     selectedNotification,
     isNotificationTrayOpen,
-    setSelectedNotification,
     setNotificationTrayOpen,
     showNotification: storeShowNotification,
     closeNotification: storeCloseNotification,
@@ -22,7 +21,7 @@ export function useNotifications() {
   } = useNotificationStore();
 
   // Query to fetch notifications
-  const { data: notificationsResponse, error } = useQuery({
+  const { data: notificationsResponse, error, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
       if (!token) throw new Error('No authentication token');
@@ -128,7 +127,7 @@ export function useNotifications() {
     acknowledgeNotification,
     toggleNotificationTray,
     setIsNotificationTrayOpen: setNotificationTrayOpen,
-    isLoading: false, // Since we're using background polling
+    isLoading,
     error
   };
 }
