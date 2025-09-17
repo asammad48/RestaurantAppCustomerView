@@ -410,6 +410,30 @@ class ApiClient {
       body: JSON.stringify({ notificationIds })
     });
   }
+
+  // Order Feedback API method
+  async submitOrderFeedback(token: string, feedbackData: OrderFeedbackRequest): Promise<ApiResponse<OrderFeedbackResponse>> {
+    return this.request<OrderFeedbackResponse>('/api/Order/Feedback', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(feedbackData)
+    });
+  }
+}
+
+// Order Feedback API Types
+export interface OrderFeedbackRequest {
+  orderId: number;
+  comments: string;
+  rating: number;
+  paymentReceipt: string; // base64 string
+}
+
+export interface OrderFeedbackResponse {
+  isSuccess: boolean;
+  message: string;
 }
 
 // Custom error class for API errors
