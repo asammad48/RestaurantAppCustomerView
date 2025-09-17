@@ -50,7 +50,7 @@ function NotificationItem({ notification, onNotificationClick, onAcknowledge }: 
       return `Order ${content.OrderNumber}`;
     } else if (notificationType === 'Reservation') {
       const content = parsedContent as ReservationNotificationContent;
-      return `Reservation Update`;
+      return content.ReservationName;
     }
     return 'Notification';
   };
@@ -58,10 +58,10 @@ function NotificationItem({ notification, onNotificationClick, onAcknowledge }: 
   const getNotificationDescription = () => {
     if (notificationType === 'Order') {
       const content = parsedContent as OrderNotificationContent;
-      return `Payment Status: ${content.PaymentStatus}`;
+      return `Status: ${content.PaymentStatus}`;
     } else if (notificationType === 'Reservation') {
       const content = parsedContent as ReservationNotificationContent;
-      return `${content.ReservationName} - ${content.ReservationStatus}`;
+      return `Status: ${content.ReservationStatus}`;
     }
     return 'Click to view details';
   };
