@@ -11,7 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { OrderNotificationContent } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/lib/auth-store";
+import { OrderNotificationContent, apiClient, OrderFeedbackRequest } from "@/lib/api-client";
 
 interface OrderNotificationModalProps {
   isOpen: boolean;
@@ -58,6 +60,9 @@ export default function OrderNotificationModal({
   const [feedback, setFeedback] = useState<string>("");
   const [rating, setRating] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { toast } = useToast();
+  const { token, isAuthenticated } = useAuthStore();
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -79,27 +84,91 @@ export default function OrderNotificationModal({
     }
   };
 
+  // Helper function to convert file to base64
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result && typeof reader.result === 'string') {
+          // Extract base64 data (remove data:image/jpeg;base64, prefix)
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Failed to convert file to base64'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmit = async () => {
+    // Check authentication
+    if (!isAuthenticated || !token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to submit feedback.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate feedback fields if feedback is required
+    if (content.IsFeedbackNeeded && (!feedback.trim() || rating === 0)) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide both rating and feedback.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      // Simulate API submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      let paymentReceiptBase64 = '';
       
-      console.log('Submitting order response:', {
-        orderNumber: content.OrderNumber,
-        tipAmount: content.IsTipNeeded ? tipAmount : null,
-        screenshot: content.IsScreenshotNeeded ? screenshot?.name : null,
-        feedback: content.IsFeedbackNeeded ? feedback : null,
-        rating: content.IsFeedbackNeeded ? rating : null
-      });
-      
-      if (onAcknowledge) {
-        onAcknowledge();
+      // Convert screenshot to base64 if provided
+      if (screenshot) {
+        paymentReceiptBase64 = await convertFileToBase64(screenshot);
       }
-      onClose();
+
+      // Prepare feedback data
+      const feedbackData: OrderFeedbackRequest = {
+        orderId: content.OrderId, // Use the numeric OrderId directly
+        comments: feedback || '',
+        rating: rating || 0,
+        paymentReceipt: paymentReceiptBase64
+      };
+
+      // Submit feedback via API
+      const response = await apiClient.submitOrderFeedback(token, feedbackData);
+      
+      if (response.data.isSuccess) {
+        toast({
+          title: "Feedback Submitted",
+          description: response.data.message || "Thank you for your feedback!",
+        });
+        
+        // Acknowledge the notification
+        if (onAcknowledge) {
+          onAcknowledge();
+        }
+        onClose();
+      } else {
+        toast({
+          title: "Submission Failed",
+          description: response.data.message || "Failed to submit feedback. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error('Failed to submit order response:', error);
+      console.error('Failed to submit order feedback:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit feedback. Please check your connection and try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
