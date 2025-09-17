@@ -5,15 +5,9 @@ import OrderNotificationModal from "./modals/order-notification-modal";
 import ReservationNotificationModal from "./modals/reservation-notification-modal";
 
 export default function NotificationModals() {
-  const { selectedNotification, closeNotification, acknowledgeNotification } = useNotifications();
+  const { selectedNotification, closeNotification } = useNotifications();
 
   if (!selectedNotification) return null;
-
-  const handleAcknowledge = () => {
-    if (!selectedNotification.isNotificationAcknowledged) {
-      acknowledgeNotification(selectedNotification.id);
-    }
-  };
 
   if (selectedNotification.notificationType === 'Order') {
     return (
@@ -21,7 +15,6 @@ export default function NotificationModals() {
         isOpen={true}
         onClose={closeNotification}
         content={selectedNotification.parsedContent as OrderNotificationContent}
-        onAcknowledge={handleAcknowledge}
       />
     );
   }
@@ -32,7 +25,6 @@ export default function NotificationModals() {
         isOpen={true}
         onClose={closeNotification}
         content={selectedNotification.parsedContent as ReservationNotificationContent}
-        onAcknowledge={handleAcknowledge}
       />
     );
   }
