@@ -424,33 +424,109 @@ export const useCartStore = create<CartStore>()(
   )
 );
 
-// Notification Store
+// New Notification Store with proper functionality
 interface NotificationStore {
+  // State
+  notifications: ParsedNotification[];
   selectedNotification: ParsedNotification | null;
   isNotificationTrayOpen: boolean;
-  setSelectedNotification: (notification: ParsedNotification | null) => void;
-  setNotificationTrayOpen: (open: boolean) => void;
+  lastToastedIds: Set<number>;
+  
+  // Actions
+  addNotification: (notification: ParsedNotification) => void;
+  acknowledgeNotification: (notificationId: number) => void;
   showNotification: (notification: ParsedNotification) => void;
   closeNotification: () => void;
   toggleNotificationTray: () => void;
+  setNotificationTrayOpen: (open: boolean) => void;
+  clearAllNotifications: () => void;
+  
+  // Getters
+  getUnreadCount: () => number;
+  getUnreadNotifications: () => ParsedNotification[];
 }
 
-export const useNotificationStore = create<NotificationStore>((set) => ({
+export const useNotificationStore = create<NotificationStore>((set, get) => ({
+  // Initial state
+  notifications: [],
   selectedNotification: null,
   isNotificationTrayOpen: false,
+  lastToastedIds: new Set(),
   
-  setSelectedNotification: (notification: ParsedNotification | null) => 
-    set({ selectedNotification: notification }),
+  // Add a new notification to the store
+  addNotification: (notification: ParsedNotification) => {
+    set((state) => {
+      // Check if notification already exists
+      const exists = state.notifications.some(n => n.id === notification.id);
+      if (exists) return state;
+      
+      // Add notification and sort by creation date (newest first)
+      const newNotifications = [notification, ...state.notifications]
+        .slice(0, 50) // Keep max 50 notifications
+        .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
+      
+      return {
+        ...state,
+        notifications: newNotifications
+      };
+    });
+  },
   
-  setNotificationTrayOpen: (open: boolean) => 
-    set({ isNotificationTrayOpen: open }),
+  // Mark a notification as acknowledged
+  acknowledgeNotification: (notificationId: number) => {
+    set((state) => ({
+      ...state,
+      notifications: state.notifications.map(n => 
+        n.id === notificationId 
+          ? { ...n, isNotificationAcknowledged: true }
+          : n
+      )
+    }));
+  },
   
-  showNotification: (notification: ParsedNotification) => 
-    set({ selectedNotification: notification }),
+  // Show notification modal
+  showNotification: (notification: ParsedNotification) => {
+    set({ selectedNotification: notification });
+    // Auto-acknowledge when opened
+    get().acknowledgeNotification(notification.id);
+  },
   
-  closeNotification: () => 
-    set({ selectedNotification: null }),
+  // Close notification modal
+  closeNotification: () => {
+    set({ selectedNotification: null });
+  },
   
-  toggleNotificationTray: () => 
-    set((state) => ({ isNotificationTrayOpen: !state.isNotificationTrayOpen })),
+  // Toggle notification tray
+  toggleNotificationTray: () => {
+    set((state) => ({ 
+      ...state,
+      isNotificationTrayOpen: !state.isNotificationTrayOpen 
+    }));
+  },
+  
+  // Set notification tray open state
+  setNotificationTrayOpen: (open: boolean) => {
+    set({ isNotificationTrayOpen: open });
+  },
+  
+  // Clear all notifications
+  clearAllNotifications: () => {
+    set({ 
+      notifications: [], 
+      selectedNotification: null,
+      lastToastedIds: new Set()
+    });
+  },
+  
+  // Get count of unread notifications
+  getUnreadCount: () => {
+    const { notifications } = get();
+    return notifications.filter(n => !n.isNotificationAcknowledged).length;
+  },
+  
+  // Get unread notifications
+  getUnreadNotifications: () => {
+    const { notifications } = get();
+    return notifications.filter(n => !n.isNotificationAcknowledged);
+  }
 }));
