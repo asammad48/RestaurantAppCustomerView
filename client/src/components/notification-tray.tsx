@@ -1,16 +1,19 @@
 import { Bell, Package, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotificationStore, ParsedNotification } from "@/lib/store";
-import { OrderNotificationContent, ReservationNotificationContent } from "@/lib/api-client";
+import {
+  OrderNotificationContent,
+  ReservationNotificationContent,
+} from "@/lib/api-client";
 import { formatDistanceToNow } from "date-fns";
 import { useNotifications } from "@/hooks/use-notifications";
 
@@ -19,18 +22,28 @@ interface NotificationItemProps {
   onNotificationClick: (notification: ParsedNotification) => void;
 }
 
-function NotificationItem({ notification, onNotificationClick }: NotificationItemProps) {
-  const { id, notificationType, createdDate, isNotificationAcknowledged, parsedContent } = notification;
-  
+function NotificationItem({
+  notification,
+  onNotificationClick,
+}: NotificationItemProps) {
+  const {
+    id,
+    notificationType,
+    createdDate,
+    isNotificationAcknowledged,
+    parsedContent,
+  } = notification;
+
   const handleClick = () => {
+    console.log(`Notification clicked: ${JSON.stringify(notification)}`);
     onNotificationClick(notification);
   };
 
   const getNotificationIcon = () => {
     switch (notificationType) {
-      case 'Order':
+      case "Order":
         return <Package className="w-4 h-4" />;
-      case 'Reservation':
+      case "Reservation":
         return <Calendar className="w-4 h-4" />;
       default:
         return <Bell className="w-4 h-4" />;
@@ -38,49 +51,58 @@ function NotificationItem({ notification, onNotificationClick }: NotificationIte
   };
 
   const getNotificationTitle = () => {
-    if (notificationType === 'Order') {
+    if (notificationType === "Order") {
       const content = parsedContent as OrderNotificationContent;
       return `Order ${content.OrderNumber}`;
-    } else if (notificationType === 'Reservation') {
+    } else if (notificationType === "Reservation") {
       const content = parsedContent as ReservationNotificationContent;
       return content.ReservationName;
     }
-    return 'Notification';
+    return "Notification";
   };
 
   const getNotificationDescription = () => {
-    if (notificationType === 'Order') {
+    if (notificationType === "Order") {
       const content = parsedContent as OrderNotificationContent;
       return `Status: ${content.PaymentStatus}`;
-    } else if (notificationType === 'Reservation') {
+    } else if (notificationType === "Reservation") {
       const content = parsedContent as ReservationNotificationContent;
       return `Status: ${content.ReservationStatus}`;
     }
-    return 'Click to view details';
+    return "Click to view details";
   };
 
   return (
-    <DropdownMenuItem 
+    <DropdownMenuItem
       className={`flex items-start space-x-3 p-3 cursor-pointer hover:bg-gray-50 ${
-        !isNotificationAcknowledged ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+        !isNotificationAcknowledged
+          ? "bg-blue-50 border-l-2 border-blue-500"
+          : ""
       }`}
       onClick={handleClick}
       data-testid={`notification-item-${id}`}
     >
-      <div className={`flex-shrink-0 mt-1 ${
-        !isNotificationAcknowledged ? 'text-blue-600' : 'text-gray-400'
-      }`}>
+      <div
+        className={`flex-shrink-0 mt-1 ${
+          !isNotificationAcknowledged ? "text-blue-600" : "text-gray-400"
+        }`}
+      >
         {getNotificationIcon()}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <p className={`text-sm font-medium truncate ${
-            !isNotificationAcknowledged ? 'text-gray-900' : 'text-gray-600'
-          }`}>
+          <p
+            className={`text-sm font-medium truncate ${
+              !isNotificationAcknowledged ? "text-gray-900" : "text-gray-600"
+            }`}
+          >
             {getNotificationTitle()}
           </p>
           {!isNotificationAcknowledged && (
-            <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800">
+            <Badge
+              variant="secondary"
+              className="ml-2 bg-blue-100 text-blue-800"
+            >
               New
             </Badge>
           )}
@@ -106,19 +128,16 @@ export default function NotificationTray() {
     toggleNotificationTray,
     showNotification,
     isLoading,
-    error
+    error,
   } = useNotifications();
-  
-  const {
-    clearAllNotifications,
-    addNotification,
-    setNotificationTrayOpen
-  } = useNotificationStore();
+
+  const { clearAllNotifications, addNotification, setNotificationTrayOpen } =
+    useNotificationStore();
 
   // Test function to create sample notifications and add them to the store
   const createTestNotifications = () => {
-    console.log('Creating test notifications...');
-    
+    console.log("Creating test notifications...");
+
     // Create test order notification
     const testOrderNotification: ParsedNotification = {
       id: Date.now(), // Use timestamp as unique ID
@@ -129,9 +148,9 @@ export default function NotificationTray() {
         IsScreenshotNeeded: true,
         IsFeedbackNeeded: true,
         IsTipNeeded: true,
-        Currency: "USD"
+        Currency: "USD",
       }),
-      notificationType: 'Order',
+      notificationType: "Order",
       createdDate: new Date().toISOString(),
       isNotificationAcknowledged: false,
       parsedContent: {
@@ -141,8 +160,8 @@ export default function NotificationTray() {
         IsScreenshotNeeded: true,
         IsFeedbackNeeded: true,
         IsTipNeeded: true,
-        Currency: "USD"
-      }
+        Currency: "USD",
+      },
     };
 
     // Create test reservation notification
@@ -151,30 +170,33 @@ export default function NotificationTray() {
       notificationContent: JSON.stringify({
         ReservationId: 456,
         ReservationName: "John Smith",
-        ReservationStatus: "Confirmed"
+        ReservationStatus: "Confirmed",
       }),
-      notificationType: 'Reservation',
+      notificationType: "Reservation",
       createdDate: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
       isNotificationAcknowledged: false,
       parsedContent: {
         ReservationId: 456,
         ReservationName: "John Smith",
-        ReservationStatus: "Confirmed"
-      }
+        ReservationStatus: "Confirmed",
+      },
     };
 
     // Add notifications to the store
     addNotification(testOrderNotification);
     addNotification(testReservationNotification);
-    
-    console.log('Test notifications added to store');
+
+    console.log("Test notifications added to store");
   };
 
   return (
-    <DropdownMenu open={isNotificationTrayOpen} onOpenChange={setNotificationTrayOpen}>
+    <DropdownMenu
+      open={isNotificationTrayOpen}
+      onOpenChange={setNotificationTrayOpen}
+    >
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="relative p-2 hover:bg-gray-100"
           onClick={toggleNotificationTray}
           data-testid="button-notification-toggle"
@@ -182,7 +204,7 @@ export default function NotificationTray() {
           <Bell size={20} className="text-gray-600" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white min-w-[20px] h-5 flex items-center justify-center text-xs rounded-full font-bold">
-              {unreadCount > 99 ? '99+' : unreadCount}
+              {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
         </Button>
@@ -198,7 +220,7 @@ export default function NotificationTray() {
             )}
           </div>
         </div>
-        
+
         {isLoading ? (
           <div className="px-3 py-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
@@ -214,9 +236,9 @@ export default function NotificationTray() {
           <div className="px-3 py-8 text-center">
             <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No notifications yet</p>
-            <Button 
-              variant="outline" 
-              className="mt-3 text-xs" 
+            <Button
+              variant="outline"
+              className="mt-3 text-xs"
               size="sm"
               onClick={createTestNotifications}
               data-testid="button-add-test-notifications"
@@ -237,23 +259,23 @@ export default function NotificationTray() {
             ))}
           </ScrollArea>
         )}
-        
+
         {notifications.length > 0 && (
           <>
             <DropdownMenuSeparator />
             <div className="px-3 py-2 space-y-2">
-              <Button 
-                variant="outline" 
-                className="w-full text-xs" 
+              <Button
+                variant="outline"
+                className="w-full text-xs"
                 size="sm"
                 onClick={clearAllNotifications}
                 data-testid="button-clear-notifications"
               >
                 Clear All Notifications
               </Button>
-              <Button 
-                variant="outline" 
-                className="w-full text-xs" 
+              <Button
+                variant="outline"
+                className="w-full text-xs"
                 size="sm"
                 onClick={createTestNotifications}
                 data-testid="button-add-test-notifications"

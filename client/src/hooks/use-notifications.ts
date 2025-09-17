@@ -70,6 +70,9 @@ export function useNotifications() {
 
   // Function to show notification modal
   const showNotification = useCallback((notification: ParsedNotification) => {
+    console.log('🔔 useNotifications: showNotification called with:', notification);
+    console.log('🔔 Notification type:', notification.notificationType);
+    console.log('🔔 Parsed content:', notification.parsedContent);
     storeShowNotification(notification);
   }, [storeShowNotification]);
 

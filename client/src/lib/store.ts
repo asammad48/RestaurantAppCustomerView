@@ -486,9 +486,12 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   
   // Show notification modal
   showNotification: (notification: ParsedNotification) => {
+    console.log('🏪 Store: showNotification called with:', notification);
+    console.log('🏪 Setting selectedNotification in store');
     set({ selectedNotification: notification });
     // Auto-acknowledge when opened
     get().acknowledgeNotification(notification.id);
+    console.log('🏪 Store state updated, selectedNotification set');
   },
   
   // Close notification modal

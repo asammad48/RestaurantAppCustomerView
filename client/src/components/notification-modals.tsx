@@ -15,6 +15,14 @@ export default function NotificationModals() {
     acknowledgeNotification
   } = useNotificationStore();
 
+  console.log('📱 NotificationModals render - selectedNotification:', selectedNotification);
+  
+  // Debug: Show more details about the selected notification
+  if (selectedNotification) {
+    console.log('📱 Modal should render for notification type:', selectedNotification.notificationType);
+    console.log('📱 Modal content:', selectedNotification.parsedContent);
+  }
+
   // Handle acknowledgment when a notification is closed
   const handleAcknowledge = () => {
     if (selectedNotification) {
@@ -33,6 +41,7 @@ export default function NotificationModals() {
 
   // Render order notification modal
   if (selectedNotification.notificationType === 'Order') {
+    console.log('📱 Rendering OrderNotificationModal with content:', selectedNotification.parsedContent);
     const content = selectedNotification.parsedContent as OrderNotificationContent;
     return (
       <OrderNotificationModal
@@ -46,6 +55,7 @@ export default function NotificationModals() {
 
   // Render reservation notification modal
   if (selectedNotification.notificationType === 'Reservation') {
+    console.log('📱 Rendering ReservationNotificationModal with content:', selectedNotification.parsedContent);
     const content = selectedNotification.parsedContent as ReservationNotificationContent;
     return (
       <ReservationNotificationModal
