@@ -180,6 +180,35 @@ export interface BranchByIdResponse {
   currency: string;
 }
 
+// Notification API Types
+export interface OrderNotificationContent {
+  OrderId: number;
+  OrderNumber: string;
+  PaymentStatus: string;
+  IsScreenshotNeeded: boolean;
+  IsFeedbackNeeded: boolean;
+  IsTipNeeded: boolean;
+  Currency: string;
+}
+
+export interface ReservationNotificationContent {
+  ReservationId: number;
+  ReservationName: string;
+  ReservationStatus: string;
+}
+
+export interface Notification {
+  id: number;
+  notificationContent: string; // JSON string containing OrderNotificationContent or ReservationNotificationContent
+  notificationType: 'Order' | 'Reservation';
+  createdDate: string; // ISO date string
+  isNotificationAcknowledged: boolean;
+}
+
+export interface NotificationAcknowledgeRequest {
+  notificationId: number;
+}
+
 export interface ApiResponse<T = any> {
   data: T;
   status: number;
@@ -305,6 +334,20 @@ class ApiClient {
     return this.request<T>(url, { method: 'GET' });
   }
 
+  // Authenticated GET request
+  async getWithAuth<T>(endpoint: string, token: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
+    const url = params
+      ? `${endpoint}?${new URLSearchParams(params).toString()}`
+      : endpoint;
+    
+    return this.request<T>(url, { 
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  }
+
   // POST request
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
@@ -351,6 +394,21 @@ class ApiClient {
   // Branch API method
   async getBranchById(requestData: BranchByIdRequest): Promise<ApiResponse<BranchByIdResponse>> {
     return this.post<BranchByIdResponse>('/api/customer-search/get-branch-by-id', requestData);
+  }
+
+  // Notification API methods
+  async getUserNotifications(token: string): Promise<ApiResponse<Notification[]>> {
+    return this.getWithAuth<Notification[]>('/api/Notification/GetUserNotifications', token);
+  }
+
+  async acknowledgeNotification(token: string, notificationId: number): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/Notification/AcknowledgeNotification', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ notificationId })
+    });
   }
 }
 
