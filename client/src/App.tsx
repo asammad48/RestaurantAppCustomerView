@@ -9,6 +9,7 @@ import Delivery from "@/pages/delivery";
 import ReservationDetail from "@/pages/reservation-detail";
 import RestaurantMenu from "@/pages/restaurant-menu";
 import OrderHistoryPage from "@/pages/order-history";
+import ReservationsPage from "@/pages/reservations";
 import NotFound from "@/pages/not-found";
 import InitialServiceModal from "@/components/modals/initial-service-modal";
 import { LoginModal } from "@/components/modals/login-modal";
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/home" component={Home} />
       <Route path="/orders" component={Orders} />
       <Route path="/order-history" component={OrderHistoryPage} />
+      <Route path="/reservations" component={ReservationsPage} />
       <Route path="/delivery" component={Delivery} />
       <Route path="/reservation-detail" component={ReservationDetail} />
       <Route path="/restaurant-menu" component={RestaurantMenu} />
