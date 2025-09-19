@@ -21,6 +21,7 @@ export interface ApiMenuItem {
   categoryName: string;
   picture: string;
   maxAllowedAmount?: number;
+  allergenItemContains?: string;
   variations: {
     id: number;
     name: string;
@@ -58,6 +59,7 @@ export interface ApiDeal {
   picture: string;
   dealEndDate: string;
   maxAllowedAmount?: number;
+  allergenItemContains?: string;
   discount?: {
     id: number;
     name: string;
@@ -67,6 +69,7 @@ export interface ApiDeal {
   menuItems: {
     menuItemId: number;
     name: string;
+    allergenItemContains?: string;
     variantsDetails: {
       menuItemVariantId: number;
       name: string;

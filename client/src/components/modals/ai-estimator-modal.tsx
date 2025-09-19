@@ -433,14 +433,22 @@ export default function AiEstimatorModal() {
                           <div className="space-y-2 mb-4">
                             <h4 className="text-sm font-medium text-gray-700">Menu Items:</h4>
                             {option.menuItems.map((item, itemIndex) => (
-                              <div key={itemIndex} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                                <div>
-                                  <span className="font-medium">{item.variations[0]?.quantity}x {item.name}</span>
-                                  <div className="text-xs text-gray-500">
-                                    {item.variations[0]?.name} • {item.categoryName}
+                              <div key={itemIndex} className="bg-gray-50 p-2 rounded space-y-1">
+                                <div className="flex justify-between text-sm">
+                                  <div>
+                                    <span className="font-medium">{item.variations[0]?.quantity}x {item.name}</span>
+                                    <div className="text-xs text-gray-500">
+                                      {item.variations[0]?.name} • {item.categoryName}
+                                    </div>
                                   </div>
+                                  <span className="font-medium">{formatBranchCurrency(item.variations[0]?.price * item.variations[0]?.quantity, branchCurrency)}</span>
                                 </div>
-                                <span className="font-medium">{formatBranchCurrency(item.variations[0]?.price * item.variations[0]?.quantity, branchCurrency)}</span>
+                                {/* Allergen Information */}
+                                {item.allergenItemContains && (
+                                  <div className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1 rounded">
+                                    <span className="font-medium">⚠️ Contains:</span> {item.allergenItemContains}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>

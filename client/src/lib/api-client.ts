@@ -98,6 +98,7 @@ export interface BudgetMenuItem {
   description: string;
   categoryName: string;
   picture: string;
+  allergenItemContains?: string;
   variations: {
     id: number;
     name: string;

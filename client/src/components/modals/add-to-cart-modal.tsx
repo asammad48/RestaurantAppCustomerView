@@ -186,6 +186,16 @@ export default function AddToCartModal() {
           </div>
         )}
 
+        {/* Allergen Information for Deal */}
+        {deal.allergenItemContains && (
+          <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
+            <h4 className="text-sm font-medium text-orange-800 mb-1">⚠️ Deal Allergen Information:</h4>
+            <p className="text-sm text-orange-700">
+              Contains: {deal.allergenItemContains}
+            </p>
+          </div>
+        )}
+
         <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
           <h3 className="font-semibold text-lg configurable-text-primary mb-3">Deal Includes:</h3>
           
@@ -202,6 +212,16 @@ export default function AddToCartModal() {
                           <span className="w-2 h-2 configurable-primary rounded-full mr-2"></span>
                           <span className="font-medium configurable-text-primary">{item.name}</span>
                         </div>
+                        
+                        {/* Allergen Information for Individual Menu Item */}
+                        {item.allergenItemContains && (
+                          <div className="ml-4 mb-2 p-2 rounded bg-orange-50 border border-orange-200">
+                            <p className="text-xs text-orange-700">
+                              <span className="font-medium">⚠️ Contains:</span> {item.allergenItemContains}
+                            </p>
+                          </div>
+                        )}
+                        
                         {item.variantsDetails && item.variantsDetails.length > 0 && (
                           <div className="ml-4 space-y-1">
                             <h5 className="text-xs font-medium configurable-text-secondary mb-1">Variants:</h5>
@@ -288,6 +308,16 @@ export default function AddToCartModal() {
           <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
             <p className="text-sm font-medium text-blue-800">
               Max Allowed discount for the Order is {formatBranchCurrency(menuItem.maxAllowedAmount || 0, branchCurrency)}
+            </p>
+          </div>
+        )}
+
+        {/* Allergen Information */}
+        {menuItem.allergenItemContains && (
+          <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
+            <h4 className="text-sm font-medium text-orange-800 mb-1">⚠️ Allergen Information:</h4>
+            <p className="text-sm text-orange-700">
+              Contains: {menuItem.allergenItemContains}
             </p>
           </div>
         )}
