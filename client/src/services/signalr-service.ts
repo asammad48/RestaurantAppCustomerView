@@ -1,11 +1,16 @@
 import { HubConnectionBuilder, HubConnection, HubConnectionState, HttpTransportType } from '@microsoft/signalr';
 import { AuthService } from './auth-service';
 import { toast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
 export interface OrderStatusUpdateEvent {
   orderId: number;
   orderNumber: string;
   status: string;
+}
+
+export interface NotificationsPendingEvent {
+  IsNotificationPending: boolean;
 }
 
 export class SignalRService {
@@ -82,6 +87,12 @@ export class SignalRService {
     this.connection.on('OrderStatusUpdate', (data: OrderStatusUpdateEvent) => {
       console.log('SignalR: Received OrderStatusUpdate:', data);
       this.handleOrderStatusUpdate(data);
+    });
+
+    // Listen for NotificationsPending event
+    this.connection.on('NotificationsPending', (data: NotificationsPendingEvent) => {
+      console.log('SignalR: Received NotificationsPending:', data);
+      this.handleNotificationsPending(data);
     });
 
     // Handle connection events
@@ -166,6 +177,22 @@ export class SignalRService {
     window.dispatchEvent(new CustomEvent('orderStatusUpdated', {
       detail: { orderId, orderNumber, status }
     }));
+  }
+
+  // Handle notifications pending events
+  private handleNotificationsPending(data: NotificationsPendingEvent): void {
+    console.log('SignalR: Handling NotificationsPending event:', data);
+    
+    // Check if there are pending notifications
+    if (data.IsNotificationPending === true) {
+      console.log('SignalR: Notifications pending - triggering GetUserNotification call');
+      
+      // Invalidate and refetch notifications query to trigger GetUserNotification API call
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      
+      // Optional: Also refetch immediately for faster response
+      queryClient.refetchQueries({ queryKey: ['notifications'] });
+    }
   }
 
   // Get current connection state
