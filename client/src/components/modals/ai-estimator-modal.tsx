@@ -445,7 +445,10 @@ export default function AiEstimatorModal() {
                                 </div>
                                 {/* Allergen Information */}
                                 {item.allergenItemContains && (
-                                  <div className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1 rounded">
+                                  <div 
+                                    className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1 rounded"
+                                    data-testid={`text-allergen-budgetitem-${item.menuItemId}`}
+                                  >
                                     <span className="font-medium">⚠️ Contains:</span> {item.allergenItemContains}
                                   </div>
                                 )}
@@ -459,17 +462,40 @@ export default function AiEstimatorModal() {
                           <div className="space-y-2 mb-4">
                             <h4 className="text-sm font-medium text-gray-700">Package Deals:</h4>
                             {option.menuPackages.map((packageItem, packageIndex) => (
-                              <div key={packageIndex} className="flex justify-between text-sm bg-blue-50 p-2 rounded">
-                                <div>
-                                  <span className="font-medium">1x {packageItem.name}</span>
-                                  <div className="text-xs text-gray-500">
-                                    {packageItem.description}
+                              <div key={packageIndex} className="bg-blue-50 p-2 rounded space-y-1">
+                                <div className="flex justify-between text-sm">
+                                  <div>
+                                    <span className="font-medium">1x {packageItem.name}</span>
+                                    <div className="text-xs text-gray-500">
+                                      {packageItem.description}
+                                    </div>
+                                    <div className="text-xs text-blue-600">
+                                      Deal includes multiple items
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-blue-600">
-                                    Deal includes multiple items
-                                  </div>
+                                  <span className="font-medium">{formatBranchCurrency(packageItem.price, branchCurrency)}</span>
                                 </div>
-                                <span className="font-medium">{formatBranchCurrency(packageItem.price, branchCurrency)}</span>
+                                {/* Package Allergen Information */}
+                                {packageItem.allergenItemContains && (
+                                  <div 
+                                    className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1 rounded"
+                                    data-testid={`text-allergen-package-${packageItem.dealId}`}
+                                  >
+                                    <span className="font-medium">⚠️ Package Contains:</span> {packageItem.allergenItemContains}
+                                  </div>
+                                )}
+                                {/* Individual Menu Items Allergen Information */}
+                                {packageItem.menuItems.map((menuItem, itemIndex) => (
+                                  menuItem.allergenItemContains && (
+                                    <div 
+                                      key={itemIndex} 
+                                      className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1 rounded"
+                                      data-testid={`text-allergen-packageitem-${menuItem.menuItemId}-${itemIndex}`}
+                                    >
+                                      <span className="font-medium">⚠️ {menuItem.name} Contains:</span> {menuItem.allergenItemContains}
+                                    </div>
+                                  )
+                                ))}
                               </div>
                             ))}
                           </div>

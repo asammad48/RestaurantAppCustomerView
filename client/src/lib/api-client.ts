@@ -117,9 +117,11 @@ export interface BudgetMenuPackage {
   quantity: number;
   picture: string;
   dealEndDate: string;
+  allergenItemContains?: string;
   menuItems: {
     menuItemId: number;
     name: string;
+    allergenItemContains?: string;
     variantsDetails: {
       menuItemVariantId: number;
       name: string;

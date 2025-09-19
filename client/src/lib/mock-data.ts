@@ -857,6 +857,7 @@ class MockStorage {
               description: "Pizza Peperonni Description",
               categoryName: "Pizza",
               picture: "uploads/menu-items/ac1fa189-51aa-499d-9dbb-4d4b07775844.jpg",
+              allergenItemContains: "Wheat, Dairy, Soy",
               variations: [
                 {
                   id: 5,
@@ -881,6 +882,7 @@ class MockStorage {
               description: "Pizza Peperonni Description",
               categoryName: "Pizza",
               picture: "uploads/menu-items/ac1fa189-51aa-499d-9dbb-4d4b07775844.jpg",
+              allergenItemContains: "Wheat, Dairy, Soy",
               variations: [
                 {
                   id: 6,
@@ -905,6 +907,7 @@ class MockStorage {
               description: "Pizza Peperonni Description",
               categoryName: "Pizza",
               picture: "uploads/menu-items/ac1fa189-51aa-499d-9dbb-4d4b07775844.jpg",
+              allergenItemContains: "Wheat, Dairy, Soy",
               variations: [
                 {
                   id: 7,
@@ -933,10 +936,12 @@ class MockStorage {
               quantity: 1,
               picture: "uploads/deals/469b13d2-d156-41d5-b27d-ab4cf667d498.bin",
               dealEndDate: "2025-09-08T20:58:14.863",
+              allergenItemContains: "Wheat, Dairy, Soy, Eggs",
               menuItems: [
                 {
                   menuItemId: 6,
                   name: "Pizza Peperonni",
+                  allergenItemContains: "Wheat, Dairy, Soy, Pork",
                   variantsDetails: [
                     {
                       menuItemVariantId: 5,
