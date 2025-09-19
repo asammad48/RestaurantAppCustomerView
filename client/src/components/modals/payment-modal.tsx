@@ -9,6 +9,7 @@ import { useCartStore } from "@/lib/store";
 import { orderService } from "@/services/order-service";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/use-cart";
+import { useAuthStore } from "@/lib/auth-store";
 import { SplitBill } from "@/lib/api-client";
 import { CartItem } from "@/lib/store";
 
@@ -30,6 +31,7 @@ export default function PaymentModal() {
   } = useCartStore();
   const { items } = useCart();
   const { toast } = useToast();
+  const { user, token } = useAuthStore();
   
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [splitBill, setSplitBill] = useState(false);
@@ -81,14 +83,14 @@ export default function PaymentModal() {
         serviceType,
         branchId: selectedBranch.branchId,
         locationId: serviceType === 'dine-in' ? selectedBranch.branchId : undefined,
-        username: "guest_user", // This should be replaced with actual user info
+        username: user?.name || user?.email || 'guest',
         tipAmount: 0, // This can be extended to include tip selection
-        deviceInfo: "WEB_APP",
         deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,
         takeawayDetails: serviceType === 'takeaway' ? takeawayDetails : null,
         splitBills: splitBillsData,
         specialInstruction: specialInstructions || '',
-        allergenIds: selectedAllergens && selectedAllergens.length > 0 ? selectedAllergens : null
+        allergenIds: selectedAllergens && selectedAllergens.length > 0 ? selectedAllergens : null,
+        token: token
       });
 
       if (response.success && response.data) {

@@ -30,7 +30,7 @@ export default function SplitBillModal() {
     branchCurrency 
   } = useCartStore();
   const { items, total } = useCart();
-  const { user, setLoginModalOpen } = useAuthStore();
+  const { user, setLoginModalOpen, token } = useAuthStore();
   const { toast } = useToast();
   const [peopleCount, setPeopleCount] = useState(3);
   const [mobileNumbers, setMobileNumbers] = useState<string[]>([]);
@@ -107,12 +107,13 @@ export default function SplitBillModal() {
         cartItems: items,
         serviceType,
         branchId: selectedBranch?.branchId || 1,
-        username: user.name || user.email || 'guest',
+        username: user?.name || user?.email || 'guest',
         tipAmount: 0,
         deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,
         takeawayDetails: serviceType === 'takeaway' ? takeawayDetails : null,
         splitBills,
-        specialInstruction: specialInstructions || ''
+        specialInstruction: specialInstructions || '',
+        token: token
       });
 
       if (orderResponse.success) {

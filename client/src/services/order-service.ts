@@ -1,5 +1,6 @@
 import { apiClient, OrderRequest, OrderResponse, ApiResponse, DeliveryDetails, SplitBill } from '@/lib/api-client';
 import { CartItem, ServiceType, DeliveryDetails as StoreDeliveryDetails, TakeawayDetails as StoreTakeawayDetails } from '@/lib/store';
+import { getDeviceId } from '@/lib/device-id';
 
 export class OrderService {
   // Get order type based on service type
@@ -127,12 +128,12 @@ export class OrderService {
     locationId,
     username,
     tipAmount = 0,
-    deviceInfo = 'WEB_APP',
     deliveryDetails = null,
     takeawayDetails = null,
     splitBills = null,
     specialInstruction = '',
-    allergenIds = []
+    allergenIds = [],
+    token = null
   }: {
     cartItems: CartItem[];
     serviceType: ServiceType;
@@ -140,17 +141,20 @@ export class OrderService {
     locationId?: number;
     username: string;
     tipAmount?: number;
-    deviceInfo?: string;
     deliveryDetails?: StoreDeliveryDetails | null;
     takeawayDetails?: StoreTakeawayDetails | null;
     splitBills?: SplitBill[] | null;
     specialInstruction?: string;
     allergenIds?: number[] | null;
+    token?: string | null;
   }): Promise<ApiResponse<OrderResponse>> {
+    // Use proper device ID instead of hardcoded 'WEB_APP'
+    const deviceId = getDeviceId();
+    
     const orderData: OrderRequest = {
       branchId,
       locationId: serviceType === 'dine-in' ? (locationId || 0) : 0,
-      deviceInfo,
+      deviceInfo: deviceId,
       tipAmount,
       username,
       orderType: this.getOrderType(serviceType),
@@ -163,7 +167,12 @@ export class OrderService {
       allergenIds: allergenIds && allergenIds.length > 0 ? allergenIds : null
     };
 
-    return apiClient.createOrder(orderData);
+    // Use authenticated request if token is provided
+    if (token) {
+      return apiClient.createOrderWithAuth(orderData, token);
+    } else {
+      return apiClient.createOrder(orderData);
+    }
   }
 }
 

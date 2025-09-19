@@ -381,6 +381,17 @@ class ApiClient {
     return this.post<OrderResponse>('/api/Order', orderData);
   }
 
+  // Authenticated order creation
+  async createOrderWithAuth(orderData: OrderRequest, token: string): Promise<ApiResponse<OrderResponse>> {
+    return this.request<OrderResponse>('/api/Order', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(orderData)
+    });
+  }
+
   // AI Budget Estimator API method
   async getBudgetEstimate(estimateData: BudgetEstimateRequest): Promise<ApiResponse<BudgetEstimateResponse>> {
     return this.post<BudgetEstimateResponse>('/api/customer-search/estimate', estimateData);
