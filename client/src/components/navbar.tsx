@@ -1,4 +1,4 @@
-import { ShoppingCart, Receipt, Utensils, Home, User, LogOut, History, Calendar } from "lucide-react";
+import { ShoppingCart, Utensils, Home, User, LogOut, History, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -60,21 +60,6 @@ export default function Navbar() {
           </Link>
           
           <div className="flex items-center space-x-3">
-            {location === "/orders" ? (
-              <Link href="/">
-                <Button variant="ghost" className="flex items-center space-x-2">
-                  <Home size={20} />
-                  <span className="hidden sm:inline">Main Page</span>
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/orders">
-                <Button variant="ghost" className="flex items-center space-x-2">
-                  <Receipt size={20} />
-                  <span className="hidden sm:inline">Orders</span>
-                </Button>
-              </Link>
-            )}
             <Button 
               onClick={() => setCartOpen(true)}
               className="flex items-center space-x-2 configurable-primary text-white hover:configurable-primary-hover relative"
