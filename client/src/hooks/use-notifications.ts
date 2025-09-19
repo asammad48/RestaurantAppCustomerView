@@ -109,6 +109,25 @@ export function useNotifications() {
     storeToggleNotificationTray();
   }, [storeToggleNotificationTray]);
 
+  // Listen for SignalR notifications pending events
+  useEffect(() => {
+    const handleNotificationsPending = (event: CustomEvent) => {
+      console.log('🔔 Received notificationsPending event:', event.detail);
+      if (event.detail?.IsNotificationPending && isAuthenticated && token) {
+        console.log('🔔 Triggering notifications refresh from SignalR event');
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('notificationsPending', handleNotificationsPending as EventListener);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('notificationsPending', handleNotificationsPending as EventListener);
+    };
+  }, [queryClient, isAuthenticated, token]);
+
   // Show toast for new unread notifications
   useEffect(() => {
     if (parsedNotifications.length > 0) {

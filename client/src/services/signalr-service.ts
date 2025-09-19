@@ -1,7 +1,6 @@
 import { HubConnectionBuilder, HubConnection, HubConnectionState, HttpTransportType } from '@microsoft/signalr';
 import { AuthService } from './auth-service';
 import { toast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
 
 export interface OrderStatusUpdateEvent {
   orderId: number;
@@ -187,11 +186,10 @@ export class SignalRService {
     if (data.IsNotificationPending === true) {
       console.log('SignalR: Notifications pending - triggering GetUserNotification call');
       
-      // Invalidate and refetch notifications query to trigger GetUserNotification API call
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      
-      // Optional: Also refetch immediately for faster response
-      queryClient.refetchQueries({ queryKey: ['notifications'] });
+      // Fire a custom event that the notifications hook can listen to
+      window.dispatchEvent(new CustomEvent('notificationsPending', {
+        detail: { IsNotificationPending: true }
+      }));
     }
   }
 
