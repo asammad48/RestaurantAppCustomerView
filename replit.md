@@ -39,8 +39,10 @@ Preferred communication style: Simple, everyday language.
 - **Frontend Only**: This project focuses solely on the frontend, with all backend logic handled by an external API.
 - **Project Structure**: All application code resides in the `client/` directory.
 - **Modals**: Comprehensive modal system for various interactions (cart, payment, bill splitting, reviews, service requests, order confirmation).
-- **Environment Configuration**: API base URL configured via `VITE_API_BASE_URL` environment variable.
-- **Deployment**: Vite builds optimized React application for production, deployed via Replit Deploy with autoscale target.
+- **Environment Configuration**: The application was originally designed to connect to an external API at `https://5dtrtpzg-7261.inc1.devtunnels.ms`. In the Replit environment, the app runs with mock data and frontend-only functionality through the TanStack Query client setup.
+- **Replit Setup**: Configured to run on port 5000 with host `0.0.0.0` and `allowedHosts: true` for proper proxy support in the Replit environment.
+- **Development Server**: Uses Vite dev server with hot module replacement for development.
+- **Deployment**: Configured for Replit Deploy with autoscale target, using `npm run build` and `npm run start` commands.
 
 ## External Dependencies
 
