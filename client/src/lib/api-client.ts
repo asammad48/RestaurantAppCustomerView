@@ -232,12 +232,22 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     try {
+      const { headers: optHeaders, ...rest } = options;
+      const extra = optHeaders ? (optHeaders instanceof Headers ? Object.fromEntries(optHeaders.entries()) : optHeaders) : {};
+      const baseHeaders: Record<string, string> = {
+        'Accept': 'application/json',
+      };
+      
+      // Only add Content-Type for requests with body that aren't FormData
+      if (rest.body && !(rest.body instanceof FormData)) {
+        baseHeaders['Content-Type'] = 'application/json';
+      }
+      
+      const mergedHeaders = { ...baseHeaders, ...extra };
+      
       const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
+        ...rest,
+        headers: mergedHeaders,
       });
 
       let data;
@@ -253,8 +263,9 @@ class ApiClient {
       switch (response.status) {
         case 200:
         case 201:
+        case 204: // No Content - success with no response body
           return {
-            data,
+            data: response.status === 204 ? null : data,
             status: response.status,
             success: true,
           };
