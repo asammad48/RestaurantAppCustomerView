@@ -16,6 +16,7 @@ import {
 } from "@/lib/api-client";
 import { formatDistanceToNow } from "date-fns";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface NotificationItemProps {
   notification: ParsedNotification;
@@ -134,6 +135,17 @@ export default function NotificationTray() {
   const { clearAllNotifications, addNotification, setNotificationTrayOpen } =
     useNotificationStore();
 
+  const queryClient = useQueryClient();
+
+  // Custom toggle function that refreshes notifications when opening the tray
+  const handleTrayToggle = () => {
+    if (!isNotificationTrayOpen) {
+      // Tray is closed, about to open - refresh notifications
+      queryClient.refetchQueries({ queryKey: ['notifications'] });
+    }
+    toggleNotificationTray();
+  };
+
   // Test function to create sample notifications and add them to the store
   const createTestNotifications = () => {
     console.log("Creating test notifications...");
@@ -198,7 +210,7 @@ export default function NotificationTray() {
         <Button
           variant="ghost"
           className="relative p-2 hover:bg-gray-100"
-          onClick={toggleNotificationTray}
+          onClick={handleTrayToggle}
           data-testid="button-notification-toggle"
         >
           <Bell size={20} className="text-gray-600" />

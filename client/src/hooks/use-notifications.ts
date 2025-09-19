@@ -28,7 +28,6 @@ export function useNotifications() {
       return apiClient.getUserNotifications(token);
     },
     enabled: isAuthenticated && !!token,
-    refetchInterval: 5000, // Poll every 5 seconds
     retry: false
   });
 
