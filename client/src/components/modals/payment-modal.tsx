@@ -37,6 +37,18 @@ export default function PaymentModal() {
   const [splitBill, setSplitBill] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Get locationId from URL parameters for dine-in orders
+  const getLocationId = () => {
+    if (serviceType === 'dine-in') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLocationId = urlParams.get('locationId');
+      if (urlLocationId) {
+        return parseInt(urlLocationId, 10);
+      }
+    }
+    return undefined;
+  };
+
   // Generate split bills based on mode
   const generateSplitBills = (cartItems: CartItem[], mode: 'equality' | 'items'): SplitBill[] => {
     if (mode === 'equality') {
@@ -72,6 +84,29 @@ export default function PaymentModal() {
       return;
     }
 
+    // Check authentication before placing order
+    if (!user || !token) {
+      toast({
+        title: "Login Required",
+        description: "Please login to place your order.",
+        variant: "destructive",
+      });
+      // Close payment modal and open login modal
+      setPaymentModalOpen(false);
+      useAuthStore.getState().setLoginModalOpen(true);
+      return;
+    }
+
+    // Check if locationId is required and provided for dine-in orders
+    if (serviceType === 'dine-in' && !getLocationId()) {
+      toast({
+        title: "Location Required",
+        description: "Please select a table/location for your dine-in order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -82,7 +117,7 @@ export default function PaymentModal() {
         cartItems: items,
         serviceType,
         branchId: selectedBranch.branchId,
-        locationId: serviceType === 'dine-in' ? selectedBranch.branchId : undefined,
+        locationId: getLocationId(),
         username: user?.name || user?.email || 'guest',
         tipAmount: 0, // This can be extended to include tip selection
         deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,

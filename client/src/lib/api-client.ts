@@ -157,6 +157,7 @@ export interface Allergen {
 // Branch API Types
 export interface BranchByIdRequest {
   branchId: number;
+  locationId?: number;
 }
 
 export interface BranchByIdResponse {
@@ -181,6 +182,8 @@ export interface BranchByIdResponse {
   taxPercentage: number;
   maxDiscountAmount: number;
   currency: string;
+  locationName?: string;
+  locationId?: number;
 }
 
 // Notification API Types
@@ -418,7 +421,14 @@ class ApiClient {
 
   // Branch API method
   async getBranchById(requestData: BranchByIdRequest): Promise<ApiResponse<BranchByIdResponse>> {
-    return this.post<BranchByIdResponse>('/api/customer-search/get-branch-by-id', requestData);
+    let url = `/api/customer-search/branch/${requestData.branchId}`;
+    
+    // Add locationId as query parameter if provided
+    if (requestData.locationId) {
+      url += `?locationId=${requestData.locationId}`;
+    }
+    
+    return this.get<BranchByIdResponse>(url);
   }
 
   // Notification API methods

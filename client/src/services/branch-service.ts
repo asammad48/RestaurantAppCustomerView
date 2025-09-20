@@ -55,8 +55,15 @@ export class BranchService {
   }
 
   // Get branch details by ID
-  static async getBranchDetails(branchId: number): Promise<ApiResponse<any>> {
-    const response = await apiClient.get<any>(`/api/customer-search/branch/${branchId}`);
+  static async getBranchDetails(branchId: number, locationId?: number): Promise<ApiResponse<any>> {
+    let url = `/api/customer-search/branch/${branchId}`;
+    
+    // Add locationId as query parameter if provided
+    if (locationId) {
+      url += `?locationId=${locationId}`;
+    }
+    
+    const response = await apiClient.get<any>(url);
     
     // Format decimal values to 2 decimal places if the response contains branch data
     if (response.data && typeof response.data === 'object') {
