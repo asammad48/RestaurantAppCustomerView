@@ -4,11 +4,11 @@ import { useCartStore } from "@/lib/store";
 import { UtensilsCrossed, MoreHorizontal } from "lucide-react";
 
 export default function InitialServiceModal() {
-  const { initialServiceOpen, setInitialServiceOpen, setServiceSelectionOpen } = useCartStore();
+  const { initialServiceOpen, setInitialServiceOpen, setServiceSelectionOpen, setDineInSelectionModalOpen } = useCartStore();
 
   const handleDineIn = () => {
     setInitialServiceOpen(false);
-    // Stay on home page for dine-in experience
+    setDineInSelectionModalOpen(true);
   };
 
   const handleOtherServices = () => {
