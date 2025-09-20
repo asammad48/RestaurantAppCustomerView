@@ -24,7 +24,7 @@ export default function ReservationPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
-  const [maxDistance, setMaxDistance] = useState(20);
+  const [maxDistance, setMaxDistance] = useState<number | ''>(20);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { setSelectedBranch } = useCartStore();
@@ -45,7 +45,7 @@ export default function ReservationPage() {
         longitude,
         address: userLocation || "",
         branchName: searchQuery || "",
-        maxDistance
+        maxDistance: Number.isFinite(maxDistance as number) ? (maxDistance as number) : 20
       });
 
       setBranches(response.data);
@@ -188,7 +188,15 @@ export default function ReservationPage() {
               <Input
                 type="number"
                 value={maxDistance}
-                onChange={(e) => setMaxDistance(Number(e.target.value))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    setMaxDistance('');
+                  } else {
+                    const num = Number(value);
+                    setMaxDistance(Number.isFinite(num) ? num : '');
+                  }
+                }}
                 placeholder="20"
                 min="1"
                 max="50"

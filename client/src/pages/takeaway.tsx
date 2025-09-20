@@ -26,7 +26,7 @@ export default function TakeawayPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
-  const [maxDistance, setMaxDistance] = useState(30);
+  const [maxDistance, setMaxDistance] = useState<number | ''>(30);
   const { setSelectedRestaurant, setServiceType, setSelectedBranch } = useCartStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -47,7 +47,7 @@ export default function TakeawayPage() {
         longitude,
         address: userLocation || "",
         branchName: searchQuery || "",
-        maxDistance
+        maxDistance: Number.isFinite(maxDistance as number) ? (maxDistance as number) : 30
       });
 
       setBranches(response.data);
@@ -91,9 +91,9 @@ export default function TakeawayPage() {
       cuisine: 'Restaurant',
       deliveryTime: '30-45 mins',
       deliveryFee: '0',
-      minimumOrder: 0,
+      minimumOrder: '0',
       address: branch.branchAddress,
-      distance: branch.distanceFromMyLocation,
+      distance: branch.distanceFromMyLocation.toFixed(1),
       isOpen: !branch.isBranchClosed
     };
     setSelectedRestaurant(restaurant);
@@ -271,7 +271,15 @@ export default function TakeawayPage() {
                 <Input
                   type="number"
                   value={maxDistance}
-                  onChange={(e) => setMaxDistance(Number(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setMaxDistance('');
+                    } else {
+                      const num = Number(value);
+                      setMaxDistance(Number.isFinite(num) ? num : '');
+                    }
+                  }}
                   placeholder="30"
                   min="1"
                   max="100"
