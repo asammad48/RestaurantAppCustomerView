@@ -185,16 +185,11 @@ export default function RestaurantMenuPage() {
   }, [restaurantId, methodType, branchId]);
 
   const { data: menuData, isLoading } = useQuery({
-    queryKey: ['/api/customer-search/branch', branchId, locationId],
-    queryFn: async () => {
-      if (!branchId) throw new Error('Branch ID is required');
-      const { BranchService } = await import('@/services/branch-service');
-      const response = await BranchService.getBranchDetails(branchId, locationId ?? undefined);
-      return response.data;
-    },
+    queryKey: [`/api/customer-search/branch/${branchId}`],
+    queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
-    staleTime: 60_000, // Cache for 1 minute to prevent duplicates
-    refetchOnMount: false, // Don't refetch on mount
+    staleTime: 0, // Always consider data stale
+    refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
