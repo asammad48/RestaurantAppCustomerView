@@ -780,10 +780,12 @@ export default function RestaurantMenuPage() {
                   <span className="text-lg font-medium">Menu - {branchData?.branchName || 'Restaurant'}</span>
                 </>
               )}
-              {(methodType === 'dine-in' || !methodType) && (
+              {methodType === 'dine-in' && (
                 <>
                   <MapPin className="mr-3" size={20} />
-                  <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || branchData?.branchName}</span>
+                  <span className="text-lg font-medium">
+                    {branchData?.locationName ? branchData.locationName : "Dine In Menu"}{(selectedRestaurant?.name || branchData?.branchName) ? ` - ${selectedRestaurant?.name || branchData?.branchName}` : ''}
+                  </span>
                 </>
               )}
             </div>
