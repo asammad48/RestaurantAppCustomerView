@@ -11,6 +11,7 @@
     "start": "serve -s dist/public -l 5000"
   },
   "dependencies": {
+    "@babel/traverse": "^7.28.4",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@microsoft/signalr": "^9.0.6",
