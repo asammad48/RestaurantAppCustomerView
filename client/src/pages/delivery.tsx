@@ -525,23 +525,6 @@ export default function DeliveryPage() {
                     </div>
                   </div>
                 )}
-                
-                <div className="flex gap-2">
-                  <Input
-                    value={userLocation}
-                    onChange={(e) => setUserLocation(e.target.value)}
-                    placeholder="Enter your pickup location"
-                    data-testid="input-pickup-location"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleAddressSearch}
-                    variant="outline"
-                    disabled={!userLocation.trim()}
-                  >
-                    Search
-                  </Button>
-                </div>
               </div>
 
               <div>
@@ -554,6 +537,22 @@ export default function DeliveryPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name or address"
                   data-testid="input-search-restaurants"
+                />
+              </div>
+              
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Max Distance (km)
+                </label>
+                <Input
+                  type="number"
+                  value={maxDistance || ''}
+                  onChange={(e) => setMaxDistance(Number(e.target.value) || 0)}
+                  placeholder="Maximum distance in km"
+                  min="1"
+                  max="100"
+                  data-testid="input-max-distance-takeaway"
                 />
               </div>
             </div>
@@ -713,8 +712,8 @@ export default function DeliveryPage() {
                 </label>
                 <Input
                   type="number"
-                  value={maxDistance}
-                  onChange={(e) => setMaxDistance(Number(e.target.value) || 20)}
+                  value={maxDistance || ''}
+                  onChange={(e) => setMaxDistance(Number(e.target.value) || 0)}
                   placeholder="Maximum distance in km"
                   min="1"
                   max="100"
