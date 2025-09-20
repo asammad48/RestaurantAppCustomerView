@@ -141,15 +141,32 @@ export default function RestaurantMenuPage() {
       if (!branchId) {
         throw new Error('Branch ID is required');
       }
+      
+      console.log('🔍 Calling get-branch-by-id API with:', { branchId, locationId });
+      
       const requestData: any = { branchId };
       if (locationId) {
         requestData.locationId = locationId;
       }
+      
       const response = await apiClient.getBranchById(requestData);
+      console.log('✅ get-branch-by-id API response:', response.data);
+      
       return response.data;
     },
     enabled: !!branchId,
   });
+
+  // Debug logging to help understand when API is called
+  useEffect(() => {
+    console.log('🔧 Restaurant Menu Debug:', { 
+      branchId, 
+      locationId, 
+      isApiEnabled: !!branchId,
+      branchData: branchData ? 'loaded' : 'not loaded',
+      error: branchError ? branchError.message : 'none'
+    });
+  }, [branchId, locationId, branchData, branchError]);
 
 
   // Update URL when restaurant/method changes
