@@ -45,7 +45,8 @@ export default function Home() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
-  const [maxDistance, setMaxDistance] = useState(20);
+  const [maxDistance, setMaxDistance] = useState<number | ''>(20);
+  const [takeawayMaxDistance, setTakeawayMaxDistance] = useState<number | ''>(30);
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -114,7 +115,7 @@ export default function Home() {
             longitude,
             address: "",
             branchName: "",
-            maxDistance
+            maxDistance: Number.isFinite(takeawayMaxDistance as number) ? (takeawayMaxDistance as number) : 30
           });
           serviceDescription = "delivery";
           break;
@@ -124,7 +125,7 @@ export default function Home() {
             longitude,
             address: userLocation || "",
             branchName: searchQuery || "",
-            maxDistance
+            maxDistance: Number.isFinite(takeawayMaxDistance as number) ? (takeawayMaxDistance as number) : 30
           });
           serviceDescription = "takeaway";
           break;
@@ -134,7 +135,7 @@ export default function Home() {
             longitude,
             address: userLocation || "",
             branchName: searchQuery || "",
-            maxDistance
+            maxDistance: Number.isFinite(takeawayMaxDistance as number) ? (takeawayMaxDistance as number) : 30
           });
           serviceDescription = "dine-in";
           break;
@@ -144,7 +145,7 @@ export default function Home() {
             longitude,
             address: userLocation || "",
             branchName: searchQuery || "",
-            maxDistance
+            maxDistance: Number.isFinite(maxDistance as number) ? (maxDistance as number) : 20
           });
           serviceDescription = "reservations";
           break;
@@ -327,7 +328,176 @@ export default function Home() {
         {/* Location Section - only show for non-reservation services */}
         {selectedService !== 'reservation' && (
           <section className="mb-12">
-            <LocationPicker />
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                    Your Location
+                  </label>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={getCurrentLocation}
+                      disabled={isLoadingLocation}
+                      className="flex items-center justify-center gap-2"
+                      data-testid="button-current-location-main"
+                    >
+                      <Navigation className="w-4 h-4 configurable-primary-text" />
+                      {isLoadingLocation ? 'Getting...' : 'Current Location'}
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowMap(true)}
+                      className="flex items-center justify-center gap-2"
+                      data-testid="button-map-location-main"
+                    >
+                      <Map className="w-4 h-4 configurable-primary-text" />
+                      Pick on Map
+                    </Button>
+                  </div>
+
+                  <Input
+                    value={userLocation}
+                    onChange={(e) => setUserLocation(e.target.value)}
+                    placeholder="Enter your location"
+                    data-testid="input-main-location"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <Search className="w-4 h-4 mr-1 configurable-primary-text" />
+                    Search Restaurants
+                  </label>
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by restaurant name"
+                    data-testid="input-search-main-restaurants"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    Max Distance (km)
+                  </label>
+                  <Input
+                    type="number"
+                    value={takeawayMaxDistance}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        setTakeawayMaxDistance('');
+                      } else {
+                        const num = Number(value);
+                        setTakeawayMaxDistance(Number.isFinite(num) ? num : '');
+                      }
+                    }}
+                    placeholder="30"
+                    min="1"
+                    max="100"
+                    data-testid="input-max-distance-main"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-4 flex justify-center">
+                <Button 
+                  onClick={() => userCoords && searchBranchesForSelectedService(userCoords.lat, userCoords.lng)}
+                  disabled={!userCoords || branchesLoading}
+                  className="configurable-primary"
+                  data-testid="button-search-main-restaurants"
+                >
+                  {branchesLoading ? 'Searching...' : 'Search Restaurants'}
+                </Button>
+              </div>
+              
+              <div className="mt-4 text-sm text-gray-600">
+                {filteredBranches.length} restaurants found
+                {branchesError && (
+                  <div className="text-red-600 mt-1">{branchesError}</div>
+                )}
+              </div>
+            </div>
+            
+            {/* Restaurant Results */}
+            {filteredBranches.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold mb-4">Available Restaurants</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {filteredBranches.map((branch: Branch) => (
+                    <Card 
+                      key={branch.branchId} 
+                      className="cursor-pointer transition-all duration-200 hover:shadow-lg"
+                      onClick={() => handleBranchSelect(branch)}
+                      data-testid={`main-branch-card-${branch.branchId}`}
+                    >
+                      <CardContent className="p-0">
+                        <div className="relative">
+                          <img
+                            src={BranchService.getBranchImageUrl(branch.branchPicture)}
+                            alt={branch.branchName}
+                            className="w-full h-48 object-cover rounded-t-lg"
+                          />
+                          <div className="absolute top-3 right-3">
+                            <Badge className="bg-white text-black shadow-sm">
+                              <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                              {branch.rating}
+                            </Badge>
+                          </div>
+                          <div className="absolute top-3 left-3">
+                            <Badge className="configurable-primary text-white">
+                              {selectedService === 'delivery' ? 'Delivery' : 
+                               selectedService === 'takeaway' ? 'Takeaway' :
+                               selectedService === 'dine-in' ? 'Dine In' : 'Restaurant'}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="p-4">
+                          <div className="mb-2">
+                            <h3 className="font-semibold text-gray-900 mb-1">
+                              {branch.branchName}
+                            </h3>
+                            <Badge variant="outline" className="text-xs">
+                              {branch.distanceFromMyLocation.toFixed(1)} km away
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-1 text-xs text-gray-600 mb-3">
+                            <div className="flex items-center">
+                              <Clock className="w-3 h-3 mr-1 configurable-primary-text" />
+                              {branch.branchOpenTime} - {branch.branchCloseTime}
+                            </div>
+                            <div className="flex items-center">
+                              <MapPin className="w-3 h-3 mr-1 configurable-primary-text" />
+                              {branch.branchAddress.substring(0, 40)}...
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-gray-100">
+                            <Button 
+                              size="sm" 
+                              className="w-full configurable-primary text-white configurable-primary-hover"
+                              data-testid={`button-main-select-${branch.branchId}`}
+                            >
+                              {selectedService === 'delivery' ? 'Order for Delivery' :
+                               selectedService === 'takeaway' ? 'Order for Pickup' :
+                               selectedService === 'dine-in' ? 'Dine In' : 'Select'}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -397,7 +567,15 @@ export default function Home() {
                   <Input
                     type="number"
                     value={maxDistance}
-                    onChange={(e) => setMaxDistance(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        setMaxDistance('');
+                      } else {
+                        const num = Number(value);
+                        setMaxDistance(Number.isFinite(num) ? num : '');
+                      }
+                    }}
                     placeholder="20"
                     min="1"
                     max="50"
