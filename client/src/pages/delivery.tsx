@@ -172,8 +172,8 @@ export default function DeliveryPage() {
       const response = await BranchService.searchReservationBranches({
         latitude,
         longitude,
-        address: userLocation || "",
-        branchName: searchQuery || "",
+        address: "", // As requested, send empty string for address
+        branchName: searchQuery || "", // Use searchQuery for restaurant name
         maxDistance
       });
 
@@ -395,6 +395,12 @@ export default function DeliveryPage() {
         {/* Dynamic Content Based on Service Selection */}
         {selectedService === 'delivery' && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="text-center mb-6">
+              <Bike className="w-12 h-12 configurable-primary-text mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Set Your Delivery Location</h3>
+              <p className="text-gray-600">Please set your location to find restaurants available for delivery in your area.</p>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -439,23 +445,6 @@ export default function DeliveryPage() {
                     </div>
                   </div>
                 )}
-                
-                <div className="flex gap-2">
-                  <Input
-                    value={userLocation}
-                    onChange={(e) => setUserLocation(e.target.value)}
-                    placeholder="Enter your delivery address"
-                    data-testid="input-delivery-location"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleAddressSearch}
-                    variant="outline"
-                    disabled={!userLocation.trim()}
-                  >
-                    Search
-                  </Button>
-                </div>
               </div>
               
               <div>
@@ -482,7 +471,7 @@ export default function DeliveryPage() {
               <p className="text-gray-600">Please set your location to find restaurants available for pickup in your area.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
@@ -556,6 +545,28 @@ export default function DeliveryPage() {
                 />
               </div>
             </div>
+            
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={async () => {
+                  if (!userCoords) {
+                    toast({
+                      variant: "destructive",
+                      title: "Location Required",
+                      description: "Please set your location to search for restaurants.",
+                    });
+                    return;
+                  }
+                  await searchBranchesForService(userCoords.lat, userCoords.lng);
+                }}
+                disabled={!userCoords || branchesLoading}
+                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
+                data-testid="button-search-takeaway"
+              >
+                <Search className="w-4 h-4" />
+                {branchesLoading ? 'Searching...' : 'Search Restaurants'}
+              </Button>
+            </div>
           </div>
         )}
 
@@ -610,23 +621,6 @@ export default function DeliveryPage() {
                     </div>
                   </div>
                 )}
-                
-                <div className="flex gap-2">
-                  <Input
-                    value={userLocation}
-                    onChange={(e) => setUserLocation(e.target.value)}
-                    placeholder="Enter area to search restaurants"
-                    data-testid="input-dinein-location"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleAddressSearch}
-                    variant="outline"
-                    disabled={!userLocation.trim()}
-                  >
-                    Search
-                  </Button>
-                </div>
               </div>
 
               <div>
@@ -642,6 +636,28 @@ export default function DeliveryPage() {
                 />
               </div>
             </div>
+            
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={async () => {
+                  if (!userCoords) {
+                    toast({
+                      variant: "destructive",
+                      title: "Location Required",
+                      description: "Please set your location to search for restaurants.",
+                    });
+                    return;
+                  }
+                  await searchBranchesForService(userCoords.lat, userCoords.lng);
+                }}
+                disabled={!userCoords || branchesLoading}
+                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
+                data-testid="button-search-dinein"
+              >
+                <Search className="w-4 h-4" />
+                {branchesLoading ? 'Searching...' : 'Search Restaurants'}
+              </Button>
+            </div>
           </div>
         )}
 
@@ -653,11 +669,11 @@ export default function DeliveryPage() {
               <p className="text-gray-600">Book a table at your favorite restaurant for the perfect dining experience.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
-                  Restaurant Location
+                  Your Location
                 </label>
                 
                 <div className="grid grid-cols-2 gap-2 mb-2">
@@ -696,15 +712,21 @@ export default function DeliveryPage() {
                     </div>
                   </div>
                 )}
-                
-                <Input
-                  value={userLocation}
-                  onChange={(e) => setUserLocation(e.target.value)}
-                  placeholder="Enter area or restaurant name"
-                  data-testid="input-reservation-location"
-                />
               </div>
 
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Search className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Search by Restaurant Name
+                </label>
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Enter restaurant name"
+                  data-testid="input-restaurant-name"
+                />
+              </div>
+              
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
@@ -722,7 +744,6 @@ export default function DeliveryPage() {
               </div>
             </div>
             
-            
             <div className="flex justify-center">
               <Button
                 onClick={async () => {
@@ -737,7 +758,7 @@ export default function DeliveryPage() {
                   await searchBranchesForService(userCoords.lat, userCoords.lng);
                 }}
                 disabled={!userCoords || branchesLoading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
                 data-testid="button-search-reservations"
               >
                 <Search className="w-4 h-4" />
@@ -790,6 +811,7 @@ export default function DeliveryPage() {
                 loading={branchesLoading}
                 onSelectBranch={handleSelectBranch}
                 serviceType={selectedService}
+                maxDistance={maxDistance}
               />
             </>
           )}

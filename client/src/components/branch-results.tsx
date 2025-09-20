@@ -12,9 +12,10 @@ interface BranchResultsProps {
   loading?: boolean;
   onSelectBranch?: (branch: Branch) => void;
   serviceType?: 'delivery' | 'takeaway' | 'dine-in' | 'reservation';
+  maxDistance?: number;
 }
 
-export default function BranchResults({ branches, loading = false, onSelectBranch, serviceType = 'delivery' }: BranchResultsProps) {
+export default function BranchResults({ branches, loading = false, onSelectBranch, serviceType = 'delivery', maxDistance = 20 }: BranchResultsProps) {
   const { branchCurrency } = useCartStore();
   const getButtonText = (service: string) => {
     switch (service) {
@@ -66,7 +67,7 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
       {branches.map((branch) => (
         <Card 
           key={branch.branchId} 
-          className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+          className={`cursor-pointer transition-all duration-200 hover:shadow-lg h-full flex flex-col ${
             branch.isBranchClosed ? 'opacity-60' : ''
           }`}
           onClick={() => !branch.isBranchClosed && onSelectBranch?.(branch)}
@@ -95,9 +96,9 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
               </div>
             </div>
 
-            <div className="p-4">
+            <div className="p-4 flex flex-col flex-grow">
               <div className="mb-2">
-                <h3 className="font-semibold text-gray-900 mb-1">
+                <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
                   {branch.branchName}
                 </h3>
                 <Badge variant="outline" className="text-xs">
@@ -114,13 +115,15 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
                   <DollarSign className="w-3 h-3 mr-1" style={{ color: 'var(--color-primary)' }} />
                   Fee: {formatBranchCurrency(3.99, branchCurrency)}
                 </div>
-                <div className="flex items-center">
-                  <MapPin className="w-3 h-3 mr-1" style={{ color: 'var(--color-primary)' }} />
-                  {Math.round(branch.distanceFromMyLocation)}km max distance
-                </div>
+                {(serviceType === 'delivery' || serviceType === 'dine-in') && (
+                  <div className="flex items-center">
+                    <MapPin className="w-3 h-3 mr-1" style={{ color: 'var(--color-primary)' }} />
+                    {Math.round(branch.distanceFromMyLocation)}km from you (Max: {maxDistance}km)
+                  </div>
+                )}
               </div>
 
-              <div className="text-xs text-gray-500 mb-3 line-clamp-2">
+              <div className="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[2.5rem]">
                 <MapPin className="w-3 h-3 inline mr-1" />
                 {branch.branchAddress}
               </div>
@@ -130,7 +133,7 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
                 <span className="font-medium">Hours:</span> {branch.branchOpenTime} - {branch.branchCloseTime}
               </div>
 
-              <div className="pt-2 border-t border-gray-100">
+              <div className="pt-2 border-t border-gray-100 mt-auto">
                 <Button 
                   size="sm" 
                   className="w-full text-white hover:opacity-90"
