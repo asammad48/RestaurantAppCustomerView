@@ -206,7 +206,7 @@ export default function DeliveryPage() {
 
   // Handle branch selection
   const handleSelectBranch = (branch: Branch) => {
-    const { setSelectedBranch } = useCartStore.getState();
+    const { setSelectedBranch, setDineInSelectionModalOpen } = useCartStore.getState();
     setServiceType(selectedService);
     setSelectedBranch(branch);
     
@@ -217,12 +217,19 @@ export default function DeliveryPage() {
       });
       // Navigate to reservation detail page
       setLocation(`/reservation-detail?branchId=${branch.branchId}&branchName=${encodeURIComponent(branch.branchName)}`);
+    } else if (selectedService === 'dine-in') {
+      toast({
+        title: "Restaurant Selected",
+        description: `Selected ${branch.branchName} for dine-in. Please select a table.`,
+      });
+      // Open dine-in selection modal for table selection
+      setDineInSelectionModalOpen(true);
     } else {
       toast({
         title: "Restaurant Selected",
         description: `Selected ${branch.branchName} for ${selectedService}. Redirecting to menu...`,
       });
-      // Navigate to menu page
+      // Navigate to menu page for delivery and takeaway
       setLocation('/restaurant-menu');
     }
   };

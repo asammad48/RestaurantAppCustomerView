@@ -23,6 +23,7 @@ export default function DineInSelectionModal() {
     setSelectedBranch,
     setSelectedTable,
     setDineInDetails,
+    selectedBranch,
     userLocation 
   } = useCartStore();
   
@@ -33,6 +34,13 @@ export default function DineInSelectionModal() {
   const [selectedBranchState, setSelectedBranchState] = useState<Branch | null>(null);
   const [selectedTableState, setSelectedTableState] = useState<TableLocation | null>(null);
   const [maxDistance] = useState(50);
+
+  // Sync selectedBranchState with store's selectedBranch when modal opens
+  useEffect(() => {
+    if (isDineInSelectionModalOpen && selectedBranch && !selectedBranchState) {
+      setSelectedBranchState(selectedBranch);
+    }
+  }, [isDineInSelectionModalOpen, selectedBranch, selectedBranchState]);
 
   // Get user's coordinates (you may want to implement proper geolocation)
   const latitude = 24.8607; // Default Karachi coordinates

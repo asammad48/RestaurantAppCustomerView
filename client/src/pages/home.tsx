@@ -180,8 +180,16 @@ export default function Home() {
     // Navigate based on selected service type
     if (selectedService === 'reservation') {
       setLocation(`/reservation-detail?branchId=${branch.branchId}&branchName=${encodeURIComponent(branch.branchName)}`);
+    } else if (selectedService === 'dine-in') {
+      const { setDineInSelectionModalOpen } = useCartStore.getState();
+      toast({
+        title: "Restaurant Selected",
+        description: `Selected ${branch.branchName} for dine-in. Please select a table.`,
+      });
+      // Open dine-in selection modal for table selection
+      setDineInSelectionModalOpen(true);
     } else {
-      // For other services, navigate to restaurant menu
+      // For delivery and takeaway, navigate to restaurant menu
       setLocation('/restaurant-menu');
     }
   };
