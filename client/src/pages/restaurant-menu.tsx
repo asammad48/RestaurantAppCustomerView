@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiDeal, ApiMenuResponse } from "@/lib/mock-data";
 import { apiClient, BudgetEstimateRequest, BudgetEstimateResponse, BudgetOption, BranchByIdResponse } from "@/lib/api-client";
@@ -148,9 +149,6 @@ export default function RestaurantMenuPage() {
       return response.data;
     },
     enabled: !!branchId,
-    staleTime: 60_000, // Cache for 1 minute to prevent duplicates
-    refetchOnMount: false, // Don't refetch on mount
-    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
 
@@ -186,9 +184,19 @@ export default function RestaurantMenuPage() {
     }
   }, [restaurantId, methodType, branchId]);
 
-  // Use the same data from getBranchById for menu data since they call the same endpoint
-  const menuData = branchData;
-  const isLoading = isBranchLoading;
+  const { data: menuData, isLoading } = useQuery({
+    queryKey: ['/api/customer-search/branch', branchId, locationId],
+    queryFn: async () => {
+      if (!branchId) throw new Error('Branch ID is required');
+      const { BranchService } = await import('@/services/branch-service');
+      const response = await BranchService.getBranchDetails(branchId, locationId ?? undefined);
+      return response.data;
+    },
+    enabled: !!branchId,
+    staleTime: 60_000, // Cache for 1 minute to prevent duplicates
+    refetchOnMount: false, // Don't refetch on mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+  });
 
   // AI Budget Estimate Mutation
   const { data: budgetData, isPending: isBudgetLoading, mutate: generateBudgetEstimate } = useMutation({
