@@ -1,6 +1,7 @@
 import { HubConnectionBuilder, HubConnection, HubConnectionState, HttpTransportType } from '@microsoft/signalr';
 import { AuthService } from './auth-service';
 import { toast } from '@/hooks/use-toast';
+import { config } from '@/lib/config';
 
 export interface OrderStatusUpdateEvent {
   orderId: number;
@@ -14,7 +15,7 @@ export interface NotificationsPendingEvent {
 
 export class SignalRService {
   private connection: HubConnection | null = null;
-  private readonly hubUrl: string = 'wss://5dtrtpzg-7261.inc1.devtunnels.ms/orderHub';
+  private readonly hubUrl: string = config.signalRHubUrl;
 
   constructor() {
     this.connection = null;
