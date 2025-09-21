@@ -1,8 +1,7 @@
 // Order History API Service
 import { OrderHistoryResponse, OrderHistoryParams } from '@/types/order-history';
 import { getDeviceId } from '@/lib/device-id';
-
-const ORDER_HISTORY_BASE_URL = 'https://5dtrtpzg-7261.inc1.devtunnels.ms/api/Order';
+import { apiClient, ApiError } from '@/lib/api-client';
 
 /**
  * Fetches order history for a user and device with pagination
@@ -14,38 +13,27 @@ export async function fetchOrderHistory(params: {
 }): Promise<OrderHistoryResponse> {
   const deviceId = getDeviceId();
   
-  const queryParams = new URLSearchParams({
+  const queryParams: Record<string, string> = {
     DeviceId: deviceId,
     PageNumber: (params.pageNumber || 1).toString(),
     PageSize: (params.pageSize || 10).toString(),
-  });
+  };
 
   // Add UserId if provided (when user is logged in)
   if (params.userId) {
-    queryParams.append('UserId', params.userId.toString());
+    queryParams.UserId = params.userId.toString();
   }
 
-  const url = `${ORDER_HISTORY_BASE_URL}/ByUserAndDevice?${queryParams.toString()}`;
-  
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'accept': '*/*',
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch order history: ${response.status} ${response.statusText}`);
-    }
-
-    const data: OrderHistoryResponse = await response.json();
+    const response = await apiClient.get<OrderHistoryResponse>(
+      '/api/Order/ByUserAndDevice',
+      queryParams
+    );
     
     // Add order status changes, subTotal, and discountAmount to each order using the actual order status
     const enhancedData = {
-      ...data,
-      items: data.items.map(order => ({
+      ...response.data,
+      items: response.data.items.map(order => ({
         ...order,
         // Temporarily use totalAmount as subTotal to test display
         subTotal: order.totalAmount,
@@ -64,7 +52,14 @@ export async function fetchOrderHistory(params: {
     return enhancedData;
   } catch (error) {
     console.error('Error fetching order history:', error);
-    throw error;
+    
+    // If it's an ApiError, throw it as-is to preserve the structured error information
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    // For any other errors, wrap them in a generic error
+    throw new Error('Failed to fetch order history. Please try again.');
   }
 }
 
@@ -73,22 +68,18 @@ export async function fetchOrderHistory(params: {
  */
 export async function fetchOrderById(orderId: number): Promise<any> {
   try {
-    const response = await fetch(`${ORDER_HISTORY_BASE_URL}/${orderId}`, {
-      method: 'GET',
-      headers: {
-        'accept': '*/*',
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch order: ${response.status} ${response.statusText}`);
-    }
-
-    return await response.json();
+    const response = await apiClient.get<any>(`/api/Order/${orderId}`);
+    return response.data;
   } catch (error) {
     console.error('Error fetching order by ID:', error);
-    throw error;
+    
+    // If it's an ApiError, throw it as-is to preserve the structured error information
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    // For any other errors, wrap them in a generic error
+    throw new Error('Failed to fetch order details. Please try again.');
   }
 }
 
