@@ -1,5 +1,7 @@
 // Generic API client with status code handling
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://5dtrtpzg-7261.inc1.devtunnels.ms';
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://5dtrtpzg-7261.inc1.devtunnels.ms";
 
 // Order API Types
 export interface OrderModifier {
@@ -157,6 +159,7 @@ export interface Allergen {
 // Branch API Types
 export interface BranchByIdRequest {
   branchId: number;
+  locationId?: number;
 }
 
 export interface BranchByIdResponse {
@@ -181,6 +184,8 @@ export interface BranchByIdResponse {
   taxPercentage: number;
   maxDiscountAmount: number;
   currency: string;
+  locationName?: string;
+  locationId?: number;
 }
 
 // Notification API Types
@@ -203,7 +208,7 @@ export interface ReservationNotificationContent {
 export interface Notification {
   id: number;
   notificationContent: string; // JSON string containing OrderNotificationContent or ReservationNotificationContent
-  notificationType: 'Order' | 'Reservation';
+  notificationType: "Order" | "Reservation";
   createdDate: string; // ISO date string
   isNotificationAcknowledged: boolean;
 }
@@ -219,7 +224,6 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-
 class ApiClient {
   private baseURL: string;
 
@@ -230,24 +234,28 @@ class ApiClient {
   // Generic API call method with comprehensive error handling
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     try {
       const { headers: optHeaders, ...rest } = options;
-      const extra = optHeaders ? (optHeaders instanceof Headers ? Object.fromEntries(optHeaders.entries()) : optHeaders) : {};
+      const extra = optHeaders
+        ? optHeaders instanceof Headers
+          ? Object.fromEntries(optHeaders.entries())
+          : optHeaders
+        : {};
       const baseHeaders: Record<string, string> = {
-        'Accept': 'application/json',
+        Accept: "application/json",
       };
-      
+
       // Only add Content-Type for requests with body that aren't FormData
       if (rest.body && !(rest.body instanceof FormData)) {
-        baseHeaders['Content-Type'] = 'application/json';
+        baseHeaders["Content-Type"] = "application/json";
       }
-      
+
       const mergedHeaders = { ...baseHeaders, ...extra };
-      
+
       const response = await fetch(url, {
         ...rest,
         headers: mergedHeaders,
@@ -276,28 +284,28 @@ class ApiClient {
         case 400:
           throw new ApiError({
             status: 400,
-            message: 'Bad Request - Invalid input data',
+            message: "Bad Request - Invalid input data",
             details: data,
           });
 
         case 401:
           throw new ApiError({
             status: 401,
-            message: 'Unauthorized - Authentication required',
+            message: "Unauthorized - Authentication required",
             details: data,
           });
 
         case 422:
           throw new ApiError({
             status: 422,
-            message: 'Validation Error - Please check your input',
+            message: "Validation Error - Please check your input",
             details: data,
           });
 
         case 500:
           throw new ApiError({
             status: 500,
-            message: 'Server Error - Please try again later',
+            message: "Server Error - Please try again later",
             details: data,
           });
 
@@ -314,58 +322,66 @@ class ApiClient {
       }
 
       // Handle different types of network errors
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
         throw new ApiError({
           status: 0,
-          message: 'Unable to connect to server. Please check your internet connection and try again.',
-          details: { type: 'network_error', originalError: error },
+          message:
+            "Unable to connect to server. Please check your internet connection and try again.",
+          details: { type: "network_error", originalError: error },
         });
       }
 
-      if (error instanceof DOMException && error.name === 'AbortError') {
+      if (error instanceof DOMException && error.name === "AbortError") {
         throw new ApiError({
           status: 0,
-          message: 'Request timed out. Please try again.',
-          details: { type: 'timeout_error', originalError: error },
+          message: "Request timed out. Please try again.",
+          details: { type: "timeout_error", originalError: error },
         });
       }
 
       // Generic network or other errors
       throw new ApiError({
         status: 0,
-        message: 'Something went wrong. Please try again later.',
-        details: { type: 'unknown_error', originalError: error },
+        message: "Something went wrong. Please try again later.",
+        details: { type: "unknown_error", originalError: error },
       });
     }
   }
 
   // GET request
-  async get<T>(endpoint: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
+  async get<T>(
+    endpoint: string,
+    params?: Record<string, string>,
+  ): Promise<ApiResponse<T>> {
     const url = params
       ? `${endpoint}?${new URLSearchParams(params).toString()}`
       : endpoint;
-    
-    return this.request<T>(url, { method: 'GET' });
+
+    return this.request<T>(url, { method: "GET" });
   }
 
   // Authenticated GET request
-  async getWithAuth<T>(endpoint: string, token: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
+  async getWithAuth<T>(
+    endpoint: string,
+    token: string,
+    params?: Record<string, string>,
+  ): Promise<ApiResponse<T>> {
     const url = params
       ? `${endpoint}?${new URLSearchParams(params).toString()}`
       : endpoint;
-    
-    return this.request<T>(url, { 
-      method: 'GET',
+
+    return this.request<T>(url, {
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
   }
 
   // POST request
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
-      method: 'POST',
+      method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -373,77 +389,104 @@ class ApiClient {
   // PUT request
   async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
   // DELETE request
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    return this.request<T>(endpoint, { method: "DELETE" });
   }
 
   // Get full URL for images and assets
   getAssetUrl(path: string): string {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
     return `${this.baseURL}/${path}`;
   }
 
   // Order API methods
-  async createOrder(orderData: OrderRequest): Promise<ApiResponse<OrderResponse>> {
-    return this.post<OrderResponse>('/api/Order', orderData);
+  async createOrder(
+    orderData: OrderRequest,
+  ): Promise<ApiResponse<OrderResponse>> {
+    return this.post<OrderResponse>("/api/Order", orderData);
   }
 
   // Authenticated order creation
-  async createOrderWithAuth(orderData: OrderRequest, token: string): Promise<ApiResponse<OrderResponse>> {
-    return this.request<OrderResponse>('/api/Order', {
-      method: 'POST',
+  async createOrderWithAuth(
+    orderData: OrderRequest,
+    token: string,
+  ): Promise<ApiResponse<OrderResponse>> {
+    return this.request<OrderResponse>("/api/Order", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(orderData)
+      body: JSON.stringify(orderData),
     });
   }
 
   // AI Budget Estimator API method
-  async getBudgetEstimate(estimateData: BudgetEstimateRequest): Promise<ApiResponse<BudgetEstimateResponse>> {
-    return this.post<BudgetEstimateResponse>('/api/customer-search/estimate', estimateData);
+  async getBudgetEstimate(
+    estimateData: BudgetEstimateRequest,
+  ): Promise<ApiResponse<BudgetEstimateResponse>> {
+    return this.post<BudgetEstimateResponse>(
+      "/api/customer-search/estimate",
+      estimateData,
+    );
   }
 
   // Allergens API method
   async getAllergens(): Promise<ApiResponse<Allergen[]>> {
-    return this.get<Allergen[]>('/api/Generic/allergens');
+    return this.get<Allergen[]>("/api/Generic/allergens");
   }
 
   // Branch API method
-  async getBranchById(requestData: BranchByIdRequest): Promise<ApiResponse<BranchByIdResponse>> {
-    return this.post<BranchByIdResponse>('/api/customer-search/get-branch-by-id', requestData);
+  async getBranchById(
+    requestData: BranchByIdRequest,
+  ): Promise<ApiResponse<BranchByIdResponse>> {
+    let url = `/api/customer-search/get-branch-by-id`;
+    return this.post<BranchByIdResponse>(url, requestData);
   }
 
   // Notification API methods
-  async getUserNotifications(token: string): Promise<ApiResponse<Notification[]>> {
-    return this.getWithAuth<Notification[]>('/api/Notification/GetUserNotifications', token);
+  async getUserNotifications(
+    token: string,
+  ): Promise<ApiResponse<Notification[]>> {
+    return this.getWithAuth<Notification[]>(
+      "/api/Notification/GetUserNotifications",
+      token,
+    );
   }
 
-  async acknowledgeNotification(token: string, notificationIds: number[]): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/Notification/UpdateNotificationAcknowledgeStatus', {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
+  async acknowledgeNotification(
+    token: string,
+    notificationIds: number[],
+  ): Promise<ApiResponse<any>> {
+    return this.request<any>(
+      "/api/Notification/UpdateNotificationAcknowledgeStatus",
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ notificationIds }),
       },
-      body: JSON.stringify({ notificationIds })
-    });
+    );
   }
 
   // Order Feedback API method
-  async submitOrderFeedback(token: string, feedbackData: OrderFeedbackRequest): Promise<ApiResponse<OrderFeedbackResponse>> {
-    return this.request<OrderFeedbackResponse>('/api/Order/Feedback', {
-      method: 'PUT',
+  async submitOrderFeedback(
+    token: string,
+    feedbackData: OrderFeedbackRequest,
+  ): Promise<ApiResponse<OrderFeedbackResponse>> {
+    return this.request<OrderFeedbackResponse>("/api/Order/Feedback", {
+      method: "PUT",
       headers: {
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(feedbackData)
+      body: JSON.stringify(feedbackData),
     });
   }
 }
@@ -466,9 +509,17 @@ class ApiError extends Error {
   status: number;
   details?: any;
 
-  constructor({ status, message, details }: { status: number; message: string; details?: any }) {
+  constructor({
+    status,
+    message,
+    details,
+  }: {
+    status: number;
+    message: string;
+    details?: any;
+  }) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.details = details;
   }

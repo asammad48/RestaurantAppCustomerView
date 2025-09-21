@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { MenuItem, ApiMenuItem, ApiDeal } from './mock-data';
 import { Branch } from '../types/branch';
 import { OrderResponse, Notification, OrderNotificationContent, ReservationNotificationContent } from './api-client';
+import { TableLocation } from '../services/table-service';
 
 export interface ParsedNotification extends Notification {
   parsedContent: OrderNotificationContent | ReservationNotificationContent;
@@ -26,6 +27,11 @@ export interface TakeawayDetails {
   customerPhone: string;
   specialInstructions?: string;
   preferredTime?: string;
+}
+
+export interface DineInDetails {
+  selectedTable: TableLocation;
+  locationId: number;
 }
 
 export interface Restaurant {
@@ -99,6 +105,8 @@ interface CartStore {
   userLocation: string;
   deliveryDetails: DeliveryDetails | null;
   takeawayDetails: TakeawayDetails | null;
+  dineInDetails: DineInDetails | null;
+  selectedTable: TableLocation | null;
   specialInstructions: string;
   selectedAllergens: number[]; // Array of selected allergen IDs
   isCartOpen: boolean;
@@ -113,6 +121,8 @@ interface CartStore {
   isReviewModalOpen: boolean;
   isOrderConfirmationOpen: boolean;
   isAiEstimatorModalOpen: boolean;
+  isTableSelectionModalOpen: boolean;
+  isDineInSelectionModalOpen: boolean;
   orderResponse: OrderResponse | null;
   splitBillMode: 'equality' | 'items';
   addItem: (item: MenuItem | ApiMenuItem | ApiDeal, variation?: string) => void;
@@ -135,6 +145,10 @@ interface CartStore {
   setPaymentModalOpen: (open: boolean) => void;
   setDeliveryDetails: (details: DeliveryDetails | null) => void;
   setTakeawayDetails: (details: TakeawayDetails | null) => void;
+  setDineInDetails: (details: DineInDetails | null) => void;
+  setSelectedTable: (table: TableLocation | null) => void;
+  setTableSelectionModalOpen: (open: boolean) => void;
+  setDineInSelectionModalOpen: (open: boolean) => void;
   setSpecialInstructions: (instructions: string) => void;
   setSelectedAllergens: (allergens: number[]) => void;
   setSplitBillModalOpen: (open: boolean) => void;
@@ -164,6 +178,8 @@ export const useCartStore = create<CartStore>()(
       userLocation: '',
       deliveryDetails: null,
       takeawayDetails: null,
+      dineInDetails: null,
+      selectedTable: null,
       specialInstructions: '',
       selectedAllergens: [],
       isCartOpen: false,
@@ -178,6 +194,8 @@ export const useCartStore = create<CartStore>()(
       isReviewModalOpen: false,
       isOrderConfirmationOpen: false,
       isAiEstimatorModalOpen: false,
+      isTableSelectionModalOpen: false,
+      isDineInSelectionModalOpen: false,
       orderResponse: null,
       splitBillMode: 'equality',
   
@@ -391,6 +409,10 @@ export const useCartStore = create<CartStore>()(
   setPaymentModalOpen: (open: boolean) => set({ isPaymentModalOpen: open }),
   setDeliveryDetails: (details: DeliveryDetails | null) => set({ deliveryDetails: details }),
   setTakeawayDetails: (details: TakeawayDetails | null) => set({ takeawayDetails: details }),
+  setDineInDetails: (details: DineInDetails | null) => set({ dineInDetails: details }),
+  setSelectedTable: (table: TableLocation | null) => set({ selectedTable: table }),
+  setTableSelectionModalOpen: (open: boolean) => set({ isTableSelectionModalOpen: open }),
+  setDineInSelectionModalOpen: (open: boolean) => set({ isDineInSelectionModalOpen: open }),
   setSpecialInstructions: (instructions: string) => set({ specialInstructions: instructions }),
   setSelectedAllergens: (allergens: number[]) => set({ selectedAllergens: allergens }),
   setSplitBillModalOpen: (open: boolean) => set({ isSplitBillModalOpen: open }),

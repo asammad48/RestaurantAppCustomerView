@@ -119,18 +119,33 @@ export default function RestaurantMenuPage() {
     return null;
   };
 
+  // Get location ID from URL parameters
+  const getLocationId = () => {
+    const urlParams = getUrlParams();
+    const urlLocationId = urlParams.get('locationId');
+    if (urlLocationId) {
+      return parseInt(urlLocationId, 10);
+    }
+    return null;
+  };
+
   const restaurantId = getRestaurantId();
   const methodType = getMethodType();
   const branchId = getBranchId();
+  const locationId = getLocationId();
 
   // API call to get branch information by ID
   const { data: branchData, isLoading: isBranchLoading, error: branchError } = useQuery<BranchByIdResponse>({
-    queryKey: ['/api/customer-search/get-branch-by-id', branchId],
+    queryKey: ['/api/customer-search/get-branch-by-id', branchId, locationId],
     queryFn: async () => {
       if (!branchId) {
         throw new Error('Branch ID is required');
       }
-      const response = await apiClient.getBranchById({ branchId });
+      const requestData: any = { branchId };
+      if (locationId) {
+        requestData.locationId = locationId;
+      }
+      const response = await apiClient.getBranchById(requestData);
       return response.data;
     },
     enabled: !!branchId,
@@ -393,7 +408,9 @@ export default function RestaurantMenuPage() {
       case 'takeaway':
         return <Badge className="configurable-primary text-white">Take Away</Badge>;
       case 'dine-in':
-        return <Badge className="configurable-primary text-white">Dine In</Badge>;
+        // Show locationName if available, otherwise show "Dine In"
+        const displayText = branchData?.locationName ? branchData.locationName : "Dine In";
+        return <Badge className="bg-green-500 text-white">{displayText}</Badge>;
       case 'qr':
         return <Badge className="configurable-primary text-white">QR Menu</Badge>;
       default:
@@ -763,10 +780,12 @@ export default function RestaurantMenuPage() {
                   <span className="text-lg font-medium">Menu - {branchData?.branchName || 'Restaurant'}</span>
                 </>
               )}
-              {(methodType === 'dine-in' || !methodType) && (
+              {methodType === 'dine-in' && (
                 <>
                   <MapPin className="mr-3" size={20} />
-                  <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || branchData?.branchName}</span>
+                  <span className="text-lg font-medium">
+                    {branchData?.locationName ? branchData.locationName : "Dine In Menu"}{(selectedRestaurant?.name || branchData?.branchName) ? ` - ${selectedRestaurant?.name || branchData?.branchName}` : ''}
+                  </span>
                 </>
               )}
             </div>

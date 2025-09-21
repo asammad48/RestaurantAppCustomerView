@@ -8,6 +8,13 @@ This project is a comprehensive, frontend-only restaurant ordering and service r
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+- **2025-09-20**: Successfully imported from GitHub and configured for Replit environment
+- Fixed replit-cartographer plugin compatibility issue by temporarily disabling it
+- Configured proper workflow for port 5000 with webview output
+- Set up deployment configuration for autoscale deployment
+- Verified all core functionality works correctly in the Replit environment
+
 ## System Architecture
 
 ### UI/UX Decisions
