@@ -7,15 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     runtimeErrorOverlay(),
-    // Temporarily disabled due to traverse function error
-    // ...(process.env.NODE_ENV !== "production" &&
-    // process.env.REPL_ID !== undefined
-    //   ? [
-    //       await import("@replit/vite-plugin-cartographer").then((m) =>
-    //         m.cartographer(),
-    //       ),
-    //     ]
-    //   : []),
+    // If you ever re-enable the cartographer plugin, you’ll want to wrap it in a top-level await
   ],
   resolve: {
     alias: {
@@ -37,4 +29,5 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
+  publicDir: path.resolve(import.meta.dirname, "client", "public"),
 });
