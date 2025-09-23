@@ -707,6 +707,11 @@ class MockStorage {
     });
   }
 
+  // Alias for getMenuData - used by branch API route
+  async getApiMenuData(): Promise<ApiMenuResponse> {
+    return this.getMenuData();
+  }
+
   // Orders
   async getOrders(tableNumber?: number): Promise<Order[]> {
     let orders = [...this.orders];
