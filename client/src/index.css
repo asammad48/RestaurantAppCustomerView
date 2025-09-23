@@ -96,11 +96,27 @@
   
   /* Responsive Grid Utilities */
   .responsive-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6;
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6;
   }
   
   .responsive-menu-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6;
+  }
+  
+  /* Mobile-specific improvements */
+  @media (max-width: 640px) {
+    .responsive-grid {
+      @apply gap-2;
+    }
+    
+    .responsive-menu-grid {
+      @apply gap-2;
+    }
+    
+    /* Better mobile text sizing */
+    .text-mobile-adjust {
+      @apply text-sm;
+    }
   }
   
   /* Safe Image Utilities */

@@ -65,13 +65,11 @@ export default function CartModal() {
     }
   };
 
-  // Fetch allergens data
-  const { data: allergensResponse, isLoading: allergensLoading, error: allergensError } = useQuery({
+  // Fetch allergens data using mock API
+  const { data: allergens, isLoading: allergensLoading, error: allergensError } = useQuery({
     queryKey: ['/api/Generic/allergens'],
-    queryFn: () => apiClient.getAllergens(),
   });
 
-  const allergens = allergensResponse?.data || [];
 
   // Handle allergen selection
   const handleAllergenToggle = (allergenId: number) => {
