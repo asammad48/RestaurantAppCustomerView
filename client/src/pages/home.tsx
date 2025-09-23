@@ -260,17 +260,17 @@ export default function Home() {
         </div>
         
         <div className="absolute bottom-0 left-0 right-0 configurable-primary text-white py-3">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+          <div className="page-container flex items-center justify-center">
             <Armchair className="mr-3" size={20} />
             <span className="text-lg font-medium">You're at TABLE #5</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container section-y">
         {/* Service Selection */}
         <section className="mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="responsive-grid gap-4 mb-8">
             {[
               {
                 id: 'delivery',
@@ -429,7 +429,7 @@ export default function Home() {
             {filteredBranches.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-semibold mb-4">Available Restaurants</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="responsive-grid gap-6">
                   {filteredBranches.map((branch: Branch) => (
                     <Card 
                       key={branch.branchId} 
@@ -608,7 +608,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 {branchesLoading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="responsive-grid gap-6">
                     {[1, 2, 3, 4].map((i) => (
                       <div key={i} className="animate-pulse">
                         <div className="h-48 bg-gray-200 rounded-t-lg mb-4"></div>
@@ -620,7 +620,7 @@ export default function Home() {
                     ))}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="responsive-grid gap-6">
                     {filteredBranches.map((branch: Branch) => (
                       <Card 
                         key={branch.branchId} 

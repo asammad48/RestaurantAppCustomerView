@@ -694,7 +694,7 @@ export default function RestaurantMenuPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-container section-y">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <p className="text-red-600 mb-4">Invalid or missing QR link</p>
@@ -711,7 +711,7 @@ export default function RestaurantMenuPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-container section-y">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
@@ -728,7 +728,7 @@ export default function RestaurantMenuPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-container section-y">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <p className="text-red-600 mb-4">Failed to load restaurant information</p>
@@ -767,7 +767,7 @@ export default function RestaurantMenuPage() {
         {/* Service Type Indicator - Hidden for delivery */}
         {methodType !== 'delivery' && (
           <div className="absolute bottom-0 left-0 right-0 configurable-primary text-white py-3">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+            <div className="page-container flex items-center justify-center">
               {methodType === 'takeaway' && (
                 <>
                   <Clock className="mr-3" size={20} />
@@ -793,7 +793,7 @@ export default function RestaurantMenuPage() {
         )}
       </div>
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container section-y">
         {/* Back Button */}
         {methodType !== 'qr' && (
           <div className="mb-6">
@@ -845,7 +845,7 @@ export default function RestaurantMenuPage() {
         {apiMenuData?.recommendedForYou && apiMenuData.recommendedForYou.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold configurable-text-primary mb-6">Recommended For You</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="responsive-menu-grid gap-6">
               {apiMenuData.recommendedForYou.map((item) => (
                 <FoodCard 
                   key={item.menuItemId} 
@@ -1403,7 +1403,7 @@ export default function RestaurantMenuPage() {
         {apiMenuData?.deals && apiMenuData.deals.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold configurable-text-primary mb-6">Special Deals</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="responsive-menu-grid gap-6">
               {apiMenuData.deals.map((deal) => renderDeal(deal))}
             </div>
           </section>
