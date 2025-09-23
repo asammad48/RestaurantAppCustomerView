@@ -70,12 +70,49 @@
     @apply border-border;
   }
 
+  html, body, #root {
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
 
 @layer components {
+  /* Responsive Layout Utilities */
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .section-y {
+    @apply py-4 sm:py-6 lg:py-8;
+  }
+  
+  .content-center {
+    @apply flex flex-col items-center justify-center text-center;
+  }
+  
+  /* Responsive Grid Utilities */
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6;
+  }
+  
+  .responsive-menu-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+  }
+  
+  /* Safe Image Utilities */
+  .responsive-image {
+    @apply w-full h-auto max-w-full object-cover;
+  }
+  
+  /* Safe Table Container */
+  .table-container {
+    @apply w-full overflow-x-auto;
+  }
+  
   /* Primary Background Colors */
   .configurable-primary {
     background-color: var(--color-primary) !important;
