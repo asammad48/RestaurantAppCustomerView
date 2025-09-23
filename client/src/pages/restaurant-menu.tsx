@@ -935,13 +935,13 @@ export default function RestaurantMenuPage() {
           {/* Left Side - Menu Items */}
           <div className="flex-1">
             <section>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-2xl font-bold configurable-text-primary">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <h2 className="text-xl sm:text-2xl font-bold configurable-text-primary">
                     {viewMode === 'menu' ? 'Menu Items' : 'AI Budget Suggestions'}
                   </h2>
                   {/* View Toggle Buttons */}
-                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1 w-fit">
                     <Button
                       variant={viewMode === 'menu' ? 'default' : 'ghost'}
                       size="sm"
@@ -959,7 +959,8 @@ export default function RestaurantMenuPage() {
                       data-testid="button-switch-to-ai"
                     >
                       <Bot className="w-4 h-4 mr-1" />
-                      AI Budget
+                      <span className="hidden xs:inline">AI Budget</span>
+                      <span className="xs:hidden">AI</span>
                     </Button>
                   </div>
                 </div>
@@ -970,7 +971,7 @@ export default function RestaurantMenuPage() {
                       console.debug('🤖 Opening AI Estimator Modal from restaurant menu');
                       setAiEstimatorModalOpen(true);
                     }}
-                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2"
+                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2 w-fit"
                     size="sm"
                     data-testid="button-open-ai-estimator-mobile"
                   >
