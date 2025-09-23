@@ -79,6 +79,9 @@ export async function apiRequest(
         { id: 7, name: "Shellfish" },
         { id: 8, name: "Sesame" }
       ];
+    } else if (url.includes('/api/customer-search/branch/') && method === 'GET') {
+      // Mock branch menu data
+      result = await mockStorage.getApiMenuData();
     } else if (url.includes('/api/customer-search/get-branch-by-id') && method === 'POST') {
       // Mock branch data
       const branchData = data as any;
@@ -103,7 +106,7 @@ export async function apiRequest(
         taxAppliedType: "percentage",
         taxPercentage: 8.5,
         maxDiscountAmount: 500,
-        currency: "PKR",
+        branchCurrency: "PKR",
         locationName: branchData?.locationId ? `Location ${branchData.locationId}` : undefined,
         locationId: branchData?.locationId
       };
