@@ -1,4 +1,4 @@
-import { Bell, Package, Calendar, Clock } from "lucide-react";
+import { Bell, Package, Calendar, Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,6 +8,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotificationStore, ParsedNotification } from "@/lib/store";
 import {
@@ -17,15 +24,18 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 
 interface NotificationItemProps {
   notification: ParsedNotification;
   onNotificationClick: (notification: ParsedNotification) => void;
+  isDropdown?: boolean; // Flag to determine if it's for dropdown or modal
 }
 
 function NotificationItem({
   notification,
   onNotificationClick,
+  isDropdown = true,
 }: NotificationItemProps) {
   const {
     id,
@@ -73,16 +83,14 @@ function NotificationItem({
     return "Click to view details";
   };
 
-  return (
-    <DropdownMenuItem
-      className={`flex items-start space-x-3 p-3 cursor-pointer hover:bg-gray-50 ${
-        !isNotificationAcknowledged
-          ? "bg-blue-50 border-l-2 border-blue-500"
-          : ""
-      }`}
-      onClick={handleClick}
-      data-testid={`notification-item-${id}`}
-    >
+  const itemClasses = `flex items-start space-x-3 p-3 cursor-pointer hover:bg-gray-50 ${
+    !isNotificationAcknowledged
+      ? "bg-blue-50 border-l-2 border-blue-500"
+      : ""
+  }`;
+
+  const content = (
+    <>
       <div
         className={`flex-shrink-0 mt-1 ${
           !isNotificationAcknowledged ? "text-blue-600" : "text-gray-400"
@@ -116,7 +124,37 @@ function NotificationItem({
           {formatDistanceToNow(new Date(createdDate), { addSuffix: true })}
         </p>
       </div>
-    </DropdownMenuItem>
+    </>
+  );
+
+  if (isDropdown) {
+    return (
+      <DropdownMenuItem
+        className={itemClasses}
+        onClick={handleClick}
+        data-testid={`notification-item-${id}`}
+      >
+        {content}
+      </DropdownMenuItem>
+    );
+  }
+
+  // For modal (mobile), use a regular div
+  return (
+    <div
+      className={itemClasses}
+      onClick={handleClick}
+      data-testid={`notification-item-${id}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClick();
+        }
+      }}
+    >
+      {content}
+    </div>
   );
 }
 
@@ -136,14 +174,34 @@ export default function NotificationTray() {
     useNotificationStore();
 
   const queryClient = useQueryClient();
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Custom toggle function that refreshes notifications when opening the tray
-  const handleTrayToggle = () => {
+  // Check if mobile screen on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Separate handlers for mobile and desktop
+  const handleMobileToggle = () => {
     if (!isNotificationTrayOpen) {
       // Tray is closed, about to open - refresh notifications
       queryClient.refetchQueries({ queryKey: ['notifications'] });
     }
     toggleNotificationTray();
+  };
+
+  const handleDesktopToggle = () => {
+    if (!isNotificationTrayOpen) {
+      // Tray is closed, about to open - refresh notifications
+      queryClient.refetchQueries({ queryKey: ['notifications'] });
+      setNotificationTrayOpen(true);
+    }
   };
 
   // Test function to create sample notifications and add them to the store
@@ -201,6 +259,122 @@ export default function NotificationTray() {
     console.log("Test notifications added to store");
   };
 
+  // Create notification content component
+  const NotificationContent = ({ isDropdown = true }: { isDropdown?: boolean }) => (
+    <>
+      {isLoading ? (
+        <div className="px-3 py-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+          <p className="text-sm text-gray-500">Loading notifications...</p>
+        </div>
+      ) : error ? (
+        <div className="px-3 py-8 text-center">
+          <Bell className="w-8 h-8 text-red-300 mx-auto mb-2" />
+          <p className="text-sm text-red-500">Failed to load notifications</p>
+          <p className="text-xs text-gray-500 mt-1">Please try again later</p>
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="px-3 py-8 text-center">
+          <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+          <p className="text-sm text-gray-500">No notifications yet</p>
+        </div>
+      ) : (
+        <ScrollArea className="max-h-80">
+          {notifications.map((notification, index) => (
+            <div key={notification.id}>
+              <NotificationItem
+                notification={notification}
+                onNotificationClick={showNotification}
+                isDropdown={isDropdown}
+              />
+              {index < notifications.length - 1 && (
+                isDropdown ? (
+                  <DropdownMenuSeparator />
+                ) : (
+                  <div className="border-b border-gray-200 mx-3" />
+                )
+              )}
+            </div>
+          ))}
+        </ScrollArea>
+      )}
+
+      {notifications.length > 0 && (
+        <>
+          {isDropdown ? (
+            <DropdownMenuSeparator />
+          ) : (
+            <div className="border-b border-gray-200 mx-3" />
+          )}
+          <div className="px-3 py-2">
+            <Button
+              variant="outline"
+              className="w-full text-xs"
+              size="sm"
+              onClick={clearAllNotifications}
+              data-testid="button-clear-notifications"
+            >
+              Clear All Notifications
+            </Button>
+          </div>
+        </>
+      )}
+    </>
+  );
+
+  if (isMobile) {
+    // Mobile: Use centered modal
+    return (
+      <>
+        <Button
+          variant="ghost"
+          className="relative p-2 hover:bg-gray-100"
+          onClick={handleMobileToggle}
+          data-testid="button-notification-toggle"
+        >
+          <Bell size={20} className="text-gray-600" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white min-w-[20px] h-5 flex items-center justify-center text-xs rounded-full font-bold">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Button>
+
+        <Dialog open={isNotificationTrayOpen} onOpenChange={setNotificationTrayOpen}>
+          <DialogContent className="w-[90vw] max-w-md max-h-[80vh] p-0">
+            <DialogHeader className="px-4 py-3 border-b">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-base font-semibold">Notifications</DialogTitle>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      {unreadCount} new
+                    </Badge>
+                  )}
+                  <DialogClose asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 hover:bg-gray-100"
+                      data-testid="button-close-notification-modal"
+                      aria-label="Close notifications"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </DialogClose>
+                </div>
+              </div>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-1">
+              <NotificationContent isDropdown={false} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  // Desktop: Use dropdown menu
   return (
     <DropdownMenu
       open={isNotificationTrayOpen}
@@ -210,7 +384,7 @@ export default function NotificationTray() {
         <Button
           variant="ghost"
           className="relative p-2 hover:bg-gray-100"
-          onClick={handleTrayToggle}
+          onClick={handleDesktopToggle}
           data-testid="button-notification-toggle"
         >
           <Bell size={20} className="text-gray-600" />
@@ -221,7 +395,7 @@ export default function NotificationTray() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" sideOffset={8} className="w-[calc(100vw-2rem)] max-w-80 max-h-96 sm:w-80 sm:align-end">
+      <DropdownMenuContent align="end" sideOffset={8} className="w-80 max-h-96">
         <div className="px-3 py-2 border-b">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Notifications</h3>
@@ -232,53 +406,7 @@ export default function NotificationTray() {
             )}
           </div>
         </div>
-
-        {isLoading ? (
-          <div className="px-3 py-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-500">Loading notifications...</p>
-          </div>
-        ) : error ? (
-          <div className="px-3 py-8 text-center">
-            <Bell className="w-8 h-8 text-red-300 mx-auto mb-2" />
-            <p className="text-sm text-red-500">Failed to load notifications</p>
-            <p className="text-xs text-gray-500 mt-1">Please try again later</p>
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="px-3 py-8 text-center">
-            <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">No notifications yet</p>
-          </div>
-        ) : (
-          <ScrollArea className="max-h-80">
-            {notifications.map((notification, index) => (
-              <div key={notification.id}>
-                <NotificationItem
-                  notification={notification}
-                  onNotificationClick={showNotification}
-                />
-                {index < notifications.length - 1 && <DropdownMenuSeparator />}
-              </div>
-            ))}
-          </ScrollArea>
-        )}
-
-        {notifications.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <div className="px-3 py-2">
-              <Button
-                variant="outline"
-                className="w-full text-xs"
-                size="sm"
-                onClick={clearAllNotifications}
-                data-testid="button-clear-notifications"
-              >
-                Clear All Notifications
-              </Button>
-            </div>
-          </>
-        )}
+        <NotificationContent isDropdown={true} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
