@@ -59,10 +59,10 @@ export default function Navbar() {
             </div>
           </Link>
           
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5">
             <Button 
               onClick={() => setCartOpen(true)}
-              className="flex items-center space-x-1 sm:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-3 sm:px-4"
+              className="flex items-center space-x-1 sm:space-x-2 md:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-3 sm:px-4 md:px-5 lg:px-6"
               size="sm"
             >
               <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
@@ -82,7 +82,7 @@ export default function Navbar() {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100">
+                <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100 px-2 sm:px-3 md:px-4">
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                     {user?.profilePicture ? (
                       <img 
@@ -125,7 +125,7 @@ export default function Navbar() {
             <Button 
               onClick={handleLoginClick}
               variant="outline" 
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 px-3 sm:px-4 md:px-5 lg:px-6"
             >
               <User size={16} />
               <span className="hidden sm:inline">Login</span>
