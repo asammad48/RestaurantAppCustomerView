@@ -59,10 +59,10 @@ export default function Navbar() {
             </div>
           </Link>
           
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5">
             <Button 
               onClick={() => setCartOpen(true)}
-              className="flex items-center space-x-1 sm:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-3 sm:px-4"
+              className="flex items-center space-x-1 sm:space-x-2 md:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-3 sm:px-4 md:px-5 lg:px-6"
               size="sm"
             >
               <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
@@ -76,61 +76,61 @@ export default function Navbar() {
 
             {/* Notification Tray - Only show when authenticated */}
             {isAuthenticated && <NotificationTray />}
-            
-            {/* Authentication Section */}
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      {user?.profilePicture ? (
-                        <img 
-                          src={user.profilePicture} 
-                          alt="Profile" 
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User size={16} className="text-white" />
-                      )}
-                    </div>
-                    <span className="hidden sm:inline text-sm font-medium">
-                      {user?.name || user?.fullName}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <Link href="/order-history">
-                    <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer">
-                      <History size={16} />
-                      <span>Order History</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <Link href="/reservations">
-                    <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer" data-testid="link-reservations">
-                      <Calendar size={16} />
-                      <span>Reservations</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <DropdownMenuItem 
-                    onClick={logout}
-                    className="flex items-center space-x-2 cursor-pointer"
-                  >
-                    <LogOut size={16} />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button 
-                onClick={handleLoginClick}
-                variant="outline" 
-                className="flex items-center space-x-2"
-              >
-                <User size={16} />
-                <span className="hidden sm:inline">Login</span>
-              </Button>
-            )}
           </div>
+          
+          {/* Authentication Section - Rightmost position */}
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100 px-2 sm:px-3 md:px-4">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    {user?.profilePicture ? (
+                      <img 
+                        src={user.profilePicture} 
+                        alt="Profile" 
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User size={16} className="text-white" />
+                    )}
+                  </div>
+                  <span className="hidden sm:inline text-sm font-medium">
+                    {user?.name || user?.fullName}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <Link href="/order-history">
+                  <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer">
+                    <History size={16} />
+                    <span>Order History</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/reservations">
+                  <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer" data-testid="link-reservations">
+                    <Calendar size={16} />
+                    <span>Reservations</span>
+                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenuItem 
+                  onClick={logout}
+                  className="flex items-center space-x-2 cursor-pointer"
+                >
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button 
+              onClick={handleLoginClick}
+              variant="outline" 
+              className="flex items-center space-x-2 px-3 sm:px-4 md:px-5 lg:px-6"
+            >
+              <User size={16} />
+              <span className="hidden sm:inline">Login</span>
+            </Button>
+          )}
         </div>
       </div>
     </nav>
