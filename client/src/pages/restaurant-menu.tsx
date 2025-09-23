@@ -44,6 +44,8 @@ export default function RestaurantMenuPage() {
     setBranchCurrency,
     branchCurrency,
     addItem,
+    setSelectedBranch,
+    setSelectedRestaurant,
   } = useCartStore();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -240,10 +242,45 @@ export default function RestaurantMenuPage() {
 
   // Set branch currency when branch data is loaded
   useEffect(() => {
-    if (branchData?.currency) {
-      setBranchCurrency(branchData.currency);
+    if (branchData?.branchCurrency) {
+      setBranchCurrency(branchData.branchCurrency);
     }
-  }, [branchData?.currency, setBranchCurrency]);
+  }, [branchData?.branchCurrency, setBranchCurrency]);
+
+  // Hydrate store with branch data when directly accessing restaurant-menu page
+  useEffect(() => {
+    if (branchData && !selectedBranch) {
+      console.log('🏪 Store: Hydrating selectedBranch from API data', branchData);
+      setSelectedBranch({
+        branchId: branchData.branchId,
+        branchName: branchData.branchName,
+        branchLogo: branchData.branchLogo,
+        branchAddress: branchData.branchAddress,
+        branchOpenTime: branchData.branchOpenTime,
+        branchCloseTime: branchData.branchCloseTime,
+        isBranchClosed: branchData.isBranchClosed,
+        branchCurrency: branchData.branchCurrency,
+        primaryColor: branchData.primaryColor
+      });
+      
+      // Also set a basic restaurant object if not already set
+      if (!selectedRestaurant) {
+        console.log('🏪 Store: Hydrating selectedRestaurant from branch data');
+        setSelectedRestaurant({
+          id: branchData.branchId.toString(),
+          name: branchData.branchName,
+          image: branchData.branchLogo || '',
+          rating: 4.5, // Default rating
+          deliveryTime: '30-45 min', // Default delivery time
+          deliveryFee: '50', // Default fee
+          minimumOrder: '500', // Default minimum
+          address: branchData.branchAddress,
+          distance: '2.5 km', // Default distance
+          isOpen: !branchData.isBranchClosed
+        });
+      }
+    }
+  }, [branchData, selectedBranch, selectedRestaurant, setSelectedBranch, setSelectedRestaurant]);
 
   // Get unique categories from menu items
   const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
@@ -933,11 +970,13 @@ export default function RestaurantMenuPage() {
                       console.debug('🤖 Opening AI Estimator Modal from restaurant menu');
                       setAiEstimatorModalOpen(true);
                     }}
-                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2"
+                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2"
+                    size="sm"
                     data-testid="button-open-ai-estimator-mobile"
                   >
                     <Bot className="w-4 h-4" />
-                    AI Estimator
+                    <span className="hidden xs:inline">AI Estimator</span>
+                    <span className="xs:hidden">AI</span>
                   </Button>
                 </div>
               </div>

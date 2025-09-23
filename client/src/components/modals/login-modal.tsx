@@ -70,7 +70,7 @@ export function LoginModal() {
 
   return (
     <Dialog open={isLoginModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md mx-4">
+      <DialogContent className="max-w-sm w-[calc(100%-2rem)] sm:max-w-md sm:w-auto mx-auto">
         <div className="flex flex-col items-center space-y-6 py-4">
           {/* Logo placeholder */}
           <div className="w-16 h-16 bg-gray-300 rounded-lg"></div>

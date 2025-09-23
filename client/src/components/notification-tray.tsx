@@ -221,7 +221,7 @@ export default function NotificationTray() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-h-96">
+      <DropdownMenuContent align="center" sideOffset={8} className="w-[calc(100vw-2rem)] max-w-80 max-h-96 sm:w-80 sm:align-end">
         <div className="px-3 py-2 border-b">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Notifications</h3>
@@ -248,15 +248,6 @@ export default function NotificationTray() {
           <div className="px-3 py-8 text-center">
             <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No notifications yet</p>
-            <Button
-              variant="outline"
-              className="mt-3 text-xs"
-              size="sm"
-              onClick={createTestNotifications}
-              data-testid="button-add-test-notifications"
-            >
-              Add Test Notifications
-            </Button>
           </div>
         ) : (
           <ScrollArea className="max-h-80">
@@ -275,7 +266,7 @@ export default function NotificationTray() {
         {notifications.length > 0 && (
           <>
             <DropdownMenuSeparator />
-            <div className="px-3 py-2 space-y-2">
+            <div className="px-3 py-2">
               <Button
                 variant="outline"
                 className="w-full text-xs"
@@ -284,15 +275,6 @@ export default function NotificationTray() {
                 data-testid="button-clear-notifications"
               >
                 Clear All Notifications
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full text-xs"
-                size="sm"
-                onClick={createTestNotifications}
-                data-testid="button-add-test-notifications"
-              >
-                Add Test Notifications
               </Button>
             </div>
           </>
