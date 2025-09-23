@@ -67,6 +67,70 @@ export async function apiRequest(
       result = await mockStorage.createReservation(data as any);
     } else if (url.includes('/api/customer-search/estimate') && method === 'POST') {
       result = await mockStorage.getBudgetEstimate(data as any);
+    } else if (url.includes('/api/Generic/allergens') && method === 'GET') {
+      // Mock allergens data
+      result = [
+        { id: 1, name: "Wheat" },
+        { id: 2, name: "Dairy" },
+        { id: 3, name: "Nuts" },
+        { id: 4, name: "Soy" },
+        { id: 5, name: "Eggs" },
+        { id: 6, name: "Fish" },
+        { id: 7, name: "Shellfish" },
+        { id: 8, name: "Sesame" }
+      ];
+    } else if (url.includes('/api/customer-search/get-branch-by-id') && method === 'POST') {
+      // Mock branch data
+      const branchData = data as any;
+      result = {
+        branchName: "Restaurant Demo Branch",
+        rating: 4.8,
+        deliveryTime: 30,
+        deliveryFee: 50,
+        maxDistanceForDelivery: 10,
+        branchPicture: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
+        branchAddress: "123 Main Street, City Center",
+        branchId: branchData?.branchId || 1,
+        branchOpenTime: "09:00",
+        branchCloseTime: "23:00",
+        isBranchClosed: false,
+        primaryColor: "#16a34a",
+        branchLogo: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100",
+        banner: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=200",
+        deliveryCharges: 50,
+        minDeliveryAmount: 200,
+        serviceCharges: 25,
+        taxAppliedType: "percentage",
+        taxPercentage: 8.5,
+        maxDiscountAmount: 500,
+        currency: "PKR",
+        locationName: branchData?.locationId ? `Location ${branchData.locationId}` : undefined,
+        locationId: branchData?.locationId
+      };
+    } else if (url.includes('/api/Order') && method === 'POST') {
+      // Mock order creation
+      result = {
+        id: Math.floor(Math.random() * 10000),
+        orderId: Math.floor(Math.random() * 10000),
+        orderNumber: `ORD-${Date.now().toString().slice(-6)}`,
+        branchId: (data as any)?.branchId || 1,
+        locationId: (data as any)?.locationId,
+        username: (data as any)?.username || "Guest User",
+        deviceInfo: (data as any)?.deviceInfo || "mock-device",
+        subTotal: 500,
+        discountAmount: 0,
+        serviceCharges: 25,
+        deliveryCharges: (data as any)?.orderType === 1 ? 50 : 0,
+        taxAmount: 42.5,
+        tipAmount: (data as any)?.tipAmount || 0,
+        totalAmount: 617.5,
+        orderStatus: 1,
+        orderType: (data as any)?.orderType || 3,
+        createdAt: new Date().toISOString(),
+        estimatedPreparationTimeMinutes: 25,
+        estimatedDeliveryTimeMinutes: (data as any)?.orderType === 1 ? 35 : undefined,
+        completionTimeMinutes: undefined
+      };
     } else {
       throw new Error(`Mock API endpoint not found: ${method} ${url}`);
     }
@@ -94,22 +158,8 @@ export const getQueryFn: <T>(options: {
     try {
       let res: Response;
       
-      // Handle external API calls (customer-search)
-      if (url.includes('/api/customer-search/branch/')) {
-        const branchId = url.split('/').pop();
-        const externalUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CUSTOMER_SEARCH}/${branchId}`;
-        
-        res = await fetch(externalUrl, {
-          method: 'GET',
-          headers: {
-            'accept': 'text/plain',
-            'Content-Type': 'application/json'
-          }
-        });
-      } else {
-        // Use mock API for other endpoints
-        res = await apiRequest('GET', url);
-      }
+      // Handle all API calls with mock data for Replit environment
+      res = await apiRequest('GET', url);
       
       const data = await res.json();
       
