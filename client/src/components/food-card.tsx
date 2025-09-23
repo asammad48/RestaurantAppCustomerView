@@ -123,7 +123,7 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
 
   if (variant === "list") {
     return (
-      <div className="food-card bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row gap-4">
+      <div className="food-card bg-white rounded-xl shadow-sm p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
         <div className="relative w-full sm:w-32 h-32 flex-shrink-0">
           <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg" />
           {isRecommended && (
@@ -138,18 +138,18 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
           )}
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold configurable-text-primary text-lg mb-2">{item.name}</h3>
-          <p className="configurable-text-secondary text-sm mb-3">{item.description}</p>
+          <h3 className="font-semibold configurable-text-primary text-base sm:text-lg mb-2 truncate">{item.name}</h3>
+          <p className="configurable-text-secondary text-xs sm:text-sm mb-3 line-clamp-2">{item.description}</p>
           
           {/* Size Selection */}
           <div className="mb-3">
             <p className="text-sm font-medium configurable-text-primary mb-2">Variation</p>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-1 sm:gap-2">
               {sizes.map((size) => (
                 <button
                   key={size.name}
                   onClick={() => setSelectedSize(size.name)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+                  className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border transition-colors ${
                     selectedSize === size.name
                       ? 'configurable-primary text-white configurable-border'
                       : 'configurable-secondary configurable-text-secondary configurable-border hover:configurable-border'
@@ -244,13 +244,13 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
         )}
       </div>
       <div className="p-4">
-        <h3 className="font-semibold configurable-text-primary mb-2">{item.name}</h3>
-        <p className="text-sm configurable-text-secondary mb-3 line-clamp-2">{item.description}</p>
+        <h3 className="font-semibold configurable-text-primary mb-2 text-sm sm:text-base truncate">{item.name}</h3>
+        <p className="text-xs sm:text-sm configurable-text-secondary mb-3 line-clamp-2">{item.description}</p>
         
         {/* Size Selection */}
         <div className="mb-3">
           <p className="text-sm font-medium configurable-text-primary mb-2">Variation</p>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-1 sm:gap-2">
             {sizes.map((size) => (
               <button
                 key={size.name}
@@ -282,7 +282,7 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
           <Button 
             onClick={handleAddToCart} 
             size="sm"
-            className="configurable-primary text-white hover:configurable-primary-hover"
+            className="configurable-primary text-white hover:configurable-primary-hover text-xs sm:text-sm px-3 sm:px-4"
           >
             Add to cart
           </Button>

@@ -53,21 +53,22 @@ export default function Navbar() {
                   <Utensils className="text-white" size={20} />
                 </div>
               )}
-              <span className="text-xl font-bold configurable-text-primary">
+              <span className="text-lg sm:text-xl font-bold configurable-text-primary truncate max-w-[150px] sm:max-w-none">
                 {showBranchDetails ? selectedBranch?.branchName : "LA PIZZA POPOLARE"}
               </span>
             </div>
           </Link>
           
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <Button 
               onClick={() => setCartOpen(true)}
-              className="flex items-center space-x-2 configurable-primary text-white hover:configurable-primary-hover relative"
+              className="flex items-center space-x-1 sm:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-3 sm:px-4"
+              size="sm"
             >
-              <ShoppingCart size={20} />
-              <span className="hidden sm:inline">Cart</span>
+              <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline text-sm">Cart</span>
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 configurable-error text-white min-w-[20px] h-5 flex items-center justify-center text-xs rounded-full font-bold">
+                <span className="absolute -top-1 -right-1 configurable-error text-white min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 flex items-center justify-center text-xs rounded-full font-bold">
                   {cartCount}
                 </span>
               )}
