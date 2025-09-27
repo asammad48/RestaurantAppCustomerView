@@ -15,6 +15,7 @@ export function LoginModal() {
     isLoginModalOpen, 
     setLoginModalOpen, 
     switchToSignup, 
+    switchToForgotPassword,
     login, 
     setLoading, 
     setError, 
@@ -123,8 +124,10 @@ export function LoginModal() {
             <div className="text-left">
               <button
                 type="button"
+                onClick={switchToForgotPassword}
                 className="text-sm text-[#15803d] hover:text-[#15803d]/80 transition-colors"
                 disabled={isLoading}
+                data-testid="link-forgot-password"
               >
                 Forget Password?
               </button>

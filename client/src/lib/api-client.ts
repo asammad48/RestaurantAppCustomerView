@@ -489,6 +489,34 @@ class ApiClient {
       body: JSON.stringify(feedbackData),
     });
   }
+
+  // Forgot Password API methods
+  async forgotPassword(
+    email: string,
+  ): Promise<ApiResponse<ForgotPasswordResponse>> {
+    return this.post<ForgotPasswordResponse>("/api/User/forgot-password", {
+      email,
+    });
+  }
+
+  async resetPassword(
+    resetData: ResetPasswordRequest,
+  ): Promise<ApiResponse<any>> {
+    return this.post<any>("/api/User/reset-password", resetData);
+  }
+}
+
+// Forgot Password API Types
+export interface ForgotPasswordResponse {
+  userId: number;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  password: string;
+  otp: string;
+  userId: number;
+  otpType: number; // Should be 1 for forgot password case
 }
 
 // Order Feedback API Types
