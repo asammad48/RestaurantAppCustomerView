@@ -15,6 +15,7 @@ export function LoginModal() {
     isLoginModalOpen, 
     setLoginModalOpen, 
     switchToSignup, 
+    switchToForgotPassword,
     login, 
     setLoading, 
     setError, 
@@ -70,8 +71,8 @@ export function LoginModal() {
 
   return (
     <Dialog open={isLoginModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-sm w-[calc(100%-2rem)] sm:max-w-md md:max-w-lg lg:max-w-xl sm:w-auto mx-auto">
-        <div className="flex flex-col items-center space-y-6 py-4">
+      <DialogContent className="w-[95%] max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto">
+        <div className="flex flex-col items-center space-y-6 py-4 px-2 sm:px-4">
           {/* Logo placeholder */}
           <div className="w-16 h-16 bg-gray-300 rounded-lg"></div>
           
@@ -123,8 +124,10 @@ export function LoginModal() {
             <div className="text-left">
               <button
                 type="button"
+                onClick={switchToForgotPassword}
                 className="text-sm text-[#15803d] hover:text-[#15803d]/80 transition-colors"
                 disabled={isLoading}
+                data-testid="link-forgot-password"
               >
                 Forget Password?
               </button>

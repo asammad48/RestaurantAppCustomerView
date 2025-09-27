@@ -59,16 +59,17 @@ export default function Navbar() {
             </div>
           </Link>
           
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5">
+          {/* Right side - Cart, Notifications, and Authentication grouped together */}
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
             <Button 
               onClick={() => setCartOpen(true)}
-              className="flex items-center space-x-1 sm:space-x-2 md:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-3 sm:px-4 md:px-5 lg:px-6"
+              className="flex items-center space-x-1 sm:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-2 sm:px-3 md:px-4"
               size="sm"
             >
-              <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
+              <ShoppingCart size={16} className="sm:w-5 sm:h-5" />
               <span className="hidden sm:inline text-sm">Cart</span>
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 configurable-error text-white min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 flex items-center justify-center text-xs rounded-full font-bold">
+                <span className="absolute -top-1 -right-1 configurable-error text-white min-w-[16px] h-[16px] sm:min-w-[18px] sm:h-[18px] flex items-center justify-center text-xs rounded-full font-bold">
                   {cartCount}
                 </span>
               )}
@@ -76,10 +77,9 @@ export default function Navbar() {
 
             {/* Notification Tray - Only show when authenticated */}
             {isAuthenticated && <NotificationTray />}
-          </div>
-          
-          {/* Authentication Section - Rightmost position */}
-          {isAuthenticated ? (
+
+            {/* Authentication Section */}
+            {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100 px-2 sm:px-3 md:px-4">
@@ -125,12 +125,13 @@ export default function Navbar() {
             <Button 
               onClick={handleLoginClick}
               variant="outline" 
-              className="flex items-center space-x-2 px-3 sm:px-4 md:px-5 lg:px-6"
+              className="flex items-center space-x-2 px-2 sm:px-3 md:px-4"
             >
               <User size={16} />
               <span className="hidden sm:inline">Login</span>
             </Button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </nav>
