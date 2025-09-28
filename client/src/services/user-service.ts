@@ -19,8 +19,10 @@ export interface UpdateProfileResponse {
 class UserService {
   async updateProfile(request: UpdateProfileRequest): Promise<UpdateProfileResponse> {
     try {
-      // Only use multipart/form-data for actual file uploads
-      // Avatar selection is temporarily disabled until proper image assets are available
+      // If avatar is selected, include it in the form data
+      if (request.selectedAvatar) {
+        request.formData.append('SelectedAvatar', request.selectedAvatar);
+      }
 
       // Use fetch directly for multipart/form-data as apiClient doesn't support it properly
       const response = await fetch(`${config.apiBaseUrl}/api/User/profile`, {

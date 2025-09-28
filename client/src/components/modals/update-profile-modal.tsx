@@ -122,7 +122,9 @@ export default function UpdateProfileModal({ isOpen, onClose }: UpdateProfileMod
   };
 
   const handleAvatarSelect = (avatar: string) => {
-    // Avatar selection temporarily disabled - only file uploads supported
+    setSelectedAvatar(avatar);
+    setProfilePicture(null);
+    setProfilePicturePreview("");
     setShowAvatarSelection(false);
   };
 
@@ -146,7 +148,8 @@ export default function UpdateProfileModal({ isOpen, onClose }: UpdateProfileMod
 
     updateProfileMutation.mutate({
       token,
-      formData
+      formData,
+      selectedAvatar
     });
   };
 
