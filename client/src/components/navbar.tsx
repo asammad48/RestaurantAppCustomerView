@@ -1,4 +1,4 @@
-import { ShoppingCart, Utensils, Home, User, LogOut, History, Calendar } from "lucide-react";
+import { ShoppingCart, Utensils, Home, User, LogOut, History, Calendar, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -12,6 +12,8 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Link, useLocation } from "wouter";
 import { getImageUrl } from "@/lib/config";
 import NotificationTray from "./notification-tray";
+import UpdateProfileModal from "./modals/update-profile-modal";
+import { useState } from "react";
 
 export default function Navbar() {
   const { setCartOpen, items, selectedBranch } = useCartStore();
@@ -24,6 +26,7 @@ export default function Navbar() {
   } = useAuthStore();
   const cartCount = items.reduce((count, item) => count + item.quantity, 0);
   const [location] = useLocation();
+  const [isUpdateProfileModalOpen, setIsUpdateProfileModalOpen] = useState(false);
 
   const handleLoginClick = () => {
     setPreviousPath(location);
@@ -113,6 +116,14 @@ export default function Navbar() {
                   </DropdownMenuItem>
                 </Link>
                 <DropdownMenuItem 
+                  onClick={() => setIsUpdateProfileModalOpen(true)}
+                  className="flex items-center space-x-2 cursor-pointer"
+                  data-testid="button-update-profile"
+                >
+                  <Settings size={16} />
+                  <span>Update Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
                   onClick={logout}
                   className="flex items-center space-x-2 cursor-pointer"
                 >
@@ -134,6 +145,12 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      
+      {/* Update Profile Modal */}
+      <UpdateProfileModal 
+        isOpen={isUpdateProfileModalOpen}
+        onClose={() => setIsUpdateProfileModalOpen(false)}
+      />
     </nav>
   );
 }
