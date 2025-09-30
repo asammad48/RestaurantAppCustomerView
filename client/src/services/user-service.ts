@@ -19,10 +19,10 @@ export interface UpdateProfileResponse {
 class UserService {
   async updateProfile(request: UpdateProfileRequest): Promise<UpdateProfileResponse> {
     try {
-      // If avatar is selected, include it as a text file in the form data
+      // If avatar is selected, include it as a text file in ProfilePicture field
       if (request.selectedAvatar) {
         const blob = new Blob([request.selectedAvatar], { type: 'text/plain' });
-        request.formData.append('SelectedAvatar', blob, 'avatar.txt');
+        request.formData.append('ProfilePicture', blob, 'avatar.txt');
       }
 
       // Use fetch directly for multipart/form-data as apiClient doesn't support it properly

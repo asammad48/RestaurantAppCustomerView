@@ -10,7 +10,7 @@ import {
 import { useCartStore } from "@/lib/store";
 import { useAuthStore } from "@/lib/auth-store";
 import { Link, useLocation } from "wouter";
-import { getImageUrl } from "@/lib/config";
+import { getImageUrl, getProfilePictureUrl } from "@/lib/config";
 import NotificationTray from "./notification-tray";
 import UpdateProfileModal from "./modals/update-profile-modal";
 import { useState } from "react";
@@ -88,11 +88,15 @@ export default function Navbar() {
                 <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100 px-2 sm:px-3 md:px-4">
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                     {user?.profilePicture ? (
-                      <img 
-                        src={user.profilePicture} 
-                        alt="Profile" 
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
+                      getProfilePictureUrl(user.profilePicture)?.startsWith('http') ? (
+                        <img 
+                          src={getProfilePictureUrl(user.profilePicture)!} 
+                          alt="Profile" 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-2xl">{user.profilePicture}</span>
+                      )
                     ) : (
                       <User size={16} className="text-white" />
                     )}

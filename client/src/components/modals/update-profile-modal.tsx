@@ -14,6 +14,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateUserProfile, UpdateProfileResponse } from "../../services/user-service";
+import { getProfilePictureUrl } from "@/lib/config";
 
 interface UpdateProfileModalProps {
   isOpen: boolean;
@@ -41,8 +42,16 @@ export default function UpdateProfileModal({ isOpen, onClose }: UpdateProfileMod
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState(user?.profilePicture || "");
-  const [selectedAvatar, setSelectedAvatar] = useState<string>("");
+  const [profilePicturePreview, setProfilePicturePreview] = useState(
+    user?.profilePicture && getProfilePictureUrl(user.profilePicture)?.startsWith('http') 
+      ? getProfilePictureUrl(user.profilePicture)! 
+      : ""
+  );
+  const [selectedAvatar, setSelectedAvatar] = useState<string>(
+    user?.profilePicture && !getProfilePictureUrl(user.profilePicture)?.startsWith('http')
+      ? user.profilePicture
+      : ""
+  );
   const [showAvatarSelection, setShowAvatarSelection] = useState(false);
 
   const form = useForm<UpdateProfileFormValues>({
@@ -159,8 +168,16 @@ export default function UpdateProfileModal({ isOpen, onClose }: UpdateProfileMod
       mobileNumber: user?.mobileNumber || "",
     });
     setProfilePicture(null);
-    setProfilePicturePreview(user?.profilePicture || "");
-    setSelectedAvatar("");
+    setProfilePicturePreview(
+      user?.profilePicture && getProfilePictureUrl(user.profilePicture)?.startsWith('http') 
+        ? getProfilePictureUrl(user.profilePicture)! 
+        : ""
+    );
+    setSelectedAvatar(
+      user?.profilePicture && !getProfilePictureUrl(user.profilePicture)?.startsWith('http')
+        ? user.profilePicture
+        : ""
+    );
     setShowAvatarSelection(false);
   };
 
