@@ -17,16 +17,8 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        // Ensure assets are properly organized for Azure Static Web Apps
-        assetFileNames: "assets/[name]-[hash][extname]",
-        chunkFileNames: "assets/[name]-[hash].js",
-        entryFileNames: "assets/[name]-[hash].js"
-      }
-    }
   },
   server: {
     host: "0.0.0.0",

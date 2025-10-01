@@ -118,6 +118,28 @@ export function getImageUrl(imagePath: string | null | undefined): string {
   return `${config.apiBaseUrl}/${path}`;
 }
 
+// Helper function to build profile picture URLs
+// If it's a URL path, prepend baseUrl; if it's just a string (emoji), return as-is
+export function getProfilePictureUrl(profilePicture: string | null | undefined): string | null {
+  if (!profilePicture) {
+    return null;
+  }
+  
+  // If it's already a full URL, return as is
+  if (profilePicture.startsWith('http')) {
+    return profilePicture;
+  }
+  
+  // If it's a path (starts with / or contains common path indicators like .)
+  if (profilePicture.startsWith('/') || profilePicture.includes('.') || profilePicture.includes('\\')) {
+    const path = profilePicture.startsWith('/') ? profilePicture.slice(1) : profilePicture;
+    return `${config.apiBaseUrl}/${path}`;
+  }
+  
+  // Otherwise, it's likely an emoji or avatar string - return as is
+  return profilePicture;
+}
+
 // Console log the current environment for debugging (development only)
 if (currentEnvironment === 'development') {
   console.log(`🌍 Environment: ${currentEnvironment}`);
