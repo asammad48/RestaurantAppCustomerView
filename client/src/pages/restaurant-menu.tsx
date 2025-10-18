@@ -190,8 +190,8 @@ export default function RestaurantMenuPage() {
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
-    staleTime: 0, // Always consider data stale
-    refetchOnMount: true, // Refetch when component mounts
+    staleTime: Infinity, // Keep data fresh to enable local filtering
+    refetchOnMount: false, // Don't refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
@@ -417,7 +417,12 @@ export default function RestaurantMenuPage() {
     console.log('🛒 RESTAURANT MENU: Finished adding budget option to cart');
   };
   
-  // Filter items by category and search
+  // Reset pagination when search or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
+
+  // Filter items by category and search (local filtering)
   const filteredItems = apiMenuData?.menuItems?.filter((item: ApiMenuItem) => {
     const matchesCategory = selectedCategory === "all" || item.categoryName === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

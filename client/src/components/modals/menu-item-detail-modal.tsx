@@ -101,89 +101,81 @@ export default function MenuItemDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-0">
         <div className="relative">
           {/* Image Section */}
-          <div className="relative w-full h-64 sm:h-80">
+          <div className="relative w-full h-48">
             <img 
               src={getImage()} 
               alt={item.name} 
               className="w-full h-full object-cover" 
             />
             {isRecommended && (
-              <Badge className="absolute top-4 right-4 configurable-recommended text-white">
+              <Badge className="absolute top-2 right-2 configurable-recommended text-white text-xs">
                 Recommended
               </Badge>
             )}
             {discountPercentage > 0 && (
-              <Badge className="absolute top-4 left-4 configurable-deal text-white">
+              <Badge className="absolute top-2 left-2 configurable-deal text-white text-xs">
                 {discountPercentage}% OFF
               </Badge>
             )}
           </div>
 
           {/* Content Section */}
-          <div className="p-6 space-y-6">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold configurable-text-primary">
-                {item.name}
-              </DialogTitle>
-            </DialogHeader>
-
-            {/* Full Description */}
+          <div className="p-4 space-y-4">
             <div>
-              <h4 className="font-semibold text-base configurable-text-primary mb-2">Description</h4>
-              <p className="text-sm configurable-text-secondary leading-relaxed">
+              <h3 className="text-lg font-bold configurable-text-primary mb-1">
+                {item.name}
+              </h3>
+              <p className="text-sm configurable-text-secondary">
                 {item.description}
               </p>
             </div>
 
             {/* Size Selection */}
             <div>
-              <h4 className="font-semibold text-base configurable-text-primary mb-3">Select Variation</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <h4 className="text-sm font-semibold configurable-text-primary mb-2">Variation</h4>
+              <div className="grid grid-cols-3 gap-2">
                 {sizes.map((size) => (
                   <button
                     key={size.name}
                     onClick={() => setSelectedSize(size.name)}
-                    className={`px-4 py-3 rounded-lg text-sm font-medium border-2 transition-all ${
+                    className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
                       selectedSize === size.name
-                        ? 'configurable-primary text-white configurable-border shadow-md scale-105'
+                        ? 'configurable-primary text-white border-transparent'
                         : 'bg-white configurable-text-secondary border-gray-200 hover:border-gray-300'
                     }`}
                     data-testid={`button-variation-${size.name}`}
                   >
                     <div className="font-semibold">{size.label}</div>
-                    <div className="text-xs mt-1">{formatBranchCurrency(size.price, branchCurrency)}</div>
+                    <div className="text-xs mt-0.5">{formatBranchCurrency(size.price, branchCurrency)}</div>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Price and Add to Cart */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t">
-              <div className="flex flex-col">
+            <div className="flex items-center justify-between pt-3 border-t">
+              <div>
                 {discountPercentage > 0 ? (
-                  <>
-                    <span className="text-2xl font-bold" style={{ color: 'var(--configurable-primary)' }}>
+                  <div className="flex flex-col">
+                    <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>
                       {formatBranchCurrency(discountedPrice, branchCurrency)}
                     </span>
-                    <span className="text-base text-gray-400 line-through">
+                    <span className="text-sm text-gray-400 line-through">
                       {formatBranchCurrency(originalPrice, branchCurrency)}
                     </span>
-                    <span className="text-sm text-green-600 font-medium">
-                      Save {formatBranchCurrency(originalPrice - discountedPrice, branchCurrency)}
-                    </span>
-                  </>
+                  </div>
                 ) : (
-                  <span className="text-2xl font-bold" style={{ color: 'var(--configurable-primary)' }}>
+                  <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>
                     {formatBranchCurrency(totalPrice, branchCurrency)}
                   </span>
                 )}
               </div>
               <Button 
                 onClick={handleAddToCart} 
-                className="configurable-primary text-white hover:configurable-primary-hover px-8 py-6 text-base font-semibold w-full sm:w-auto"
+                className="configurable-primary text-white hover:configurable-primary-hover px-6 py-5 font-semibold"
                 data-testid="button-add-to-cart-detail"
               >
                 Add to Cart
