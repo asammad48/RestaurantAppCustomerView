@@ -130,7 +130,7 @@ export function useNotifications() {
 
   // Show toast for new unread notifications
   useEffect(() => {
-    if (parsedNotifications.length > 0) {
+    if (notifications.length > 0) {
       const unreadNotifications = parsedNotifications.filter(n => !n.isNotificationAcknowledged);
       
       // Only show toast for the first unread notification to avoid spam
@@ -153,7 +153,7 @@ export function useNotifications() {
         }
       }
     }
-  }, [parsedNotifications, toast]);
+  }, [notifications, toast]);
 
   return {
     notifications: parsedNotifications,
