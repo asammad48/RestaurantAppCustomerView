@@ -244,20 +244,20 @@ export default function CartModal() {
     <Dialog open={isCartOpen} onOpenChange={setCartOpen}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="border-b border-gray-200 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-2 pr-6">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               {selectedBranchView !== null && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedBranchView(null)}
-                  className="p-1"
+                  className="p-1 flex-shrink-0"
                   data-testid="button-back-to-summary"
                 >
                   <ArrowLeft size={16} />
                 </Button>
               )}
-              <DialogTitle className="text-xl font-bold text-black">
+              <DialogTitle className="text-base sm:text-xl font-bold text-black truncate">
                 {selectedBranchView !== null
                   ? branchSummary.find(b => b.branchId === selectedBranchView)?.branchName || 'Branch Cart'
                   : 'Your cart'
@@ -267,11 +267,11 @@ export default function CartModal() {
             <Button 
               variant="ghost" 
               onClick={clearCart} 
-              className="configurable-primary-text font-medium hover:configurable-primary-hover hover:text-white"
+              className="configurable-primary-text font-medium hover:configurable-primary-hover hover:text-white text-xs sm:text-sm px-2 sm:px-4 flex-shrink-0"
               data-testid="button-clear-cart"
             >
               {showBranchSummary ? 'Clear All' : 
-               selectedBranchView !== null ? 'Clear Branch' : 'Clear Cart'}
+               selectedBranchView !== null ? 'Clear' : 'Clear'}
             </Button>
           </div>
           {isRestaurantMenuPage && selectedBranch && (
