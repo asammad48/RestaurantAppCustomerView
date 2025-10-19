@@ -46,6 +46,7 @@ export default function RestaurantMenuPage() {
     addItem,
     setSelectedBranch,
     setSelectedRestaurant,
+    setServiceType,
   } = useCartStore();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -135,6 +136,20 @@ export default function RestaurantMenuPage() {
   const methodType = getMethodType();
   const branchId = getBranchId();
   const locationId = getLocationId();
+
+  // Update store serviceType when URL method parameter changes
+  useEffect(() => {
+    const urlParams = getUrlParams();
+    const urlMethod = urlParams.get('method');
+    
+    // If there's a method in URL and it's different from store, update the store
+    if (urlMethod && ['delivery', 'takeaway', 'dine-in', 'qr'].includes(urlMethod)) {
+      if (serviceType !== urlMethod) {
+        console.log('🔄 Updating serviceType from URL:', urlMethod);
+        setServiceType(urlMethod as any);
+      }
+    }
+  }, [serviceType, setServiceType]);
 
   // API call to get branch information by ID
   const { data: branchData, isLoading: isBranchLoading, error: branchError } = useQuery<BranchByIdResponse>({
