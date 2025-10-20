@@ -53,8 +53,18 @@ export default function PaymentModal() {
   const generateSplitBills = (cartItems: CartItem[], mode: 'equality' | 'items'): SplitBill[] => {
     if (mode === 'equality') {
       const totalAmount = cartItems.reduce((total, item) => {
-        const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0;
-        return total + (price * item.quantity);
+        const basePrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0;
+        
+        // Calculate modifier price for this item
+        let modifierPrice = 0;
+        if (item.customization?.selectedModifiers && item.modifiers) {
+          modifierPrice = Object.entries(item.customization.selectedModifiers).reduce((modTotal, [modifierId, qty]) => {
+            const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+            return modTotal + (modifier ? modifier.price * qty : 0);
+          }, 0);
+        }
+        
+        return total + ((basePrice + modifierPrice) * item.quantity);
       }, 0);
       
       return [{
@@ -65,12 +75,25 @@ export default function PaymentModal() {
       }];
     } else {
       // Split by items
-      return cartItems.map(item => ({
-        splitType: 2, // By Item
-        price: (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0) * item.quantity * 100, // Convert to cents
-        mobileNumber: "guest_mobile", // This should be collected from user
-        itemName: item.name
-      }));
+      return cartItems.map(item => {
+        const basePrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0;
+        
+        // Calculate modifier price for this item
+        let modifierPrice = 0;
+        if (item.customization?.selectedModifiers && item.modifiers) {
+          modifierPrice = Object.entries(item.customization.selectedModifiers).reduce((modTotal, [modifierId, qty]) => {
+            const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+            return modTotal + (modifier ? modifier.price * qty : 0);
+          }, 0);
+        }
+        
+        return {
+          splitType: 2, // By Item
+          price: ((basePrice + modifierPrice) * item.quantity) * 100, // Convert to cents
+          mobileNumber: "guest_mobile", // This should be collected from user
+          itemName: item.name
+        };
+      });
     }
   };
 
@@ -132,6 +155,9 @@ export default function PaymentModal() {
         setOrderResponse(response.data);
         setPaymentModalOpen(false);
         setOrderConfirmationOpen(true);
+        
+        // Clear the cart for this branch after successful order
+        useCartStore.getState().clearCartForBranch(selectedBranch.branchId);
         
         toast({
           title: "Order Placed Successfully!",
