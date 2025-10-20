@@ -144,6 +144,11 @@ export default function SplitBillModal() {
         setSplitBillModalOpen(false);
         setOrderConfirmationOpen(true);
         
+        // Clear the cart for this branch after successful order
+        if (selectedBranch) {
+          useCartStore.getState().clearCartForBranch(selectedBranch.branchId);
+        }
+        
         toast({
           title: "Order Placed Successfully!",
           description: "Split bill links have been sent to all participants.",
@@ -190,7 +195,18 @@ export default function SplitBillModal() {
       items.forEach(item => {
         const assignedMobile = assignedPersons[item.id];
         if (assignedMobile && assignedMobile.length === 10) {
-          const itemTotal = parseFloat(item.price.toString()) * item.quantity;
+          const basePrice = parseFloat(item.price.toString());
+          
+          // Calculate modifier price for this item
+          let modifierPrice = 0;
+          if (item.customization?.selectedModifiers && item.modifiers) {
+            modifierPrice = Object.entries(item.customization.selectedModifiers).reduce((modTotal, [modifierId, qty]) => {
+              const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+              return modTotal + (modifier ? modifier.price * qty : 0);
+            }, 0);
+          }
+          
+          const itemTotal = (basePrice + modifierPrice) * item.quantity;
           splitBills.push({
             splitType: 2, // By item
             price: Math.round(itemTotal * 100), // Convert to cents

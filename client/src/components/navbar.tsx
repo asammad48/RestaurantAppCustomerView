@@ -39,12 +39,15 @@ export default function Navbar() {
   // Show branch details only on branch-specific pages
   const showBranchDetails = isBranchSpecificPage && selectedBranch;
 
+  // Don't allow navigation from restaurant menu page
+  const isRestaurantMenuPage = location === '/restaurant-menu';
+
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/">
-            <div className="flex items-center space-x-3 cursor-pointer">
+          {isRestaurantMenuPage ? (
+            <div className="flex items-center space-x-3">
               {showBranchDetails && selectedBranch?.branchLogo ? (
                 <img 
                   src={getImageUrl(selectedBranch.branchLogo)} 
@@ -60,7 +63,26 @@ export default function Navbar() {
                 {showBranchDetails ? selectedBranch?.branchName : "LA PIZZA POPOLARE"}
               </span>
             </div>
-          </Link>
+          ) : (
+            <Link href="/">
+              <div className="flex items-center space-x-3 cursor-pointer">
+                {showBranchDetails && selectedBranch?.branchLogo ? (
+                  <img 
+                    src={getImageUrl(selectedBranch.branchLogo)} 
+                    alt="Branch Logo" 
+                    className="w-10 h-10 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 configurable-primary rounded-lg flex items-center justify-center">
+                    <Utensils className="text-white" size={20} />
+                  </div>
+                )}
+                <span className="text-lg sm:text-xl font-bold configurable-text-primary truncate max-w-[150px] sm:max-w-none">
+                  {showBranchDetails ? selectedBranch?.branchName : "LA PIZZA POPOLARE"}
+                </span>
+              </div>
+            </Link>
+          )}
           
           {/* Right side - Cart, Notifications, and Authentication grouped together */}
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
