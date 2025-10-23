@@ -104,20 +104,20 @@ export default function RestaurantMenuPage() {
   };
 
   // Get branch ID dynamically - can come from:
-  // 1. Selected branch (from takeaway/delivery flow)
-  // 2. URL parameters (for direct access)
-  // Note: No fallback to avoid showing wrong branch data
+  // 1. URL parameters (highest priority for direct access)
+  // 2. Selected branch (from takeaway/delivery flow)
+  // Note: URL parameter takes precedence to allow direct navigation to specific branches
   const getBranchId = () => {
-    // Check if branch is selected from the service flow
-    if (selectedBranch?.branchId) {
-      return selectedBranch.branchId;
-    }
-    
-    // Check URL parameters for branch ID
+    // Check URL parameters first for branch ID (highest priority)
     const urlParams = getUrlParams();
     const urlBranchId = urlParams.get('branchId');
     if (urlBranchId) {
       return parseInt(urlBranchId, 10);
+    }
+    
+    // Fall back to branch selected from the service flow
+    if (selectedBranch?.branchId) {
+      return selectedBranch.branchId;
     }
     
     // No fallback - return null to prevent accidental wrong branch display
