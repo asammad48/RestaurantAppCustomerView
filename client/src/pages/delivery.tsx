@@ -10,6 +10,7 @@ import { BranchService } from "@/services/branch-service";
 import { Branch } from "@/types/branch";
 import { useCartStore } from "@/lib/store";
 import { applyGreenTheme } from "@/lib/colors";
+import { featureConfig } from "@/config/features";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -26,7 +27,7 @@ export default function DeliveryPage() {
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
   const [maxDistance, setMaxDistance] = useState(20);
-  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('delivery');
+  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('dine-in');
   const { setServiceType } = useCartStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -344,6 +345,7 @@ export default function DeliveryPage() {
                 description: 'Get food delivered to your doorstep',
                 icon: Bike,
                 color: selectedService === 'delivery' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.delivery.enabled,
               },
               {
                 id: 'takeaway',
@@ -351,6 +353,7 @@ export default function DeliveryPage() {
                 description: 'Pick up your order from the restaurant',
                 icon: ShoppingBag,
                 color: selectedService === 'takeaway' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.takeaway.enabled,
               },
               {
                 id: 'dine-in',
@@ -358,6 +361,7 @@ export default function DeliveryPage() {
                 description: 'Eat at the restaurant',
                 icon: UtensilsCrossed,
                 color: selectedService === 'dine-in' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.dineIn.enabled,
               },
               {
                 id: 'reservation',
@@ -365,24 +369,31 @@ export default function DeliveryPage() {
                 description: 'Book a table for dining in',
                 icon: Calendar,
                 color: selectedService === 'reservation' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.reservation.enabled,
               },
             ].map((service) => {
               const Icon = service.icon;
+              const isLocked = !service.enabled;
               return (
                 <Card 
                   key={service.id} 
-                  className={`cursor-pointer transition-all duration-200 border ${service.color}`}
-                  onClick={() => handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
+                  className={`transition-all duration-200 border ${
+                    isLocked 
+                      ? 'opacity-50 cursor-not-allowed bg-gray-50' 
+                      : `cursor-pointer ${service.color}`
+                  }`}
+                  onClick={() => !isLocked && handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
                   data-testid={`service-option-${service.id}`}
                 >
-                  <CardContent className="flex flex-col items-center p-6 text-center">
-                    <div className={`p-3 rounded-full ${selectedService === service.id ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
-                      <Icon size={24} className={selectedService === service.id ? 'text-white' : 'configurable-primary-text'} />
+                  <CardContent className="flex flex-col items-center p-6 text-center relative">
+                    <div className={`p-3 rounded-full ${selectedService === service.id && !isLocked ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
+                      <Icon size={24} className={selectedService === service.id && !isLocked ? 'text-white' : 'configurable-primary-text'} />
                     </div>
                     <h3 className="font-semibold text-lg mb-1">
                       {service.title}
+                      {isLocked && <span className="text-xs ml-2 text-gray-400">(Locked)</span>}
                     </h3>
-                    <p className={`text-sm ${selectedService === service.id ? 'text-white/80' : 'text-gray-600'}`}>
+                    <p className={`text-sm ${selectedService === service.id && !isLocked ? 'text-white/80' : 'text-gray-600'}`}>
                       {service.description}
                     </p>
                   </CardContent>

@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, ChefHat } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Users, ChefHat, AlertTriangle } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/auth-store";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { TableService, TableLocation } from "@/services/table-service";
 import { Branch } from "@/types/branch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { featureConfig } from "@/config/features";
 
 export default function DineInSelectionModal() {
   const { 
@@ -25,6 +28,7 @@ export default function DineInSelectionModal() {
     userLocation 
   } = useCartStore();
   
+  const { isAuthenticated, setLoginModalOpen } = useAuthStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
@@ -109,6 +113,38 @@ export default function DineInSelectionModal() {
         </DialogHeader>
         
         <div className="space-y-6 mt-4">
+          {/* Guest Warning Alert */}
+          {!isAuthenticated && featureConfig.features.guestCheckout.enabled && featureConfig.features.guestCheckout.showWarning && (
+            <Alert className="bg-amber-50 border-amber-200" data-testid="guest-warning-alert">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 ml-2">
+                {featureConfig.features.guestCheckout.warningMessage}
+                <div className="mt-3 flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      setDineInSelectionModalOpen(false);
+                      setLoginModalOpen(true);
+                    }}
+                    className="border-amber-300 hover:bg-amber-100"
+                    data-testid="button-login-from-dine-in"
+                  >
+                    Login
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    className="text-amber-700 hover:bg-amber-100"
+                    data-testid="button-continue-as-guest"
+                  >
+                    Continue as Guest
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Table Selection */}
           <div className="space-y-3">
             {!selectedBranch ? (

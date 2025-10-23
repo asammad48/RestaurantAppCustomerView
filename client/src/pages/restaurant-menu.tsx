@@ -19,8 +19,6 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
-import DeliveryDetailsModal from "@/components/modals/delivery-details-modal";
-import TakeawayDetailsModal from "@/components/modals/takeaway-details-modal";
 import PaymentModal from "@/components/modals/payment-modal";
 import SplitBillModal from "@/components/modals/split-bill-modal";
 import ReviewModal from "@/components/modals/review-modal";
@@ -1500,8 +1498,6 @@ export default function RestaurantMenuPage() {
       {/* Modals */}
       <CartModal />
       <AddToCartModal />
-      <DeliveryDetailsModal />
-      <TakeawayDetailsModal />
       <PaymentModal />
       <SplitBillModal />
       <ReviewModal />

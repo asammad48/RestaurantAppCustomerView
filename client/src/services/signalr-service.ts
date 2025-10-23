@@ -2,6 +2,8 @@ import { HubConnectionBuilder, HubConnection, HubConnectionState, HttpTransportT
 import { AuthService } from './auth-service';
 import { toast } from '@/hooks/use-toast';
 import { config } from '@/lib/config';
+import { pushNotificationService } from './push-notification-service';
+import { getDeviceId } from '@/lib/device-id';
 
 export interface OrderStatusUpdateEvent {
   orderId: number;
@@ -21,23 +23,39 @@ export class SignalRService {
     this.connection = null;
   }
 
-  // Initialize and start connection with authorization headers
-  async startConnection(token: string): Promise<void> {
+  // Initialize and start connection with authorization headers or deviceId
+  async startConnection(token?: string): Promise<void> {
     if (this.connection && this.connection.state === HubConnectionState.Connected) {
       console.log('SignalR: Already connected');
       return;
     }
 
     try {
-      // Create new connection with authorization header
-      this.connection = new HubConnectionBuilder()
-        .withUrl(this.hubUrl, {
-          accessTokenFactory: () => token,
-          transport: HttpTransportType.WebSockets,
-          skipNegotiation: true
-        })
-        .withAutomaticReconnect([0, 2000, 10000, 30000]) // Retry intervals in milliseconds
-        .build();
+      const deviceId = getDeviceId();
+      
+      // Create new connection - use token if available, otherwise use deviceId
+      if (token) {
+        // Logged-in user: use access token
+        console.log('SignalR: Connecting with access token (logged-in user)');
+        this.connection = new HubConnectionBuilder()
+          .withUrl(this.hubUrl, {
+            accessTokenFactory: () => token,
+            transport: HttpTransportType.WebSockets,
+            skipNegotiation: true
+          })
+          .withAutomaticReconnect([0, 2000, 10000, 30000]) // Retry intervals in milliseconds
+          .build();
+      } else {
+        // Guest user: use deviceId as query parameter
+        console.log('SignalR: Connecting with deviceId (guest user):', deviceId);
+        this.connection = new HubConnectionBuilder()
+          .withUrl(`${this.hubUrl}?deviceId=${encodeURIComponent(deviceId)}`, {
+            transport: HttpTransportType.WebSockets,
+            skipNegotiation: true
+          })
+          .withAutomaticReconnect([0, 2000, 10000, 30000]) // Retry intervals in milliseconds
+          .build();
+      }
 
       // Set up event handlers
       this.setupEventHandlers();
@@ -171,6 +189,11 @@ export class SignalRService {
       description: statusInfo.description,
       variant: statusInfo.variant || 'default',
       duration: 8000, // Show for 8 seconds for order updates
+    });
+
+    // Show browser push notification if permission granted
+    pushNotificationService.showOrderNotification(orderNumber, status).catch(err => {
+      console.log('Push notification failed:', err);
     });
 
     // Fire a custom event for other components to listen to if needed

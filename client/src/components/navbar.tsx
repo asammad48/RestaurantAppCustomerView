@@ -100,6 +100,19 @@ export default function Navbar() {
               )}
             </Button>
 
+            {/* Order History Button - Always visible for both logged-in and guest users */}
+            <Link href="/order-history">
+              <Button
+                variant="outline"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4"
+                size="sm"
+                data-testid="button-order-history"
+              >
+                <History size={16} className="sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline text-sm">Orders</span>
+              </Button>
+            </Link>
+
             {/* Notification Tray - Only show when authenticated */}
             {isAuthenticated && <NotificationTray />}
 
