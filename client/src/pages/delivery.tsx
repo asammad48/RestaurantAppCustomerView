@@ -10,6 +10,7 @@ import { BranchService } from "@/services/branch-service";
 import { Branch } from "@/types/branch";
 import { useCartStore } from "@/lib/store";
 import { applyGreenTheme } from "@/lib/colors";
+import { featureConfig } from "@/config/features";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -26,7 +27,7 @@ export default function DeliveryPage() {
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
   const [maxDistance, setMaxDistance] = useState(20);
-  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('delivery');
+  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('dine-in');
   const { setServiceType } = useCartStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -344,6 +345,7 @@ export default function DeliveryPage() {
                 description: 'Get food delivered to your doorstep',
                 icon: Bike,
                 color: selectedService === 'delivery' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.delivery.enabled,
               },
               {
                 id: 'takeaway',
@@ -351,6 +353,7 @@ export default function DeliveryPage() {
                 description: 'Pick up your order from the restaurant',
                 icon: ShoppingBag,
                 color: selectedService === 'takeaway' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.takeaway.enabled,
               },
               {
                 id: 'dine-in',
@@ -358,6 +361,7 @@ export default function DeliveryPage() {
                 description: 'Eat at the restaurant',
                 icon: UtensilsCrossed,
                 color: selectedService === 'dine-in' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.dineIn.enabled,
               },
               {
                 id: 'reservation',
@@ -365,8 +369,9 @@ export default function DeliveryPage() {
                 description: 'Book a table for dining in',
                 icon: Calendar,
                 color: selectedService === 'reservation' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.reservation.enabled,
               },
-            ].map((service) => {
+            ].filter(service => service.enabled).map((service) => {
               const Icon = service.icon;
               return (
                 <Card 

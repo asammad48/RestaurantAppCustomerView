@@ -131,22 +131,22 @@ export default function OrderConfirmationModal() {
 
   return (
     <Dialog open={isOrderConfirmationOpen} onOpenChange={setOrderConfirmationOpen}>
-      <DialogContent className="max-w-lg max-h-[95vh] overflow-hidden flex flex-col" data-testid="order-confirmation-content">
-        {/* Header with branch primary color */}
-        <div className="configurable-primary text-white p-6 -mx-6 -mt-6 mb-6 rounded-t-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] sm:max-h-[95vh] overflow-hidden flex flex-col p-0" data-testid="order-confirmation-content">
+        {/* Header with white/gray background */}
+        <div className="bg-gray-50 dark:bg-gray-900 p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="text-white" size={32} />
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="text-green-600 dark:text-green-400" size={32} />
             </div>
-            <DialogTitle className="text-2xl font-bold text-white mb-2">Order Confirmed!</DialogTitle>
-            <DialogDescription className="text-white/90">
+            <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Order Confirmed!</DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-300">
               Your order has been placed successfully. You will receive updates on your order status.
             </DialogDescription>
           </div>
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6 p-6 bg-white dark:bg-gray-800">
           {/* Order Overview */}
           <div className="configurable-surface rounded-xl p-4 border configurable-border">
             <div className="flex items-center justify-between mb-4">
@@ -313,7 +313,7 @@ export default function OrderConfirmationModal() {
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-3 pt-4 border-t configurable-border">
+        <div className="space-y-3 p-6 pt-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <Button 
             onClick={handleTrackOrder}
             className="w-full configurable-primary text-white hover:configurable-primary-hover py-3"

@@ -8,8 +8,8 @@ export interface EnvironmentConfig {
 
 const environments: Record<Environment, EnvironmentConfig> = {
   development: {
-    apiBaseUrl: 'https://5dtrtpzg-7261.inc1.devtunnels.ms',
-    signalRHubUrl: 'wss://5dtrtpzg-7261.inc1.devtunnels.ms/orderHub',
+    apiBaseUrl: 'https://5dtrtpzg-44336.inc1.devtunnels.ms',
+    signalRHubUrl: 'wss://5dtrtpzg-44336.inc1.devtunnels.ms/orderHub',
   },
   qa: {
     apiBaseUrl: 'https://restaurant-app-web-qa-001-eecdfsadcfgxevc9.centralindia-01.azurewebsites.net',

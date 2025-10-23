@@ -2,6 +2,7 @@ import { HubConnectionBuilder, HubConnection, HubConnectionState, HttpTransportT
 import { AuthService } from './auth-service';
 import { toast } from '@/hooks/use-toast';
 import { config } from '@/lib/config';
+import { pushNotificationService } from './push-notification-service';
 
 export interface OrderStatusUpdateEvent {
   orderId: number;
@@ -171,6 +172,11 @@ export class SignalRService {
       description: statusInfo.description,
       variant: statusInfo.variant || 'default',
       duration: 8000, // Show for 8 seconds for order updates
+    });
+
+    // Show browser push notification if permission granted
+    pushNotificationService.showOrderNotification(orderNumber, status).catch(err => {
+      console.log('Push notification failed:', err);
     });
 
     // Fire a custom event for other components to listen to if needed

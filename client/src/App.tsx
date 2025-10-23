@@ -3,12 +3,10 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Home from "@/pages/home";
 import Delivery from "@/pages/delivery";
-import ReservationDetail from "@/pages/reservation-detail";
 import RestaurantMenu from "@/pages/restaurant-menu";
 import OrderHistoryPage from "@/pages/order-history";
-import ReservationsPage from "@/pages/reservations";
+import ReservationPage from "@/pages/reservation";
 import NotFound from "@/pages/not-found";
 import InitialServiceModal from "@/components/modals/initial-service-modal";
 import { LoginModal } from "@/components/modals/login-modal";
@@ -20,16 +18,15 @@ import DineInSelectionModal from "@/components/modals/dine-in-selection-modal";
 import NotificationModals from "@/components/notification-modals";
 import { useSignalR } from "@/hooks/use-signalr";
 import { useAuthStore } from "@/lib/auth-store";
+import { pushNotificationService } from "@/services/push-notification-service";
+import { useEffect } from "react";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Delivery} />
-      <Route path="/home" component={Home} />
       <Route path="/order-history" component={OrderHistoryPage} />
-      <Route path="/reservations" component={ReservationsPage} />
-      <Route path="/delivery" component={Delivery} />
-      <Route path="/reservation-detail" component={ReservationDetail} />
+      <Route path="/reservation" component={ReservationPage} />
       <Route path="/restaurant-menu" component={RestaurantMenu} />
       <Route component={NotFound} />
     </Switch>
@@ -39,6 +36,13 @@ function Router() {
 function App() {
   // Initialize SignalR connection management based on authentication status
   useSignalR();
+
+  // Initialize push notifications on app load
+  useEffect(() => {
+    pushNotificationService.initializeOnLoad().catch(err => {
+      console.log('Push notification initialization failed:', err);
+    });
+  }, []);
 
   const { 
     isForgotPasswordModalOpen,
