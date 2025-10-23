@@ -5,47 +5,72 @@ import { HubConnectionState } from '@microsoft/signalr';
 
 /**
  * Custom hook to manage SignalR connection based on authentication status
- * Automatically connects when user is logged in and disconnects when logged out
+ * Automatically connects for both logged-in users (with token) and guest users (with deviceId)
  */
 export const useSignalR = () => {
   const { isAuthenticated, token, user } = useAuthStore();
   const connectionStateRef = useRef<HubConnectionState | null>(null);
   const isConnecting = useRef(false);
+  const wasAuthenticatedRef = useRef(isAuthenticated);
 
   useEffect(() => {
     const handleConnection = async () => {
-      // If user is authenticated and has a token
-      if (isAuthenticated && token && user) {
-        // Check if we're already connected or connecting
-        const currentState = signalRService.getConnectionState();
-        
-        if (currentState === HubConnectionState.Connected || isConnecting.current) {
-          return;
-        }
-
-        try {
-          isConnecting.current = true;
-          console.log('SignalR Hook: Starting connection for user:', user.email);
-          await signalRService.startConnection(token);
-          connectionStateRef.current = HubConnectionState.Connected;
-        } catch (error) {
-          console.error('SignalR Hook: Failed to connect:', error);
-        } finally {
-          isConnecting.current = false;
-        }
-      } else {
-        // User is not authenticated, disconnect if connected
-        const currentState = signalRService.getConnectionState();
-        
+      let currentState = signalRService.getConnectionState();
+      
+      // Handle authentication state transitions
+      // If user just logged out (was authenticated, now not), disconnect token-based connection
+      if (wasAuthenticatedRef.current && !isAuthenticated) {
+        console.log('SignalR Hook: User logged out, disconnecting token-based connection');
         if (currentState === HubConnectionState.Connected || currentState === HubConnectionState.Connecting) {
           try {
-            console.log('SignalR Hook: Stopping connection - user logged out');
             await signalRService.stopConnection();
             connectionStateRef.current = null;
+            currentState = null; // Reset state to allow reconnection
           } catch (error) {
-            console.error('SignalR Hook: Error stopping connection:', error);
+            console.error('SignalR Hook: Error stopping connection on logout:', error);
           }
         }
+      }
+      // If user just logged in (was not authenticated, now is), disconnect deviceId-based connection
+      else if (!wasAuthenticatedRef.current && isAuthenticated && token) {
+        console.log('SignalR Hook: User logged in, disconnecting deviceId-based connection');
+        if (currentState === HubConnectionState.Connected || currentState === HubConnectionState.Connecting) {
+          try {
+            await signalRService.stopConnection();
+            connectionStateRef.current = null;
+            currentState = null; // Reset state to allow reconnection
+          } catch (error) {
+            console.error('SignalR Hook: Error stopping connection on login:', error);
+          }
+        }
+      }
+      
+      // Update the ref for next comparison
+      wasAuthenticatedRef.current = isAuthenticated;
+      
+      // Check if we're already connected or connecting (after potential state changes above)
+      if (currentState === HubConnectionState.Connected || isConnecting.current) {
+        return;
+      }
+
+      try {
+        isConnecting.current = true;
+        
+        if (isAuthenticated && token && user) {
+          // Logged-in user: connect with access token
+          console.log('SignalR Hook: Starting connection for logged-in user:', user.email);
+          await signalRService.startConnection(token);
+        } else {
+          // Guest user: connect with deviceId (no token)
+          console.log('SignalR Hook: Starting connection for guest user with deviceId');
+          await signalRService.startConnection();
+        }
+        
+        connectionStateRef.current = HubConnectionState.Connected;
+      } catch (error) {
+        console.error('SignalR Hook: Failed to connect:', error);
+      } finally {
+        isConnecting.current = false;
       }
     };
 
@@ -54,7 +79,7 @@ export const useSignalR = () => {
     // Cleanup on unmount
     return () => {
       // Don't automatically disconnect on component unmount since this is a global connection
-      // Only disconnect when user actually logs out (handled above)
+      // Connection remains active for both logged-in and guest users
     };
   }, [isAuthenticated, token, user?.id]); // Dependencies: re-run when auth state changes
 

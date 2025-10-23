@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { CreditCard, Banknote, Building2, Loader2 } from "lucide-react";
+import { CreditCard, Banknote, Building2, Loader2, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCartStore } from "@/lib/store";
 import { orderService } from "@/services/order-service";
 import { useToast } from "@/hooks/use-toast";
@@ -203,6 +204,30 @@ export default function PaymentModal() {
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Warning for non-logged-in users */}
+          {!user && (
+            <Alert className="border-yellow-500 bg-yellow-50" data-testid="alert-login-warning">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-sm text-yellow-800">
+                <div className="flex flex-col gap-2">
+                  <p>You are not logged in. Your order history may not be saved.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setPaymentModalOpen(false);
+                      useAuthStore.getState().setLoginModalOpen(true);
+                    }}
+                    className="w-fit border-yellow-600 text-yellow-700 hover:bg-yellow-100"
+                    data-testid="button-login-from-warning"
+                  >
+                    Login to Save Order History
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Payment Methods */}
           <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
             <div className="space-y-3">

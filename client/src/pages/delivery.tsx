@@ -371,23 +371,29 @@ export default function DeliveryPage() {
                 color: selectedService === 'reservation' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
                 enabled: featureConfig.services.reservation.enabled,
               },
-            ].filter(service => service.enabled).map((service) => {
+            ].map((service) => {
               const Icon = service.icon;
+              const isLocked = !service.enabled;
               return (
                 <Card 
                   key={service.id} 
-                  className={`cursor-pointer transition-all duration-200 border ${service.color}`}
-                  onClick={() => handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
+                  className={`transition-all duration-200 border ${
+                    isLocked 
+                      ? 'opacity-50 cursor-not-allowed bg-gray-50' 
+                      : `cursor-pointer ${service.color}`
+                  }`}
+                  onClick={() => !isLocked && handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
                   data-testid={`service-option-${service.id}`}
                 >
-                  <CardContent className="flex flex-col items-center p-6 text-center">
-                    <div className={`p-3 rounded-full ${selectedService === service.id ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
-                      <Icon size={24} className={selectedService === service.id ? 'text-white' : 'configurable-primary-text'} />
+                  <CardContent className="flex flex-col items-center p-6 text-center relative">
+                    <div className={`p-3 rounded-full ${selectedService === service.id && !isLocked ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
+                      <Icon size={24} className={selectedService === service.id && !isLocked ? 'text-white' : 'configurable-primary-text'} />
                     </div>
                     <h3 className="font-semibold text-lg mb-1">
                       {service.title}
+                      {isLocked && <span className="text-xs ml-2 text-gray-400">(Locked)</span>}
                     </h3>
-                    <p className={`text-sm ${selectedService === service.id ? 'text-white/80' : 'text-gray-600'}`}>
+                    <p className={`text-sm ${selectedService === service.id && !isLocked ? 'text-white/80' : 'text-gray-600'}`}>
                       {service.description}
                     </p>
                   </CardContent>
