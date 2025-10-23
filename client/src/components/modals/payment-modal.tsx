@@ -12,6 +12,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useAuthStore } from "@/lib/auth-store";
 import { SplitBill } from "@/lib/api-client";
 import { CartItem } from "@/lib/store";
+import { featureConfig } from "@/config/features";
 
 export default function PaymentModal() {
   const { 
@@ -107,17 +108,26 @@ export default function PaymentModal() {
       return;
     }
 
-    // Check authentication before placing order
+    // Check authentication before placing order - allow guest checkout for dine-in if enabled
+    const allowGuestCheckout = serviceType === 'dine-in' && 
+                                featureConfig.services.dineIn.enabled && 
+                                !featureConfig.services.dineIn.requireLogin &&
+                                featureConfig.features.guestCheckout.enabled;
+    
     if (!user || !token) {
-      toast({
-        title: "Login Required",
-        description: "Please login to place your order.",
-        variant: "destructive",
-      });
-      // Close payment modal and open login modal
-      setPaymentModalOpen(false);
-      useAuthStore.getState().setLoginModalOpen(true);
-      return;
+      if (!allowGuestCheckout) {
+        toast({
+          title: "Login Required",
+          description: "Please login to place your order.",
+          variant: "destructive",
+        });
+        // Close payment modal and open login modal
+        setPaymentModalOpen(false);
+        useAuthStore.getState().setLoginModalOpen(true);
+        return;
+      }
+      // Guest checkout allowed for dine-in - proceed with guest order
+      console.log('Processing order as guest for dine-in');
     }
 
     // Check if locationId is required and provided for dine-in orders
@@ -148,7 +158,7 @@ export default function PaymentModal() {
         splitBills: splitBillsData,
         specialInstruction: specialInstructions || '',
         allergenIds: selectedAllergens && selectedAllergens.length > 0 ? selectedAllergens : null,
-        token: token
+        token: token || undefined // Allow undefined token for guest checkout
       });
 
       if (response.success && response.data) {
@@ -196,31 +206,99 @@ export default function PaymentModal() {
           {/* Payment Methods */}
           <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
             <div className="space-y-3">
-              <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:configurable-border">
-                <RadioGroupItem value="cash" id="cash" />
+              {/* Cash Payment Option */}
+              <div 
+                className={`flex items-center space-x-3 p-4 border border-gray-200 rounded-lg ${
+                  featureConfig.payment.cash.enabled 
+                    ? 'cursor-pointer hover:configurable-border' 
+                    : 'opacity-50 cursor-not-allowed bg-gray-50'
+                }`}
+                onClick={() => featureConfig.payment.cash.enabled && setPaymentMethod('cash')}
+                data-testid="payment-option-cash"
+              >
+                <RadioGroupItem 
+                  value="cash" 
+                  id="cash" 
+                  disabled={!featureConfig.payment.cash.enabled}
+                  className="cursor-pointer"
+                />
                 <Banknote className="configurable-primary-text" size={24} />
-                <Label htmlFor="cash" className="font-medium configurable-text-primary cursor-pointer">Cash</Label>
+                <Label 
+                  htmlFor="cash" 
+                  className={`font-medium cursor-pointer flex-1 ${
+                    featureConfig.payment.cash.enabled ? 'configurable-text-primary' : 'text-gray-400'
+                  }`}
+                >
+                  Cash
+                  {!featureConfig.payment.cash.enabled && <span className="text-xs ml-2">(Not Available)</span>}
+                </Label>
               </div>
               
-              <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:configurable-border">
-                <RadioGroupItem value="card" id="card" />
+              {/* Card Payment Option */}
+              <div 
+                className={`flex items-center space-x-3 p-4 border border-gray-200 rounded-lg ${
+                  featureConfig.payment.card.enabled 
+                    ? 'cursor-pointer hover:configurable-border' 
+                    : 'opacity-50 cursor-not-allowed bg-gray-50'
+                }`}
+                onClick={() => featureConfig.payment.card.enabled && setPaymentMethod('card')}
+                data-testid="payment-option-card"
+              >
+                <RadioGroupItem 
+                  value="card" 
+                  id="card" 
+                  disabled={!featureConfig.payment.card.enabled}
+                  className="cursor-pointer"
+                />
                 <CreditCard className="configurable-primary-text" size={24} />
-                <Label htmlFor="card" className="font-medium configurable-text-primary cursor-pointer">Credit/Debit Card</Label>
+                <Label 
+                  htmlFor="card" 
+                  className={`font-medium cursor-pointer flex-1 ${
+                    featureConfig.payment.card.enabled ? 'configurable-text-primary' : 'text-gray-400'
+                  }`}
+                >
+                  Credit/Debit Card
+                  {!featureConfig.payment.card.enabled && <span className="text-xs ml-2">(Not Available)</span>}
+                </Label>
               </div>
               
-              <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:configurable-border">
-                <RadioGroupItem value="bank" id="bank" />
+              {/* Bank Transfer Payment Option */}
+              <div 
+                className={`flex items-center space-x-3 p-4 border border-gray-200 rounded-lg ${
+                  featureConfig.payment.bankTransfer.enabled 
+                    ? 'cursor-pointer hover:configurable-border' 
+                    : 'opacity-50 cursor-not-allowed bg-gray-50'
+                }`}
+                onClick={() => featureConfig.payment.bankTransfer.enabled && setPaymentMethod('bank')}
+                data-testid="payment-option-bank"
+              >
+                <RadioGroupItem 
+                  value="bank" 
+                  id="bank" 
+                  disabled={!featureConfig.payment.bankTransfer.enabled}
+                  className="cursor-pointer"
+                />
                 <Building2 className="configurable-primary-text" size={24} />
-                <Label htmlFor="bank" className="font-medium configurable-text-primary cursor-pointer">Bank Transfer</Label>
+                <Label 
+                  htmlFor="bank" 
+                  className={`font-medium cursor-pointer flex-1 ${
+                    featureConfig.payment.bankTransfer.enabled ? 'configurable-text-primary' : 'text-gray-400'
+                  }`}
+                >
+                  Bank Transfer
+                  {!featureConfig.payment.bankTransfer.enabled && <span className="text-xs ml-2">(Not Available)</span>}
+                </Label>
               </div>
             </div>
           </RadioGroup>
           
-          {/* Split Bill Option */}
-          <div className="flex items-center space-x-3">
-            <Checkbox id="split" checked={splitBill} onCheckedChange={(checked) => setSplitBill(checked === true)} />
-            <Label htmlFor="split" className="font-medium configurable-text-primary">Do you want to split?</Label>
-          </div>
+          {/* Split Bill Option - Only show if enabled */}
+          {featureConfig.features.splitBills.enabled && (
+            <div className="flex items-center space-x-3">
+              <Checkbox id="split" checked={splitBill} onCheckedChange={(checked) => setSplitBill(checked === true)} data-testid="checkbox-split-bill" />
+              <Label htmlFor="split" className="font-medium configurable-text-primary cursor-pointer">Do you want to split?</Label>
+            </div>
+          )}
           
           <div className="space-y-3">
             <Button 
@@ -238,11 +316,12 @@ export default function PaymentModal() {
                 'Place Order'
               )}
             </Button>
-            {splitBill && (
+            {splitBill && featureConfig.features.splitBills.enabled && (
               <Button 
                 onClick={handleSplitBill} 
                 variant="outline" 
                 className="w-full"
+                data-testid="button-split-bill"
               >
                 Split Bill
               </Button>

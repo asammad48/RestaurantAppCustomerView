@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ChevronLeft, ChevronRight, Armchair, MapPin, Navigation, Map, Bike, ShoppingBag, Calendar, UtensilsCrossed, Star, Clock, Users } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Armchair, MapPin, Navigation, Map, Bike, ShoppingBag, Calendar, UtensilsCrossed, Star, Clock, Users, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -28,13 +28,16 @@ import { applyGreenTheme } from "@/lib/colors";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import MapPickerModal from "@/components/modals/map-picker-modal";
+import { featureConfig } from "@/config/features";
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('delivery');
+  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>(
+    featureConfig.services.dineIn.defaultSelected ? 'dine-in' : 'delivery'
+  );
   
   // Reservation-specific states
   const [searchQuery, setSearchQuery] = useState("");
@@ -278,6 +281,7 @@ export default function Home() {
                 description: 'Get food delivered to your doorstep',
                 icon: Bike,
                 color: selectedService === 'delivery' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.delivery.enabled,
               },
               {
                 id: 'takeaway',
@@ -285,6 +289,7 @@ export default function Home() {
                 description: 'Pick up your order from the restaurant',
                 icon: ShoppingBag,
                 color: selectedService === 'takeaway' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.takeaway.enabled,
               },
               {
                 id: 'dine-in',
@@ -292,6 +297,7 @@ export default function Home() {
                 description: 'Eat at the restaurant',
                 icon: UtensilsCrossed,
                 color: selectedService === 'dine-in' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.dineIn.enabled,
               },
               {
                 id: 'reservation',
@@ -299,23 +305,47 @@ export default function Home() {
                 description: 'Book a table for dining in',
                 icon: Calendar,
                 color: selectedService === 'reservation' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.reservation.enabled,
               },
             ].map((service) => {
               const Icon = service.icon;
+              const isDisabled = !service.enabled;
               return (
                 <Card 
                   key={service.id} 
-                  className={`cursor-pointer transition-all duration-200 border ${service.color}`}
-                  onClick={() => handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
+                  className={`transition-all duration-200 border ${
+                    isDisabled 
+                      ? 'opacity-50 cursor-not-allowed bg-gray-100' 
+                      : `cursor-pointer ${service.color}`
+                  }`}
+                  onClick={() => !isDisabled && handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
+                  data-testid={`service-card-${service.id}`}
                 >
-                  <CardContent className="flex flex-col items-center p-6 text-center">
-                    <div className={`p-3 rounded-full ${selectedService === service.id ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
-                      <Icon size={24} className={selectedService === service.id ? 'text-white' : 'configurable-primary-text'} />
+                  <CardContent className="flex flex-col items-center p-6 text-center relative">
+                    {isDisabled && (
+                      <div className="absolute top-2 right-2">
+                        <Lock size={16} className="text-gray-400" />
+                      </div>
+                    )}
+                    <div className={`p-3 rounded-full ${
+                      isDisabled 
+                        ? 'bg-gray-200' 
+                        : selectedService === service.id ? 'bg-white/20' : 'bg-gray-100'
+                    } mb-3`}>
+                      <Icon size={24} className={
+                        isDisabled 
+                          ? 'text-gray-400' 
+                          : selectedService === service.id ? 'text-white' : 'configurable-primary-text'
+                      } />
                     </div>
-                    <h3 className="font-semibold text-lg mb-1">
+                    <h3 className={`font-semibold text-lg mb-1 ${isDisabled ? 'text-gray-400' : ''}`}>
                       {service.title}
                     </h3>
-                    <p className={`text-sm ${selectedService === service.id ? 'text-white/80' : 'text-gray-600'}`}>
+                    <p className={`text-sm ${
+                      isDisabled 
+                        ? 'text-gray-400' 
+                        : selectedService === service.id ? 'text-white/80' : 'text-gray-600'
+                    }`}>
                       {service.description}
                     </p>
                   </CardContent>
