@@ -9,6 +9,13 @@ This project is a comprehensive, frontend-only restaurant ordering and service r
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **2025-10-23**: Bug fixes for improved user experience
+  - Fixed notification icon visibility in navbar to show for guest users (previously only shown for authenticated users)
+  - Fixed allergens section scrolling in cart modal by implementing ScrollArea component for proper content scrolling
+  - Fixed infinite loop in placeholder image error handling on restaurant cards by adding fallback flag
+  - Fixed branchId URL parameter priority in restaurant menu page to take precedence over stored state
+  - Fixed customization options API formatting to support multiple selections as array of objects using flatMap
+
 - **2025-10-23**: Enhanced user experience and guest user support
   - Modified service selection (delivery.tsx) to show locked/disabled options instead of hiding them when not enabled
   - Added warning alert in payment modal for non-logged-in users about potential loss of order history with login button
