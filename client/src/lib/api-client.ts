@@ -452,8 +452,17 @@ class ApiClient {
 
   // Notification API methods
   async getUserNotifications(
-    token: string,
+    token?: string,
+    deviceInfo?: string,
   ): Promise<ApiResponse<Notification[]>> {
+    if (deviceInfo && !token) {
+      return this.get<Notification[]>(
+        `/api/Notification/GetUserNotifications/${deviceInfo}`,
+      );
+    }
+    if (!token) {
+      throw new Error('Either token or deviceInfo must be provided');
+    }
     return this.getWithAuth<Notification[]>(
       "/api/Notification/GetUserNotifications",
       token,
