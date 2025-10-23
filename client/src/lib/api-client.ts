@@ -487,14 +487,16 @@ class ApiClient {
 
   // Order Feedback API method
   async submitOrderFeedback(
-    token: string,
     feedbackData: OrderFeedbackRequest,
+    token?: string,
   ): Promise<ApiResponse<OrderFeedbackResponse>> {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
     return this.request<OrderFeedbackResponse>("/api/Order/Feedback", {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify(feedbackData),
     });
   }
