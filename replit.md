@@ -9,6 +9,11 @@ This project is a comprehensive, frontend-only restaurant ordering and service r
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **2025-10-23**: Guest user improvements and UX enhancements
+  - Removed authentication requirement from order feedback submission - guests can now submit reviews without logging in
+  - Fixed deviceId persistence by removing daily timestamp component - device IDs now remain stable across sessions
+  - Improved allergens popup scrollability in cart modal with properly nested ScrollArea component
+  
 - **2025-10-23**: Bug fixes for improved user experience
   - Fixed notification icon visibility in navbar to show for guest users (previously only shown for authenticated users)
   - Fixed allergens section scrolling in cart modal by implementing ScrollArea component for proper content scrolling
