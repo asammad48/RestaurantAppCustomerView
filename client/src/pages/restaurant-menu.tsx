@@ -29,6 +29,7 @@ import FoodCard from "@/components/food-card";
 import { getImageUrl } from "@/lib/config";
 import { applyBranchPrimaryColor } from "@/lib/colors";
 import { formatToLocalTime, formatBranchCurrency } from '@/lib/utils';
+import { useNotifications } from '@/hooks/use-notifications';
 
 export default function RestaurantMenuPage() {
   const { 
@@ -65,6 +66,9 @@ export default function RestaurantMenuPage() {
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Fetch notifications when page loads
+  const { notifications } = useNotifications();
 
   // Get URL parameters helper function
   const getUrlParams = () => {

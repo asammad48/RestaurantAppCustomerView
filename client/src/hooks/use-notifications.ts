@@ -4,6 +4,7 @@ import { apiClient, Notification, OrderNotificationContent, ReservationNotificat
 import { useAuthStore } from '@/lib/auth-store';
 import { useToast } from '@/hooks/use-toast';
 import { useNotificationStore, ParsedNotification } from '@/lib/store';
+import { getDeviceId } from '@/lib/device-id';
 
 export function useNotifications() {
   const { isAuthenticated, token } = useAuthStore();
@@ -20,14 +21,18 @@ export function useNotifications() {
     toggleNotificationTray: storeToggleNotificationTray
   } = useNotificationStore();
 
-  // Query to fetch notifications
+  // Query to fetch notifications (supports both authenticated and guest users)
   const { data: notificationsResponse, error, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      if (!token) throw new Error('No authentication token');
-      return apiClient.getUserNotifications(token);
+      if (isAuthenticated && token) {
+        return apiClient.getUserNotifications(token);
+      } else {
+        const deviceInfo = getDeviceId();
+        return apiClient.getUserNotifications(undefined, deviceInfo);
+      }
     },
-    enabled: isAuthenticated && !!token,
+    enabled: true,
     retry: false
   });
 
@@ -113,7 +118,7 @@ export function useNotifications() {
   useEffect(() => {
     const handleNotificationsPending = (event: CustomEvent) => {
       console.log('🔔 Received notificationsPending event:', event.detail);
-      if (event.detail?.IsNotificationPending && isAuthenticated && token) {
+      if (event.detail?.IsNotificationPending) {
         console.log('🔔 Triggering notifications refresh from SignalR event');
         queryClient.invalidateQueries({ queryKey: ['notifications'] });
       }
@@ -126,7 +131,7 @@ export function useNotifications() {
     return () => {
       window.removeEventListener('notificationsPending', handleNotificationsPending as EventListener);
     };
-  }, [queryClient, isAuthenticated, token]);
+  }, [queryClient]);
 
   // Show toast for new unread notifications
   useEffect(() => {
