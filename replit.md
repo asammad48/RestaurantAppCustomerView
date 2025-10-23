@@ -12,7 +12,8 @@ Preferred communication style: Simple, everyday language.
 - **2025-10-23**: Guest user improvements and UX enhancements
   - Removed authentication requirement from order feedback submission - guests can now submit reviews without logging in
   - Fixed deviceId persistence by removing daily timestamp component - device IDs now remain stable across sessions
-  - Improved allergens popup scrollability in cart modal with properly nested ScrollArea component
+  - Fixed allergens popup scrollability in cart modal by implementing ScrollArea with fixed height (h-60) for proper scrolling
+  - Fixed notification acknowledgment for guest users - notifications can now be acknowledged using deviceId instead of requiring authentication
   
 - **2025-10-23**: Bug fixes for improved user experience
   - Fixed notification icon visibility in navbar to show for guest users (previously only shown for authenticated users)
