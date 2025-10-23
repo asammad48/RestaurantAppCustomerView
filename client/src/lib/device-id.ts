@@ -70,9 +70,6 @@ function createBrowserFingerprint(): string {
     // Canvas fingerprint (basic)
     getCanvasFingerprint()
   ];
-
-  // Add timestamp-based component for additional uniqueness
-  characteristics.push(Math.floor(Date.now() / (1000 * 60 * 60 * 24)).toString()); // Daily component
   
   // Combine all characteristics and create a hash
   const combined = characteristics.join('|');

@@ -67,7 +67,7 @@ export default function CartModal() {
   };
 
   // Fetch allergens data using mock API
-  const { data: allergens, isLoading: allergensLoading, error: allergensError } = useQuery({
+  const { data: allergens = [], isLoading: allergensLoading, error: allergensError } = useQuery<Allergen[]>({
     queryKey: ['/api/Generic/allergens'],
   });
 
@@ -544,7 +544,7 @@ export default function CartModal() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0" align="start">
-                <ScrollArea className="max-h-60">
+                <div className="max-h-60 overflow-hidden">
                   {allergensLoading ? (
                     <div className="p-4 text-center text-sm text-gray-500">Loading allergens...</div>
                   ) : allergensError ? (
@@ -552,33 +552,35 @@ export default function CartModal() {
                   ) : allergens.length === 0 ? (
                     <div className="p-4 text-center text-sm text-gray-500">No allergens available</div>
                   ) : (
-                    <div className="p-2">
-                      {allergens.map((allergen: Allergen) => (
-                        <div
-                          key={allergen.id}
-                          className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          onClick={() => handleAllergenToggle(allergen.id)}
-                          data-testid={`checkbox-allergen-${allergen.id}`}
-                        >
-                          <Checkbox
-                            id={`allergen-${allergen.id}`}
-                            checked={selectedAllergens.includes(allergen.id)}
-                            onChange={() => handleAllergenToggle(allergen.id)}
-                          />
-                          <label 
-                            htmlFor={`allergen-${allergen.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                    <ScrollArea className="h-full max-h-60">
+                      <div className="p-2">
+                        {allergens.map((allergen: Allergen) => (
+                          <div
+                            key={allergen.id}
+                            className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                            onClick={() => handleAllergenToggle(allergen.id)}
+                            data-testid={`checkbox-allergen-${allergen.id}`}
                           >
-                            {allergen.name}
-                          </label>
-                          {selectedAllergens.includes(allergen.id) && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                            <Checkbox
+                              id={`allergen-${allergen.id}`}
+                              checked={selectedAllergens.includes(allergen.id)}
+                              onChange={() => handleAllergenToggle(allergen.id)}
+                            />
+                            <label 
+                              htmlFor={`allergen-${allergen.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                            >
+                              {allergen.name}
+                            </label>
+                            {selectedAllergens.includes(allergen.id) && (
+                              <Check className="h-4 w-4 text-primary" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
-                </ScrollArea>
+                </div>
               </PopoverContent>
             </Popover>
           </div>

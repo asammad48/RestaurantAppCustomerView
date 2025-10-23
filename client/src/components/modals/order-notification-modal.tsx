@@ -103,16 +103,6 @@ export default function OrderNotificationModal({
   };
 
   const handleSubmit = async () => {
-    // Check authentication
-    if (!isAuthenticated || !token) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to submit feedback.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Validate feedback fields if feedback is required
     if (content.IsFeedbackNeeded && (!feedback.trim() || rating === 0)) {
       toast({
@@ -141,8 +131,8 @@ export default function OrderNotificationModal({
         paymentReceipt: paymentReceiptBase64
       };
 
-      // Submit feedback via API
-      const response = await apiClient.submitOrderFeedback(token, feedbackData);
+      // Submit feedback via API (token is optional)
+      const response = await apiClient.submitOrderFeedback(feedbackData, token || undefined);
       
       if (response.data.isSuccess) {
         toast({
