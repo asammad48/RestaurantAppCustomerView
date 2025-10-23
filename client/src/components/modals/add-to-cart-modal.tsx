@@ -13,7 +13,7 @@ export default function AddToCartModal() {
   const [quantity, setQuantity] = useState(1);
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
   const [selectedModifiers, setSelectedModifiers] = useState<{[key: number]: number}>({});
-  const [selectedCustomizations, setSelectedCustomizations] = useState<{[key: number]: number}>({});
+  const [selectedCustomizations, setSelectedCustomizations] = useState<{[key: number]: number[]}>({});
   
   // Reset selections when modal opens or closes
   useEffect(() => {
@@ -45,11 +45,24 @@ export default function AddToCartModal() {
     });
   };
 
-  const selectCustomizationOption = (customizationId: number, optionId: number) => {
-    setSelectedCustomizations(prev => ({
-      ...prev,
-      [customizationId]: optionId
-    }));
+  const toggleCustomizationOption = (customizationId: number, optionId: number) => {
+    setSelectedCustomizations(prev => {
+      const currentOptions = prev[customizationId] || [];
+      const isSelected = currentOptions.includes(optionId);
+      
+      if (isSelected) {
+        // Remove the option
+        const newOptions = currentOptions.filter(id => id !== optionId);
+        if (newOptions.length === 0) {
+          const { [customizationId]: removed, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [customizationId]: newOptions };
+      } else {
+        // Add the option
+        return { ...prev, [customizationId]: [...currentOptions, optionId] };
+      }
+    });
   };
 
   // Helper function to calculate discounted price from original price and discount percentage
@@ -94,11 +107,14 @@ export default function AddToCartModal() {
         return total + (modifier?.price || 0) * qty;
       }, 0);
       
-      // Add customizations price
-      const customizationsPrice = Object.entries(selectedCustomizations).reduce((total, [customizationId, optionId]) => {
+      // Add customizations price - support multiple options per customization
+      const customizationsPrice = Object.entries(selectedCustomizations).reduce((total, [customizationId, optionIds]) => {
         const customization = menuItem.customizations?.find(c => c.id === parseInt(customizationId));
-        const option = customization?.options.find(o => o.id === optionId);
-        return total + (option?.price || 0);
+        const optionsTotal = optionIds.reduce((optTotal, optionId) => {
+          const option = customization?.options.find(o => o.id === optionId);
+          return optTotal + (option?.price || 0);
+        }, 0);
+        return total + optionsTotal;
       }, 0);
       
       basePrice += modifiersPrice + customizationsPrice;
@@ -408,25 +424,32 @@ export default function AddToCartModal() {
                   {customizationsOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2 space-y-2">
-                  {customization.options.map((option) => (
-                    <button
-                      key={option.id}
-                      onClick={() => selectCustomizationOption(customization.id, option.id)}
-                      className={`w-full text-left p-2 rounded text-sm ${
-                        selectedCustomizations[customization.id] === option.id 
-                          ? 'border configurable-border' 
-                          : 'bg-gray-50 hover:bg-gray-100'
-                      }`}
-                      style={selectedCustomizations[customization.id] === option.id ? { backgroundColor: 'var(--configurable-primary-alpha-20)' } : {}}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span>{option.name}</span>
-                        {option.price > 0 && (
-                          <span className="text-xs font-medium">+{formatBranchCurrency(option.price, branchCurrency)}</span>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                  {customization.options.map((option) => {
+                    const isSelected = (selectedCustomizations[customization.id] || []).includes(option.id);
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => toggleCustomizationOption(customization.id, option.id)}
+                        className={`w-full text-left p-2 rounded text-sm ${
+                          isSelected
+                            ? 'border configurable-border' 
+                            : 'bg-gray-50 hover:bg-gray-100'
+                        }`}
+                        style={isSelected ? { backgroundColor: 'var(--configurable-primary-alpha-20)' } : {}}
+                        data-testid={`customization-option-${customization.id}-${option.id}`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="flex items-center gap-2">
+                            {isSelected && <span className="text-xs">✓</span>}
+                            {option.name}
+                          </span>
+                          {option.price > 0 && (
+                            <span className="text-xs font-medium">+{formatBranchCurrency(option.price, branchCurrency)}</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </CollapsibleContent>
               </Collapsible>
             ))}
