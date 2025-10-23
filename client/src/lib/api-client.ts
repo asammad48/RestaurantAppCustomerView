@@ -470,16 +470,30 @@ class ApiClient {
   }
 
   async acknowledgeNotification(
-    token: string,
     notificationIds: number[],
+    token?: string,
+    deviceInfo?: string,
   ): Promise<ApiResponse<any>> {
+    const headers: Record<string, string> = {};
+    
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else if (deviceInfo) {
+      // For guest users, use deviceInfo endpoint
+      return this.request<any>(
+        `/api/Notification/UpdateNotificationAcknowledgeStatus/${deviceInfo}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ notificationIds }),
+        },
+      );
+    }
+    
     return this.request<any>(
       "/api/Notification/UpdateNotificationAcknowledgeStatus",
       {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({ notificationIds }),
       },
     );
