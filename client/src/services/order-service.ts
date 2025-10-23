@@ -54,12 +54,18 @@ export class OrderService {
       }
 
       // Add customizations if exists and selected
+      // selectedCustomizations format: {[customizationId: number]: number[]}
+      // API expects: [{customizationId: number, optionId: number}, ...]
       if (item.customization?.selectedCustomizations) {
         const selectedCustomizations = Object.entries(item.customization.selectedCustomizations)
-          .map(([customizationId, optionId]) => ({
-            customizationId: parseInt(customizationId),
-            optionId: parseInt(optionId)
-          }));
+          .flatMap(([customizationId, optionIds]) => {
+            // Handle both array and single value formats for backward compatibility
+            const optionArray = Array.isArray(optionIds) ? optionIds : [optionIds];
+            return optionArray.map((optionId: any) => ({
+              customizationId: parseInt(customizationId),
+              optionId: typeof optionId === 'number' ? optionId : parseInt(optionId)
+            }));
+          });
         
         if (selectedCustomizations.length > 0) {
           orderItem.customizations = selectedCustomizations;

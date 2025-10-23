@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
 import { useAuthStore } from "@/lib/auth-store";
@@ -543,7 +544,7 @@ export default function CartModal() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0" align="start">
-                <div className="max-h-60 overflow-auto">
+                <ScrollArea className="max-h-60">
                   {allergensLoading ? (
                     <div className="p-4 text-center text-sm text-gray-500">Loading allergens...</div>
                   ) : allergensError ? (
@@ -577,7 +578,7 @@ export default function CartModal() {
                       ))}
                     </div>
                   )}
-                </div>
+                </ScrollArea>
               </PopoverContent>
             </Popover>
           </div>

@@ -80,7 +80,11 @@ export default function BranchResults({ branches, loading = false, onSelectBranc
                 alt={branch.branchName}
                 className="w-full h-48 object-cover rounded-t-lg"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x192/f3f4f6/9ca3af?text=No+Image';
+                  const img = e.target as HTMLImageElement;
+                  if (!img.dataset.fallback) {
+                    img.dataset.fallback = 'true';
+                    img.src = 'https://via.placeholder.com/400x192/f3f4f6/9ca3af?text=No+Image';
+                  }
                 }}
               />
               {branch.isBranchClosed && (

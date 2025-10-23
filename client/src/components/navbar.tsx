@@ -113,8 +113,8 @@ export default function Navbar() {
               </Button>
             </Link>
 
-            {/* Notification Tray - Only show when authenticated */}
-            {isAuthenticated && <NotificationTray />}
+            {/* Notification Tray - Always visible for both logged-in and guest users */}
+            <NotificationTray />
 
             {/* Authentication Section */}
             {isAuthenticated ? (
