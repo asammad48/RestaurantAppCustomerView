@@ -87,14 +87,18 @@ export function useNotifications() {
 
   // Function to acknowledge notification with API call
   const acknowledgeNotification = useCallback(async (notificationId: number) => {
-    if (!token || !isAuthenticated) {
-      console.warn('Cannot acknowledge notification: No authentication token');
-      return;
-    }
-
     try {
       console.log('Acknowledging notification:', notificationId);
-      await apiClient.acknowledgeNotification(token, [notificationId]);
+      
+      // Use token if authenticated, otherwise use deviceId for guest users
+      if (token && isAuthenticated) {
+        await apiClient.acknowledgeNotification([notificationId], token);
+      } else {
+        // Guest user - use deviceId
+        const deviceId = getDeviceId();
+        await apiClient.acknowledgeNotification([notificationId], undefined, deviceId);
+      }
+      
       console.log('Notification acknowledged successfully:', notificationId);
       
       // Invalidate notifications query to refetch updated data
