@@ -28,7 +28,7 @@ export interface NominatimResponse {
 class GeolocationService {
   /**
    * Get user's current location using browser Geolocation API
-   * Falls back to IP-based location if needed
+   * Attempts to get address, but gracefully falls back to coordinates
    */
   async getCurrentLocation(): Promise<LocationData> {
     return new Promise((resolve, reject) => {
@@ -41,25 +41,27 @@ class GeolocationService {
         async (position) => {
           const { latitude, longitude } = position.coords;
           
+          console.log('📍 Got coordinates:', latitude, longitude);
+          
+          let address = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          
+          // Try to get a proper address, but don't fail if it doesn't work
           try {
-            const address = await this.getReverseGeocodeAddress(latitude, longitude);
-            resolve({
-              latitude,
-              longitude,
-              address,
-            });
-          } catch (error) {
-            // If reverse geocoding fails, still return coordinates
-            console.warn('Reverse geocoding failed, using coordinates:', error);
-            resolve({
-              latitude,
-              longitude,
-              address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
-            });
+            address = await this.getReverseGeocodeAddress(latitude, longitude);
+            console.log('✅ Got address from geocoding:', address);
+          } catch (error: any) {
+            console.log('⚠️ Geocoding unavailable, using coordinates instead:', address);
+            // Continue with coordinate-based address
           }
+          
+          resolve({
+            latitude,
+            longitude,
+            address,
+          });
         },
         (error) => {
-          console.error('Geolocation error:', error);
+          console.error('❌ Geolocation error:', error);
           reject(new Error(this.getGeolocationErrorMessage(error.code)));
         },
         {
@@ -74,27 +76,41 @@ class GeolocationService {
   /**
    * Get address from coordinates using Nominatim (OpenStreetMap)
    * Free service, no API key required
+   * Falls back gracefully if CORS or network errors occur
    */
   private async getReverseGeocodeAddress(latitude: number, longitude: number): Promise<string> {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
         {
           headers: {
             'Accept': 'application/json',
+            'User-Agent': 'RestaurantOrderingApp/1.0',
           },
+          signal: controller.signal,
         }
       );
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Geocoding failed: ${response.status}`);
       }
 
       const data: NominatimResponse = await response.json();
-      return data.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-    } catch (error) {
-      console.error('Reverse geocoding error:', error);
-      throw error;
+      
+      if (data && data.display_name) {
+        return data.display_name;
+      }
+      
+      throw new Error('No address found in response');
+    } catch (error: any) {
+      console.warn('Reverse geocoding failed, will use coordinates:', error.message);
+      // Don't throw - let the caller handle the fallback
+      throw new Error('Reverse geocoding unavailable');
     }
   }
 
