@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Delivery from "@/pages/delivery";
 import RestaurantMenu from "@/pages/restaurant-menu";
+import ARMenuPage from "@/pages/ar-menu";
 import OrderHistoryPage from "@/pages/order-history";
 import ReservationPage from "@/pages/reservation";
 import NotFound from "@/pages/not-found";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/order-history" component={OrderHistoryPage} />
       <Route path="/reservation" component={ReservationPage} />
       <Route path="/restaurant-menu" component={RestaurantMenu} />
+      <Route path="/restaurant-menu/ar" component={ARMenuPage} />
       <Route component={NotFound} />
     </Switch>
   );
