@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Search, Star, Navigation, Map, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
+import { geolocationService } from "@/services/geolocation-service";
 import { Branch } from "@/types/branch";
 import { applyGreenTheme } from "@/lib/colors";
 import { useCartStore } from "@/lib/store";
@@ -82,24 +83,32 @@ export default function ReservationPage() {
     return matchesSearch;
   });
 
-  // Get current location
-  const getCurrentLocation = () => {
+  // Get current location using reliable geolocation service
+  const getCurrentLocation = async () => {
     setIsLoadingLocation(true);
     
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setUserCoords({ lat, lng });
-          searchReservationBranches(lat, lng);
-          setIsLoadingLocation(false);
-        },
-        () => {
-          setIsLoadingLocation(false);
-          alert("Unable to get location");
-        }
-      );
+    try {
+      const locationData = await geolocationService.getCurrentLocation();
+      
+      setUserLocation(locationData.address);
+      setUserCoords({ lat: locationData.latitude, lng: locationData.longitude });
+      
+      // Search for branches based on location
+      await searchReservationBranches(locationData.latitude, locationData.longitude);
+      
+      toast({
+        title: "Location Found",
+        description: `Found your location: ${locationData.address}`,
+      });
+    } catch (error: any) {
+      console.error('Error getting location:', error);
+      toast({
+        variant: "destructive",
+        title: "Location Error",
+        description: error.message || "Unable to get your location. Please enter address manually or use map picker.",
+      });
+    } finally {
+      setIsLoadingLocation(false);
     }
   };
 
