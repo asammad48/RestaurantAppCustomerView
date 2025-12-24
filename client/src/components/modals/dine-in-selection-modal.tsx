@@ -62,7 +62,7 @@ export default function DineInSelectionModal() {
     }
   };
 
-  const handleProceedToMenu = () => {
+  const handleProceedToMenu = (isAR: boolean = false) => {
     if (!selectedBranchState || !selectedTableState) {
       toast({
         variant: "destructive",
@@ -84,12 +84,13 @@ export default function DineInSelectionModal() {
     // Close modal
     setDineInSelectionModalOpen(false);
 
-    // Navigate to menu with locationId parameter
-    setLocation(`/restaurant-menu?branchId=${selectedBranchState.branchId}&locationId=${selectedTableState.id}`);
+    // Navigate to menu or AR menu with locationId parameter
+    const menuPath = isAR ? '/restaurant-menu/ar' : '/restaurant-menu';
+    setLocation(`${menuPath}?branchId=${selectedBranchState.branchId}&locationId=${selectedTableState.id}`);
 
     toast({
       title: "Selections Saved",
-      description: `Selected ${selectedBranchState.branchName} - ${selectedTableState.name}. Loading menu...`,
+      description: `Selected ${selectedBranchState.branchName} - ${selectedTableState.name}. Loading ${isAR ? 'AR' : 'regular'} menu...`,
     });
   };
 
@@ -188,7 +189,7 @@ export default function DineInSelectionModal() {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-between mt-6 pt-4 border-t">
+        <div className="flex justify-between mt-6 pt-4 border-t gap-2">
           <Button 
             variant="outline" 
             onClick={handleClose}
@@ -196,13 +197,24 @@ export default function DineInSelectionModal() {
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleProceedToMenu}
-            disabled={!selectedTableState}
-            data-testid="button-proceed-to-menu"
-          >
-            Proceed to Menu
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => handleProceedToMenu(false)}
+              disabled={!selectedTableState}
+              data-testid="button-proceed-to-menu"
+              variant="outline"
+            >
+              View Menu
+            </Button>
+            <Button 
+              onClick={() => handleProceedToMenu(true)}
+              disabled={!selectedTableState}
+              data-testid="button-proceed-to-ar-menu"
+              className="bg-green-600 hover:bg-green-700"
+            >
+              View AR Menu
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
