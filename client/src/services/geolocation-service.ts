@@ -45,15 +45,17 @@ class GeolocationService {
           
           let address = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
           
-          // Try to get a proper address, but don't fail if it doesn't work
-          try {
-            address = await this.getReverseGeocodeAddress(latitude, longitude);
-            console.log('✅ Got address from geocoding:', address);
-          } catch (error: any) {
-            console.log('⚠️ Geocoding unavailable, using coordinates instead:', address);
-            // Continue with coordinate-based address
-          }
+          // Try to get a proper address in the background, but don't wait for it
+          // This ensures coordinates are returned immediately
+          this.getReverseGeocodeAddress(latitude, longitude)
+            .then((geocodedAddress) => {
+              console.log('✅ Got address from geocoding:', geocodedAddress);
+            })
+            .catch((error: any) => {
+              console.log('⚠️ Geocoding unavailable (non-blocking):', error.message);
+            });
           
+          // Return immediately with coordinates, don't wait for address lookup
           resolve({
             latitude,
             longitude,
@@ -61,13 +63,13 @@ class GeolocationService {
           });
         },
         (error) => {
-          console.error('❌ Geolocation error:', error);
-          reject(new Error(this.getGeolocationErrorMessage(error.code)));
+          console.error('❌ Geolocation error:', error?.code, error?.message);
+          reject(new Error(this.getGeolocationErrorMessage(error?.code)));
         },
         {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0, // Don't use cached position
+          enableHighAccuracy: false, // Set to false for faster results
+          timeout: 20000, // Increased to 20 seconds
+          maximumAge: 30000, // Allow 30 second old cached position
         }
       );
     });
@@ -77,14 +79,15 @@ class GeolocationService {
    * Get address from coordinates using Nominatim (OpenStreetMap)
    * Free service, no API key required
    * Falls back gracefully if CORS or network errors occur
+   * Non-blocking - doesn't hold up location retrieval
    */
   private async getReverseGeocodeAddress(latitude: number, longitude: number): Promise<string> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
         {
           headers: {
             'Accept': 'application/json',
@@ -108,8 +111,7 @@ class GeolocationService {
       
       throw new Error('No address found in response');
     } catch (error: any) {
-      console.warn('Reverse geocoding failed, will use coordinates:', error.message);
-      // Don't throw - let the caller handle the fallback
+      console.warn('Reverse geocoding failed:', error.message);
       throw new Error('Reverse geocoding unavailable');
     }
   }
@@ -130,16 +132,16 @@ class GeolocationService {
   /**
    * Get human-readable error message for geolocation errors
    */
-  private getGeolocationErrorMessage(errorCode: number): string {
+  private getGeolocationErrorMessage(errorCode: number | undefined): string {
     switch (errorCode) {
       case 1:
-        return 'Location permission denied. Please enable location access in browser settings.';
+        return 'Location permission denied. In browser preview, try the map picker instead.';
       case 2:
-        return 'Unable to retrieve your location. Please check your connection and try again.';
+        return 'Location service is unavailable. Please check your connection or use map picker.';
       case 3:
-        return 'Location request timed out. Please try again.';
+        return 'Location request timed out. Please try again or use map picker.';
       default:
-        return 'An error occurred while fetching your location.';
+        return 'Unable to get your location. Please use the map picker or enter address manually.';
     }
   }
 
