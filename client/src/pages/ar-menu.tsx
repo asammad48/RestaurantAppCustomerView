@@ -7,12 +7,16 @@ export default function ARMenuPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null);
   const [cameraPermission, setCameraPermission] = useState<string>("requesting");
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [selectedItemData, setSelectedItemData] = useState<{ name: string; price: string } | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const cubeRef = useRef<THREE.Mesh | null>(null);
   const menuItemsRef = useRef<THREE.Mesh[]>([]);
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
 
   useEffect(() => {
     // Request camera permissions first
@@ -188,7 +192,12 @@ export default function ARMenuPage() {
     menuItem.castShadow = true;
     menuItem.receiveShadow = true;
     menuItem.userData.testId = "ar-menu-item-0"; // For testing
+    menuItem.userData.id = 0; // Menu item ID
+    menuItem.userData.name = "Premium Meal"; // Item name for display
+    menuItem.userData.price = "$24.99"; // Item price for display
     menuItem.userData.baseY = 0.5; // Store original Y position for floating animation
+    menuItem.userData.baseScale = 1; // Original scale
+    menuItem.userData.isSelected = false; // Selection state
     menuItem.userData.floatOffset = 0; // Animation offset
     scene.add(menuItem);
     menuItemsRef.current.push(menuItem);
@@ -218,6 +227,48 @@ export default function ARMenuPage() {
     
     scene.add(directionalLight);
 
+    // ===== CLICK/RAYCASTING SETUP =====
+    // Handle clicks on 3D menu items
+    const onDocumentClick = (event: MouseEvent) => {
+      // Calculate normalized mouse position (-1 to 1)
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      // Update the picking ray with the camera and mouse position
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+
+      // Check if any menu items are intersected
+      const intersects = raycasterRef.current.intersectObjects(menuItemsRef.current);
+
+      if (intersects.length > 0) {
+        const selectedItem = intersects[0].object as THREE.Mesh;
+        const itemId = selectedItem.userData.id;
+
+        // Toggle selection
+        if (selectedItemId === itemId) {
+          setSelectedItemId(null);
+          setSelectedItemData(null);
+          selectedItem.userData.isSelected = false;
+        } else {
+          // Deselect previous item if any
+          menuItemsRef.current.forEach((item) => {
+            item.userData.isSelected = false;
+          });
+
+          // Select new item
+          selectedItem.userData.isSelected = true;
+          setSelectedItemId(itemId);
+          setSelectedItemData({
+            name: selectedItem.userData.name,
+            price: selectedItem.userData.price,
+          });
+        }
+      }
+    };
+
+    renderer.domElement.addEventListener("click", onDocumentClick);
+
     // ===== ANIMATION LOOP =====
     // Render loop that updates camera feed, rotates cube, and animates menu items
     let animationTime = 0;
@@ -237,12 +288,41 @@ export default function ARMenuPage() {
         cube.rotation.z += 0.002;
       }
 
-      // Animate menu items with floating motion (subtle up/down)
+      // Animate menu items with floating motion and interaction
       menuItemsRef.current.forEach((item) => {
         const baseY = item.userData.baseY || 0.5;
-        // Sine wave creates smooth up/down floating motion
-        const floatAmount = Math.sin(animationTime * 1.5) * 0.15; // Amplitude: 0.15m
-        item.position.y = baseY + floatAmount;
+        const baseScale = item.userData.baseScale || 1;
+        const isSelected = item.userData.isSelected || false;
+
+        if (isSelected) {
+          // ===== SELECTED STATE ANIMATION =====
+          // Scale up slightly
+          const targetScale = 1.3;
+          item.scale.x += (targetScale - item.scale.x) * 0.05; // Smooth scaling
+          item.scale.y += (targetScale - item.scale.y) * 0.05;
+          item.scale.z += (targetScale - item.scale.z) * 0.05;
+
+          // Rotate slowly
+          item.rotation.y += 0.03;
+
+          // Lift from table (add to floating motion)
+          const liftAmount = 0.3; // Lift 0.3m higher
+          const floatAmount = Math.sin(animationTime * 1.5) * 0.1; // Smaller float when selected
+          item.position.y = baseY + liftAmount + floatAmount;
+        } else {
+          // ===== NORMAL STATE ANIMATION =====
+          // Return to normal scale
+          item.scale.x += (baseScale - item.scale.x) * 0.05;
+          item.scale.y += (baseScale - item.scale.y) * 0.05;
+          item.scale.z += (baseScale - item.scale.z) * 0.05;
+
+          // Stop rotation
+          item.rotation.y *= 0.98;
+
+          // Normal floating motion
+          const floatAmount = Math.sin(animationTime * 1.5) * 0.15; // Amplitude: 0.15m
+          item.position.y = baseY + floatAmount;
+        }
       });
 
       // Render the scene with camera
@@ -267,8 +347,16 @@ export default function ARMenuPage() {
     console.log("✓ Virtual table surface: Added with wooden texture");
     console.log("✓ Test cube: Positioned on table and rotating");
     console.log("✓ 3D menu item: Loaded from 2D food image with floating animation");
+    console.log("✓ Raycasting: Click detection enabled on menu items");
+    console.log("✓ Interaction: Click to select/deselect with animation");
     console.log("✓ Lighting: Ambient + Directional with shadow mapping");
     console.log("✓ Shadow casting: Objects cast soft shadows on table");
+
+    // Return cleanup function
+    return () => {
+      renderer.domElement.removeEventListener("click", onDocumentClick);
+      window.removeEventListener("resize", handleResize);
+    };
   };
 
   return (
@@ -344,15 +432,25 @@ export default function ARMenuPage() {
         </div>
       </div>
 
+      {/* Selected Item Overlay */}
+      {selectedItemData && (
+        <div className="absolute top-20 left-4 right-4 text-white bg-black/80 px-4 py-3 rounded-lg border border-green-500/50 z-40 max-w-sm">
+          <div className="font-semibold text-sm mb-1">{selectedItemData.name}</div>
+          <div className="text-xs text-gray-300 mb-2">Price: {selectedItemData.price}</div>
+          <div className="text-xs text-green-400">
+            ✓ Item selected • Scaling up • Rotating • Lifting from table
+          </div>
+        </div>
+      )}
+
       <div className="absolute bottom-4 left-4 right-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-blue-500/30 z-40">
-        <div className="font-semibold mb-2 text-sm">AR Scene with 3D Menu Item</div>
+        <div className="font-semibold mb-2 text-sm">AR Scene - Interactive Menu</div>
         <div className="text-xs text-gray-300 space-y-1">
           <div>✓ Camera feed visible with transparent AR layer</div>
-          <div>✓ Restaurant background visible in transparent areas</div>
           <div>✓ Wooden table surface: Fixed in AR world</div>
-          <div>✓ 3D Menu item: Food image mapped to box geometry with floating animation</div>
-          <div>✓ Blue cube: Test object rotating on table with shadow</div>
-          <div>✓ Depth & realism: Thin box (0.15m) for 3D appearance</div>
+          <div>✓ 3D Menu item: Food image on box with floating animation</div>
+          <div>✓ Click to interact: Select item to scale, rotate, and lift</div>
+          <div>✓ Item details shown in overlay when selected</div>
         </div>
       </div>
     </div>
