@@ -2,13 +2,77 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import restaurantBackgroundImage from "@assets/generated_images/elegant_italian_restaurant_interior_background.png";
 import premiumMealImage from "@assets/generated_images/Premium_meal_photography_0924ff10.png";
+import budgetFoodImage from "@assets/generated_images/Budget_food_combo_photo_72d038b1.png";
+import fastFoodImage from "@assets/generated_images/Fast_food_spread_fe6113bb.png";
+
+// ===== MENU DATA STRUCTURE =====
+// Menu items organized by section with images, names, and prices
+interface MenuItem {
+  id: number;
+  name: string;
+  price: string;
+  image: string;
+  section: "recommended" | "menu" | "deals";
+}
+
+const MENU_ITEMS: MenuItem[] = [
+  // Recommended Section
+  {
+    id: 0,
+    name: "Premium Meal",
+    price: "$24.99",
+    image: premiumMealImage,
+    section: "recommended"
+  },
+  {
+    id: 1,
+    name: "Chef's Special",
+    price: "$28.99",
+    image: budgetFoodImage,
+    section: "recommended"
+  },
+
+  // Menu Section
+  {
+    id: 2,
+    name: "Budget Combo",
+    price: "$12.99",
+    image: budgetFoodImage,
+    section: "menu"
+  },
+  {
+    id: 3,
+    name: "Fast Food Spread",
+    price: "$14.99",
+    image: fastFoodImage,
+    section: "menu"
+  },
+
+  // Deals Section
+  {
+    id: 4,
+    name: "Limited Deal",
+    price: "$9.99",
+    image: fastFoodImage,
+    section: "deals"
+  },
+  {
+    id: 5,
+    name: "Combo Special",
+    price: "$16.99",
+    image: budgetFoodImage,
+    section: "deals"
+  }
+];
 
 export default function ARMenuPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null);
   const [cameraPermission, setCameraPermission] = useState<string>("requesting");
+  const [activeSection, setActiveSection] = useState<"recommended" | "menu" | "deals">("recommended");
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [selectedItemData, setSelectedItemData] = useState<{ name: string; price: string } | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -17,6 +81,36 @@ export default function ARMenuPage() {
   const menuItemsRef = useRef<THREE.Mesh[]>([]);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const textureLoaderRef = useRef<THREE.TextureLoader | null>(null);
+
+  // ===== SECTION CHANGE HANDLER =====
+  // When user switches sections, remove old items and load new ones
+  useEffect(() => {
+    if (sceneRef.current && textureLoaderRef.current) {
+      setIsTransitioning(true);
+
+      // Remove existing menu items from scene with fade out animation
+      menuItemsRef.current.forEach((item) => {
+        // Fade out animation
+        const fadeOut = setInterval(() => {
+          item.scale.multiplyScalar(0.95);
+          if (item.scale.x < 0.1) {
+            sceneRef.current?.remove(item);
+            clearInterval(fadeOut);
+          }
+        }, 30);
+      });
+      menuItemsRef.current = [];
+      setSelectedItemId(null);
+      setSelectedItemData(null);
+
+      // Load new items for the selected section
+      setTimeout(() => {
+        loadMenuItemsForSection(activeSection);
+        setIsTransitioning(false);
+      }, 300);
+    }
+  }, [activeSection]);
 
   useEffect(() => {
     // Request camera permissions first
@@ -35,6 +129,69 @@ export default function ARMenuPage() {
       }
     };
   }, []);
+
+  // ===== LOAD MENU ITEMS FOR SECTION =====
+  // Create 3D menu items for the active section and position them on the table
+  const loadMenuItemsForSection = async (section: "recommended" | "menu" | "deals") => {
+    if (!sceneRef.current || !textureLoaderRef.current) return;
+
+    const scene = sceneRef.current;
+    const textureLoader = textureLoaderRef.current;
+    const sectionItems = MENU_ITEMS.filter((item) => item.section === section);
+
+    // Position items in a grid layout on the table
+    const positions = [
+      [-1.2, 0.5, -3], // Left
+      [0, 0.5, -3],    // Center
+      [1.2, 0.5, -3],  // Right
+    ];
+
+    for (let i = 0; i < sectionItems.length; i++) {
+      const item = sectionItems[i];
+      const position = positions[i] || [i * 0.6 - 1.2, 0.5, -3];
+
+      try {
+        // Load texture
+        const texture = await new Promise<THREE.Texture>((resolve, reject) => {
+          textureLoader.load(
+            item.image,
+            (tex) => resolve(tex),
+            undefined,
+            (err) => reject(err)
+          );
+        });
+
+        // Create menu item
+        const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.15);
+        const material = new THREE.MeshPhongMaterial({
+          map: texture,
+          side: THREE.FrontSide,
+          shininess: 50,
+        });
+
+        const menuItem = new THREE.Mesh(geometry, material);
+        menuItem.position.set(position[0], position[1], position[2]);
+        menuItem.castShadow = true;
+        menuItem.receiveShadow = true;
+        menuItem.scale.set(0.1, 0.1, 0.1); // Start small for fade-in animation
+        
+        // Store data
+        menuItem.userData.id = item.id;
+        menuItem.userData.name = item.name;
+        menuItem.userData.price = item.price;
+        menuItem.userData.baseY = position[1];
+        menuItem.userData.baseScale = 1;
+        menuItem.userData.isSelected = false;
+        menuItem.userData.section = section;
+        menuItem.userData.testId = `ar-menu-item-${item.id}`;
+
+        scene.add(menuItem);
+        menuItemsRef.current.push(menuItem);
+      } catch (error) {
+        console.error(`Failed to load menu item ${item.id}:`, error);
+      }
+    }
+  };
 
   const requestCameraPermissions = async () => {
     try {
@@ -167,40 +324,10 @@ export default function ARMenuPage() {
     cubeRef.current = cube;
     scene.add(cube);
 
-    // ===== 3D MENU ITEM FROM 2D IMAGE =====
-    // Convert a 2D food image into a 3D AR object
-    // Create thin box geometry to display the food image with slight depth
-    const menuItemGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.15);
-    
-    // Load the food image and create texture
+    // ===== TEXTURE LOADER SETUP =====
+    // Create texture loader for reuse across menu items
     const textureLoader = new THREE.TextureLoader();
-    const foodTexture = await new Promise<THREE.Texture>((resolve) => {
-      textureLoader.load(premiumMealImage, (texture) => {
-        resolve(texture);
-      });
-    });
-    
-    // Create material with the food image
-    const menuItemMaterial = new THREE.MeshPhongMaterial({
-      map: foodTexture,
-      side: THREE.FrontSide,
-      shininess: 50
-    });
-    
-    const menuItem = new THREE.Mesh(menuItemGeometry, menuItemMaterial);
-    menuItem.position.set(-1.2, 0.5, -3); // Position on left side of table
-    menuItem.castShadow = true;
-    menuItem.receiveShadow = true;
-    menuItem.userData.testId = "ar-menu-item-0"; // For testing
-    menuItem.userData.id = 0; // Menu item ID
-    menuItem.userData.name = "Premium Meal"; // Item name for display
-    menuItem.userData.price = "$24.99"; // Item price for display
-    menuItem.userData.baseY = 0.5; // Store original Y position for floating animation
-    menuItem.userData.baseScale = 1; // Original scale
-    menuItem.userData.isSelected = false; // Selection state
-    menuItem.userData.floatOffset = 0; // Animation offset
-    scene.add(menuItem);
-    menuItemsRef.current.push(menuItem);
+    textureLoaderRef.current = textureLoader;
 
     // ===== LIGHTING =====
     // Add ambient light for general illumination
@@ -311,10 +438,17 @@ export default function ARMenuPage() {
           item.position.y = baseY + liftAmount + floatAmount;
         } else {
           // ===== NORMAL STATE ANIMATION =====
-          // Return to normal scale
-          item.scale.x += (baseScale - item.scale.x) * 0.05;
-          item.scale.y += (baseScale - item.scale.y) * 0.05;
-          item.scale.z += (baseScale - item.scale.z) * 0.05;
+          // Fade in effect when section changes (scale up from small)
+          const targetScale = baseScale;
+          if (item.scale.x < targetScale) {
+            item.scale.x += (targetScale - item.scale.x) * 0.1; // Faster fade-in
+            item.scale.y += (targetScale - item.scale.y) * 0.1;
+            item.scale.z += (targetScale - item.scale.z) * 0.1;
+          } else {
+            item.scale.x += (baseScale - item.scale.x) * 0.05;
+            item.scale.y += (baseScale - item.scale.y) * 0.05;
+            item.scale.z += (baseScale - item.scale.z) * 0.05;
+          }
 
           // Stop rotation
           item.rotation.y *= 0.98;
@@ -351,6 +485,14 @@ export default function ARMenuPage() {
     console.log("✓ Interaction: Click to select/deselect with animation");
     console.log("✓ Lighting: Ambient + Directional with shadow mapping");
     console.log("✓ Shadow casting: Objects cast soft shadows on table");
+
+    // ===== LOAD INITIAL MENU ITEMS =====
+    // Load items for the recommended section on scene initialization
+    await loadMenuItemsForSection("recommended");
+
+    console.log("✓ AR Scene with menu sections initialized");
+    console.log("✓ Recommended, Menu, and Deals sections ready");
+    console.log("✓ Click section buttons to switch between menus");
 
     // Return cleanup function
     return () => {
@@ -432,6 +574,25 @@ export default function ARMenuPage() {
         </div>
       </div>
 
+      {/* Section Selector */}
+      <div className="absolute top-4 right-4 flex gap-2 z-40">
+        {(["recommended", "menu", "deals"] as const).map((section) => (
+          <button
+            key={section}
+            onClick={() => setActiveSection(section)}
+            disabled={isTransitioning}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+              activeSection === section
+                ? "bg-green-600 text-white border-2 border-green-400"
+                : "bg-black/70 text-gray-300 border-2 border-gray-600 hover:border-green-500"
+            } disabled:opacity-50`}
+            data-testid={`button-section-${section}`}
+          >
+            {section.charAt(0).toUpperCase() + section.slice(1)}
+          </button>
+        ))}
+      </div>
+
       {/* Selected Item Overlay */}
       {selectedItemData && (
         <div className="absolute top-20 left-4 right-4 text-white bg-black/80 px-4 py-3 rounded-lg border border-green-500/50 z-40 max-w-sm">
@@ -444,13 +605,13 @@ export default function ARMenuPage() {
       )}
 
       <div className="absolute bottom-4 left-4 right-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-blue-500/30 z-40">
-        <div className="font-semibold mb-2 text-sm">AR Scene - Interactive Menu</div>
+        <div className="font-semibold mb-2 text-sm">AR Menu with Sections</div>
         <div className="text-xs text-gray-300 space-y-1">
-          <div>✓ Camera feed visible with transparent AR layer</div>
-          <div>✓ Wooden table surface: Fixed in AR world</div>
-          <div>✓ 3D Menu item: Food image on box with floating animation</div>
-          <div>✓ Click to interact: Select item to scale, rotate, and lift</div>
-          <div>✓ Item details shown in overlay when selected</div>
+          <div>✓ Three menu sections: Recommended, Menu, Deals</div>
+          <div>✓ Click section buttons to switch menus</div>
+          <div>✓ Multiple 3D items per section with smooth transitions</div>
+          <div>✓ Click items to select (scale, rotate, lift)</div>
+          <div>✓ Item name and price shown in overlay</div>
         </div>
       </div>
     </div>
