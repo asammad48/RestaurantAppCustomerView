@@ -16,7 +16,7 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  // Recommended Section
+  // Recommended Section (5 items)
   {
     id: 0,
     name: "Premium Meal",
@@ -31,35 +31,98 @@ const MENU_ITEMS: MenuItem[] = [
     image: budgetFoodImage,
     section: "recommended"
   },
-
-  // Menu Section
   {
     id: 2,
+    name: "Deluxe Platter",
+    price: "$32.99",
+    image: fastFoodImage,
+    section: "recommended"
+  },
+  {
+    id: 3,
+    name: "Signature Dish",
+    price: "$26.99",
+    image: premiumMealImage,
+    section: "recommended"
+  },
+  {
+    id: 4,
+    name: "Chef's Tasting",
+    price: "$35.99",
+    image: budgetFoodImage,
+    section: "recommended"
+  },
+
+  // Menu Section (5 items)
+  {
+    id: 5,
     name: "Budget Combo",
     price: "$12.99",
     image: budgetFoodImage,
     section: "menu"
   },
   {
-    id: 3,
+    id: 6,
     name: "Fast Food Spread",
     price: "$14.99",
     image: fastFoodImage,
     section: "menu"
   },
-
-  // Deals Section
   {
-    id: 4,
+    id: 7,
+    name: "Classic Burger",
+    price: "$11.99",
+    image: premiumMealImage,
+    section: "menu"
+  },
+  {
+    id: 8,
+    name: "Crispy Chicken",
+    price: "$13.99",
+    image: budgetFoodImage,
+    section: "menu"
+  },
+  {
+    id: 9,
+    name: "Veggie Delight",
+    price: "$10.99",
+    image: fastFoodImage,
+    section: "menu"
+  },
+
+  // Deals Section (5 items)
+  {
+    id: 10,
     name: "Limited Deal",
     price: "$9.99",
     image: fastFoodImage,
     section: "deals"
   },
   {
-    id: 5,
+    id: 11,
     name: "Combo Special",
     price: "$16.99",
+    image: budgetFoodImage,
+    section: "deals"
+  },
+  {
+    id: 12,
+    name: "Flash Sale",
+    price: "$8.99",
+    image: premiumMealImage,
+    section: "deals"
+  },
+  {
+    id: 13,
+    name: "Happy Hour Deal",
+    price: "$11.49",
+    image: fastFoodImage,
+    section: "deals"
+  },
+  {
+    id: 14,
+    name: "Bundle Offer",
+    price: "$18.99",
     image: budgetFoodImage,
     section: "deals"
   }
@@ -82,6 +145,7 @@ export default function ARMenuPage() {
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const textureLoaderRef = useRef<THREE.TextureLoader | null>(null);
+  const menuGeometryRef = useRef<THREE.BoxGeometry | null>(null);
 
   // ===== SECTION CHANGE HANDLER =====
   // When user switches sections, remove old items and load new ones
@@ -131,7 +195,7 @@ export default function ARMenuPage() {
   }, []);
 
   // ===== LOAD MENU ITEMS FOR SECTION =====
-  // Create 3D menu items for the active section and position them on the table
+  // Create 3D menu items for the active section with optimized layout
   const loadMenuItemsForSection = async (section: "recommended" | "menu" | "deals") => {
     if (!sceneRef.current || !textureLoaderRef.current) return;
 
@@ -139,57 +203,81 @@ export default function ARMenuPage() {
     const textureLoader = textureLoaderRef.current;
     const sectionItems = MENU_ITEMS.filter((item) => item.section === section);
 
-    // Position items in a grid layout on the table
-    const positions = [
-      [-1.2, 0.5, -3], // Left
-      [0, 0.5, -3],    // Center
-      [1.2, 0.5, -3],  // Right
-    ];
+    // Calculate natural grid positions for items (up to 5 items per section)
+    // Arrange in 2x2 or 2x3 grid pattern on the table surface
+    const getPositions = (count: number) => {
+      const positions: [number, number, number][] = [];
+      
+      if (count <= 2) {
+        positions.push([-0.7, 0.5, -3], [0.7, 0.5, -3]);
+      } else if (count === 3) {
+        positions.push([-1.0, 0.5, -3], [0, 0.5, -3], [1.0, 0.5, -3]);
+      } else if (count === 4) {
+        positions.push([-0.9, 0.5, -2.8], [0.3, 0.5, -2.8], [-0.9, 0.5, -3.2], [0.3, 0.5, -3.2]);
+      } else {
+        // 5 items: 2x2 grid plus center
+        positions.push([-0.9, 0.5, -2.8], [0.3, 0.5, -2.8], [-0.9, 0.5, -3.2], [0.3, 0.5, -3.2], [0, 0.5, -3.0]);
+      }
+      
+      return positions.slice(0, count);
+    };
 
-    for (let i = 0; i < sectionItems.length; i++) {
-      const item = sectionItems[i];
-      const position = positions[i] || [i * 0.6 - 1.2, 0.5, -3];
+    const positions = getPositions(sectionItems.length);
 
-      try {
-        // Load texture
-        const texture = await new Promise<THREE.Texture>((resolve, reject) => {
-          textureLoader.load(
-            item.image,
-            (tex) => resolve(tex),
-            undefined,
-            (err) => reject(err)
-          );
-        });
+    // Load all textures in parallel for better performance
+    const texturePromises = sectionItems.map((item) =>
+      new Promise<{ item: MenuItem; texture: THREE.Texture }>((resolve, reject) => {
+        textureLoader.load(
+          item.image,
+          (texture) => resolve({ item, texture }),
+          undefined,
+          (err) => reject(err)
+        );
+      })
+    );
 
-        // Create menu item
-        const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.15);
+    try {
+      const loadedTextures = await Promise.all(texturePromises);
+
+      // Create reusable geometry once
+      if (!menuGeometryRef.current) {
+        menuGeometryRef.current = new THREE.BoxGeometry(0.8, 0.8, 0.15);
+      }
+      const sharedGeometry = menuGeometryRef.current;
+
+      // Create menu items with loaded textures
+      loadedTextures.forEach((data, index) => {
+        const position = positions[index];
+        
+        // Create material for each item (must be unique for different textures)
         const material = new THREE.MeshPhongMaterial({
-          map: texture,
+          map: data.texture,
           side: THREE.FrontSide,
           shininess: 50,
         });
 
-        const menuItem = new THREE.Mesh(geometry, material);
+        // Create mesh using shared geometry
+        const menuItem = new THREE.Mesh(sharedGeometry, material);
         menuItem.position.set(position[0], position[1], position[2]);
         menuItem.castShadow = true;
         menuItem.receiveShadow = true;
         menuItem.scale.set(0.1, 0.1, 0.1); // Start small for fade-in animation
         
         // Store data
-        menuItem.userData.id = item.id;
-        menuItem.userData.name = item.name;
-        menuItem.userData.price = item.price;
+        menuItem.userData.id = data.item.id;
+        menuItem.userData.name = data.item.name;
+        menuItem.userData.price = data.item.price;
         menuItem.userData.baseY = position[1];
         menuItem.userData.baseScale = 1;
         menuItem.userData.isSelected = false;
         menuItem.userData.section = section;
-        menuItem.userData.testId = `ar-menu-item-${item.id}`;
+        menuItem.userData.testId = `ar-menu-item-${data.item.id}`;
 
         scene.add(menuItem);
         menuItemsRef.current.push(menuItem);
-      } catch (error) {
-        console.error(`Failed to load menu item ${item.id}:`, error);
-      }
+      });
+    } catch (error) {
+      console.error(`Failed to load menu items for section ${section}:`, error);
     }
   };
 
