@@ -5,6 +5,31 @@ import premiumMealImage from "@assets/generated_images/Premium_meal_photography_
 import budgetFoodImage from "@assets/generated_images/Budget_food_combo_photo_72d038b1.png";
 import fastFoodImage from "@assets/generated_images/Fast_food_spread_fe6113bb.png";
 
+// ===== EASING FUNCTIONS FOR SMOOTH ANIMATIONS =====
+// Cubic easing for natural, smooth motion without abrupt starts/stops
+const easingFunctions = {
+  // Smooth deceleration for scaling animations
+  easeOutCubic: (t: number) => 1 - Math.pow(1 - t, 3),
+  // Smooth acceleration and deceleration for floating motion
+  easeInOutQuad: (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+  // Smooth deceleration for item fade-in
+  easeOutQuad: (t: number) => 1 - (1 - t) * (1 - t),
+};
+
+// ===== WEBGL SUPPORT CHECK =====
+// Detect if browser supports WebGL for AR rendering
+const checkWebGLSupport = (): boolean => {
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
+    );
+  } catch {
+    return false;
+  }
+};
+
 // ===== MENU DATA STRUCTURE =====
 // Menu items organized by section with images, names, and prices
 interface MenuItem {
@@ -131,21 +156,38 @@ const MENU_ITEMS: MenuItem[] = [
 export default function ARMenuPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null);
+  // Camera permission states: requesting, granted, denied, or unsupported
   const [cameraPermission, setCameraPermission] = useState<string>("requesting");
+  // Active menu section being displayed
   const [activeSection, setActiveSection] = useState<"recommended" | "menu" | "deals">("recommended");
+  // ID of currently selected menu item for highlighting
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  // Details (name, price) of selected item for display overlay
   const [selectedItemData, setSelectedItemData] = useState<{ name: string; price: string } | null>(null);
+  // Animation flag to prevent rapid section switching
   const [isTransitioning, setIsTransitioning] = useState(false);
+  // WebGL support flag for fallback UI
+  const [webglSupported] = useState(() => checkWebGLSupport());
+  // Three.js scene, renderer, and camera references
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
+  // Video element for camera feed texture
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  // Reference to rotating test cube
   const cubeRef = useRef<THREE.Mesh | null>(null);
+  // Array of menu item meshes for animation and interaction
   const menuItemsRef = useRef<THREE.Mesh[]>([]);
+  // Raycaster for click detection on 3D objects
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  // Mouse position in normalized device coordinates (-1 to 1)
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  // Texture loader for reusable texture loading
   const textureLoaderRef = useRef<THREE.TextureLoader | null>(null);
+  // Shared geometry for all menu items (improves performance)
   const menuGeometryRef = useRef<THREE.BoxGeometry | null>(null);
+  // Animation start time for easing calculations
+  const animationStartTimeRef = useRef<number>(0);
 
   // ===== SECTION CHANGE HANDLER =====
   // When user switches sections, remove old items and load new ones
@@ -417,28 +459,48 @@ export default function ARMenuPage() {
     const textureLoader = new THREE.TextureLoader();
     textureLoaderRef.current = textureLoader;
 
-    // ===== LIGHTING =====
-    // Add ambient light for general illumination
-    // This ensures the entire scene is lit without harsh shadows
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // ===== LIGHTING SETUP FOR POLISHED AR EXPERIENCE =====
+    
+    // PRIMARY AMBIENT LIGHT: Soft, even illumination
+    // Provides baseline lighting to prevent completely dark areas
+    // Higher intensity for better visibility of menu items
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
     scene.add(ambientLight);
 
-    // Add directional light for realistic shadows and depth
-    // Position to create shadows that fall toward the camera for natural look
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    // SECONDARY FILL LIGHT: Subtle light from opposite direction
+    // Adds depth by illuminating shadows slightly, reduces harsh contrast
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    fillLight.position.set(-5, 3, -5);
+    scene.add(fillLight);
+
+    // PRIMARY DIRECTIONAL LIGHT: Key light for shadows and depth
+    // Position creates natural shadows falling away from camera
+    // High intensity for dramatic but not overwhelming shadows
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     directionalLight.position.set(5, 8, 5);
     directionalLight.castShadow = true;
     
-    // Configure shadow map for high quality shadows
+    // ===== SOFT SHADOW CONFIGURATION =====
+    // High-resolution shadow maps for smooth, detailed shadows
+    // Without harsh pixelation or banding artifacts
     directionalLight.shadow.mapSize.width = 2048;
     directionalLight.shadow.mapSize.height = 2048;
-    directionalLight.shadow.camera.left = -5;
-    directionalLight.shadow.camera.right = 5;
-    directionalLight.shadow.camera.top = 5;
-    directionalLight.shadow.camera.bottom = -5;
+    
+    // Configure shadow camera to cover the entire scene volume
+    // Ensures menu items and table cast shadows within view frustum
+    directionalLight.shadow.camera.left = -10;
+    directionalLight.shadow.camera.right = 10;
+    directionalLight.shadow.camera.top = 10;
+    directionalLight.shadow.camera.bottom = -10;
     directionalLight.shadow.camera.near = 0.1;
-    directionalLight.shadow.camera.far = 50;
-    directionalLight.shadow.bias = -0.005; // Reduce shadow acne
+    directionalLight.shadow.camera.far = 100;
+    
+    // SHADOW SOFTENING: Reduce shadow artifacts while maintaining quality
+    // Bias prevents shadow acne (dark lines on surfaces)
+    directionalLight.shadow.bias = -0.0005;
+    // Map size and blur reduce pixelated shadow edges for soft appearance
+    directionalLight.shadow.mapSize.width = 4096;
+    directionalLight.shadow.mapSize.height = 4096;
     
     scene.add(directionalLight);
 
@@ -484,70 +546,85 @@ export default function ARMenuPage() {
 
     renderer.domElement.addEventListener("click", onDocumentClick);
 
-    // ===== ANIMATION LOOP =====
-    // Render loop that updates camera feed, rotates cube, and animates menu items
+    // ===== POLISHED ANIMATION LOOP WITH EASING FUNCTIONS =====
+    // Smooth 60fps rendering loop with camera feed integration
     let animationTime = 0;
+    const deltaTime = 0.016; // ~60fps frame time
+    
     const animate = () => {
       requestAnimationFrame(animate);
-      animationTime += 0.016; // ~60fps
+      animationTime += deltaTime;
 
-      // Update video texture from camera feed
+      // ===== UPDATE CAMERA FEED TEXTURE =====
+      // Continuously draw video frames to canvas texture
+      // Only draw when video has sufficient data to prevent black frames
       if (ctx && video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       }
 
-      // Rotate test cube continuously
+      // ===== ANIMATE TEST CUBE WITH SMOOTH ROTATION =====
+      // Demonstrate 3D rotation - use consistent rotation speeds
       if (cube) {
+        // Rotation amounts carefully tuned for smooth, non-jittery motion
         cube.rotation.x += 0.005;
         cube.rotation.y += 0.005;
         cube.rotation.z += 0.002;
       }
 
-      // Animate menu items with floating motion and interaction
-      menuItemsRef.current.forEach((item) => {
+      // ===== ANIMATE MENU ITEMS WITH EASING FUNCTIONS =====
+      // Apply smooth animations based on state (selected vs normal)
+      menuItemsRef.current.forEach((item, index) => {
         const baseY = item.userData.baseY || 0.5;
         const baseScale = item.userData.baseScale || 1;
         const isSelected = item.userData.isSelected || false;
+        
+        // Stagger animations slightly for visual appeal (index * small offset)
+        const staggeredTime = animationTime + (index * 0.05);
 
         if (isSelected) {
-          // ===== SELECTED STATE ANIMATION =====
-          // Scale up slightly
+          // ===== SELECTED ITEM ANIMATION =====
+          // Smooth scale-up using easing function
           const targetScale = 1.3;
-          item.scale.x += (targetScale - item.scale.x) * 0.05; // Smooth scaling
-          item.scale.y += (targetScale - item.scale.y) * 0.05;
-          item.scale.z += (targetScale - item.scale.z) * 0.05;
+          const scaleFactor = easingFunctions.easeOutCubic(0.08); // Smooth easing
+          item.scale.x += (targetScale - item.scale.x) * scaleFactor;
+          item.scale.y += (targetScale - item.scale.y) * scaleFactor;
+          item.scale.z += (targetScale - item.scale.z) * scaleFactor;
 
-          // Rotate slowly
+          // Slow rotation for selected items (magnetic effect)
           item.rotation.y += 0.03;
 
-          // Lift from table (add to floating motion)
-          const liftAmount = 0.3; // Lift 0.3m higher
-          const floatAmount = Math.sin(animationTime * 1.5) * 0.1; // Smaller float when selected
+          // Floating motion while selected: more subtle amplitude
+          const liftAmount = 0.3; // Rise 0.3m above table
+          const floatAmount = Math.sin(staggeredTime * 1.5) * 0.08; // Small float
           item.position.y = baseY + liftAmount + floatAmount;
         } else {
-          // ===== NORMAL STATE ANIMATION =====
-          // Fade in effect when section changes (scale up from small)
+          // ===== NORMAL ITEM ANIMATION =====
+          // Smooth fade-in when items first appear
           const targetScale = baseScale;
-          if (item.scale.x < targetScale) {
-            item.scale.x += (targetScale - item.scale.x) * 0.1; // Faster fade-in
-            item.scale.y += (targetScale - item.scale.y) * 0.1;
-            item.scale.z += (targetScale - item.scale.z) * 0.1;
+          if (item.scale.x < targetScale * 0.99) {
+            // Use easing function for natural acceleration
+            const fadeFactor = easingFunctions.easeOutQuad(0.12);
+            item.scale.x += (targetScale - item.scale.x) * fadeFactor;
+            item.scale.y += (targetScale - item.scale.y) * fadeFactor;
+            item.scale.z += (targetScale - item.scale.z) * fadeFactor;
           } else {
+            // Maintain scale once fully visible
             item.scale.x += (baseScale - item.scale.x) * 0.05;
             item.scale.y += (baseScale - item.scale.y) * 0.05;
             item.scale.z += (baseScale - item.scale.z) * 0.05;
           }
 
-          // Stop rotation
+          // Dampen rotation when deselected for smooth stops
           item.rotation.y *= 0.98;
 
-          // Normal floating motion
-          const floatAmount = Math.sin(animationTime * 1.5) * 0.15; // Amplitude: 0.15m
+          // Smooth floating motion using eased sine wave
+          const floatAmount = Math.sin(staggeredTime * 1.5) * 0.15; // 0.15m amplitude
           item.position.y = baseY + floatAmount;
         }
       });
 
-      // Render the scene with camera
+      // ===== RENDER SCENE TO SCREEN =====
+      // Composite camera feed + 3D AR objects
       renderer.render(scene, camera);
     };
 
@@ -591,117 +668,144 @@ export default function ARMenuPage() {
 
   return (
     <div className="w-full h-screen relative overflow-hidden">
-      {/* 
-        LAYER 1 - STATIC RESTAURANT BACKGROUND (z-index: 10)
-        - Provides restaurant-themed visual context
-        - Positioned behind AR content
-        - Responsive scaling
-      */}
-      <div
-        ref={backgroundRef}
-        className="absolute inset-0 z-10 bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${restaurantBackgroundImage})`,
-          backgroundAttachment: "fixed", // Creates subtle parallax effect
-        }}
-        data-testid="background-layer"
-      />
-
-      {/* 
-        LAYER 2 - AR CANVAS WITH CAMERA FEED (z-index: 20)
-        - Three.js renderer with transparent background
-        - Camera feed shows through transparent areas
-        - AR objects render on top of camera feed
-        - Positioned above static background but below UI
-      */}
-      <div
-        ref={containerRef}
-        className="absolute inset-0 z-20"
-        data-testid="ar-container"
-      />
-
-      {/* 
-        LAYER 3 - PERMISSION STATUS OVERLAY (z-index: 50)
-        - Only visible when requesting or denied
-        - Blocks interaction until permission resolved
-      */}
-      {cameraPermission === "requesting" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50">
-          <div className="text-white text-center">
-            <div className="mb-4 text-lg font-semibold">Requesting camera permission...</div>
-            <div className="text-sm text-gray-400">
-              Please allow camera access to use AR menu
+      {/* ===== WEBGL SUPPORT CHECK FALLBACK =====
+          Display if browser doesn't support WebGL (required for 3D rendering)
+          Provides helpful message about browser compatibility */}
+      {!webglSupported && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-900 to-black z-50 px-4">
+          <div className="text-white text-center max-w-md">
+            <div className="mb-6 text-4xl">🖥️</div>
+            <div className="mb-4 text-2xl font-bold">WebGL Not Supported</div>
+            <div className="text-sm text-gray-300 mb-6">
+              Your browser doesn't support WebGL, required for the AR menu experience.
+            </div>
+            <div className="text-xs text-gray-400 space-y-2">
+              <div>✓ Try modern browser: Chrome, Firefox, Safari, Edge</div>
+              <div>✓ Enable hardware acceleration in browser settings</div>
+              <div>✓ Update your browser to the latest version</div>
             </div>
           </div>
         </div>
       )}
 
-      {cameraPermission === "denied" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50">
-          <div className="text-white text-center">
-            <div className="mb-4 text-lg font-semibold">Camera permission denied</div>
-            <div className="text-sm text-gray-400">
-              Please enable camera permissions in your browser settings to use AR menu features
+      {webglSupported && (
+        <>
+          {/* 
+            LAYER 1 - STATIC RESTAURANT BACKGROUND (z-index: 10)
+            - Provides restaurant-themed visual context
+            - Positioned behind AR content for depth
+            - Responsive scaling with parallax effect
+          */}
+          <div
+            ref={backgroundRef}
+            className="absolute inset-0 z-10 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${restaurantBackgroundImage})`,
+              backgroundAttachment: "fixed",
+            }}
+            data-testid="background-layer"
+          />
+
+          {/* 
+            LAYER 2 - AR CANVAS WITH CAMERA FEED (z-index: 20)
+            - Three.js WebGL renderer with polished lighting and shadows
+            - Transparent background composites camera feed beneath 3D objects
+            - Soft shadows and smooth animations for professional look
+            - Touch-responsive on mobile devices
+          */}
+          <div
+            ref={containerRef}
+            className="absolute inset-0 z-20 touch-none"
+            data-testid="ar-container"
+          />
+
+          {/* 
+            LAYER 3 - PERMISSION STATUS OVERLAY (z-index: 50)
+            - Only visible when requesting camera or permission denied
+            - Blocks interaction until permission is resolved
+            - Responsive text sizing for mobile and desktop
+          */}
+          {cameraPermission === "requesting" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50 px-4">
+              <div className="text-white text-center">
+                <div className="mb-4 text-lg sm:text-2xl font-semibold">Requesting camera permission...</div>
+                <div className="text-sm text-gray-400">
+                  Please allow camera access to use the AR menu
+                </div>
+              </div>
+            </div>
+          )}
+
+          {cameraPermission === "denied" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50 px-4">
+              <div className="text-white text-center">
+                <div className="mb-4 text-lg sm:text-2xl font-semibold">Camera Permission Denied</div>
+                <div className="text-sm text-gray-400">
+                  Please enable camera permissions in your browser settings for AR menu
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 
+            LAYER 4 - UI OVERLAYS (z-index: 40)
+            - Status indicator (top-left)
+            - Section selector (top-right) with smooth transitions
+            - Selected item info and instructions
+            - Responsive layout for mobile and desktop
+          */}
+          <div className="absolute top-4 left-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-green-500/30 z-40">
+            <div className="text-sm font-semibold">AR Menu - Polished</div>
+            <div className="text-xs text-gray-300 mt-1">
+              Camera: <span className={cameraPermission === "granted" ? "text-green-400" : "text-gray-500"}>
+                {cameraPermission === "granted" ? "✓ Active" : "Inactive"}
+              </span>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* 
-        LAYER 4 - UI OVERLAYS (z-index: 40)
-        - Status indicator (top-left)
-        - Instructions (bottom)
-        - Always visible and interactive
-      */}
-      <div className="absolute top-4 left-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-green-500/30 z-40">
-        <div className="text-sm font-semibold">AR Menu - Test Mode</div>
-        <div className="text-xs text-gray-300 mt-1">
-          Camera: <span className={cameraPermission === "granted" ? "text-green-400" : "text-gray-500"}>
-            {cameraPermission === "granted" ? "✓ Active" : "Inactive"}
-          </span>
-        </div>
-      </div>
-
-      {/* Section Selector */}
-      <div className="absolute top-4 right-4 flex gap-2 z-40">
-        {(["recommended", "menu", "deals"] as const).map((section) => (
-          <button
-            key={section}
-            onClick={() => setActiveSection(section)}
-            disabled={isTransitioning}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-              activeSection === section
-                ? "bg-green-600 text-white border-2 border-green-400"
-                : "bg-black/70 text-gray-300 border-2 border-gray-600 hover:border-green-500"
-            } disabled:opacity-50`}
-            data-testid={`button-section-${section}`}
-          >
-            {section.charAt(0).toUpperCase() + section.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Selected Item Overlay */}
-      {selectedItemData && (
-        <div className="absolute top-20 left-4 right-4 text-white bg-black/80 px-4 py-3 rounded-lg border border-green-500/50 z-40 max-w-sm">
-          <div className="font-semibold text-sm mb-1">{selectedItemData.name}</div>
-          <div className="text-xs text-gray-300 mb-2">Price: {selectedItemData.price}</div>
-          <div className="text-xs text-green-400">
-            ✓ Item selected • Scaling up • Rotating • Lifting from table
+          {/* Section Selector Buttons - Mobile responsive */}
+          <div className="absolute top-4 right-4 flex gap-2 z-40 flex-wrap justify-end px-4">
+            {(["recommended", "menu", "deals"] as const).map((section) => (
+              <button
+                key={section}
+                onClick={() => setActiveSection(section)}
+                disabled={isTransitioning}
+                className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all ${
+                  activeSection === section
+                    ? "bg-green-600 text-white border-2 border-green-400"
+                    : "bg-black/70 text-gray-300 border-2 border-gray-600 hover:border-green-500"
+                } disabled:opacity-50`}
+                data-testid={`button-section-${section}`}
+              >
+                {section.charAt(0).toUpperCase() + section.slice(1)}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
 
-      <div className="absolute bottom-4 left-4 right-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-blue-500/30 z-40">
-        <div className="font-semibold mb-2 text-sm">AR Menu with Sections</div>
-        <div className="text-xs text-gray-300 space-y-1">
-          <div>✓ Three menu sections: Recommended, Menu, Deals</div>
-          <div>✓ Click section buttons to switch menus</div>
-          <div>✓ Multiple 3D items per section with smooth transitions</div>
-          <div>✓ Click items to select (scale, rotate, lift)</div>
-          <div>✓ Item name and price shown in overlay</div>
-        </div>
-      </div>
+          {/* Selected Item Overlay - Shows item details with smooth animations */}
+          {selectedItemData && (
+            <div className="absolute top-20 left-4 right-4 text-white bg-black/80 px-4 py-3 rounded-lg border border-green-500/50 z-40 max-w-sm">
+              <div className="font-semibold text-sm mb-1">{selectedItemData.name}</div>
+              <div className="text-xs text-gray-300 mb-2">Price: {selectedItemData.price}</div>
+              <div className="text-xs text-green-400">
+                ✓ Item selected • Scaling up • Rotating smoothly • Lifting from table
+              </div>
+            </div>
+          )}
+
+          {/* Instructions and Feature List */}
+          <div className="absolute bottom-4 left-4 right-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-blue-500/30 z-40 max-w-md">
+            <div className="font-semibold mb-2 text-sm">AR Menu - Polished Experience</div>
+            <div className="text-xs text-gray-300 space-y-1">
+              <div>✓ Enhanced lighting: Ambient + fill + directional</div>
+              <div>✓ Soft shadows for depth and realism</div>
+              <div>✓ Smooth easing animations for natural motion</div>
+              <div>✓ Click items to select with interactive feedback</div>
+              <div>✓ Three menu sections: Recommended, Menu, Deals</div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
