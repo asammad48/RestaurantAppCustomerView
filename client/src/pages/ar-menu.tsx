@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import restaurantBackgroundImage from "@assets/generated_images/elegant_italian_restaurant_interior_background.png";
+import premiumMealImage from "@assets/generated_images/Premium_meal_photography_0924ff10.png";
 
 export default function ARMenuPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -11,6 +12,7 @@ export default function ARMenuPage() {
   const cameraRef = useRef<THREE.Camera | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const cubeRef = useRef<THREE.Mesh | null>(null);
+  const menuItemsRef = useRef<THREE.Mesh[]>([]);
 
   useEffect(() => {
     // Request camera permissions first
@@ -50,7 +52,7 @@ export default function ARMenuPage() {
     }
   };
 
-  const initializeARScene = (mediaStream: MediaStream) => {
+  const initializeARScene = async (mediaStream: MediaStream) => {
     if (!containerRef.current) return;
 
     // ===== VIDEO ELEMENT SETUP =====
@@ -161,6 +163,36 @@ export default function ARMenuPage() {
     cubeRef.current = cube;
     scene.add(cube);
 
+    // ===== 3D MENU ITEM FROM 2D IMAGE =====
+    // Convert a 2D food image into a 3D AR object
+    // Create thin box geometry to display the food image with slight depth
+    const menuItemGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.15);
+    
+    // Load the food image and create texture
+    const textureLoader = new THREE.TextureLoader();
+    const foodTexture = await new Promise<THREE.Texture>((resolve) => {
+      textureLoader.load(premiumMealImage, (texture) => {
+        resolve(texture);
+      });
+    });
+    
+    // Create material with the food image
+    const menuItemMaterial = new THREE.MeshPhongMaterial({
+      map: foodTexture,
+      side: THREE.FrontSide,
+      shininess: 50
+    });
+    
+    const menuItem = new THREE.Mesh(menuItemGeometry, menuItemMaterial);
+    menuItem.position.set(-1.2, 0.5, -3); // Position on left side of table
+    menuItem.castShadow = true;
+    menuItem.receiveShadow = true;
+    menuItem.userData.testId = "ar-menu-item-0"; // For testing
+    menuItem.userData.baseY = 0.5; // Store original Y position for floating animation
+    menuItem.userData.floatOffset = 0; // Animation offset
+    scene.add(menuItem);
+    menuItemsRef.current.push(menuItem);
+
     // ===== LIGHTING =====
     // Add ambient light for general illumination
     // This ensures the entire scene is lit without harsh shadows
@@ -187,9 +219,11 @@ export default function ARMenuPage() {
     scene.add(directionalLight);
 
     // ===== ANIMATION LOOP =====
-    // Render loop that updates camera feed and rotates cube
+    // Render loop that updates camera feed, rotates cube, and animates menu items
+    let animationTime = 0;
     const animate = () => {
       requestAnimationFrame(animate);
+      animationTime += 0.016; // ~60fps
 
       // Update video texture from camera feed
       if (ctx && video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -202,6 +236,14 @@ export default function ARMenuPage() {
         cube.rotation.y += 0.005;
         cube.rotation.z += 0.002;
       }
+
+      // Animate menu items with floating motion (subtle up/down)
+      menuItemsRef.current.forEach((item) => {
+        const baseY = item.userData.baseY || 0.5;
+        // Sine wave creates smooth up/down floating motion
+        const floatAmount = Math.sin(animationTime * 1.5) * 0.15; // Amplitude: 0.15m
+        item.position.y = baseY + floatAmount;
+      });
 
       // Render the scene with camera
       renderer.render(scene, camera);
@@ -224,8 +266,9 @@ export default function ARMenuPage() {
     console.log("✓ Camera feed: Active with transparent background");
     console.log("✓ Virtual table surface: Added with wooden texture");
     console.log("✓ Test cube: Positioned on table and rotating");
+    console.log("✓ 3D menu item: Loaded from 2D food image with floating animation");
     console.log("✓ Lighting: Ambient + Directional with shadow mapping");
-    console.log("✓ Shadow casting: Cube casts soft shadows on table");
+    console.log("✓ Shadow casting: Objects cast soft shadows on table");
   };
 
   return (
@@ -302,13 +345,14 @@ export default function ARMenuPage() {
       </div>
 
       <div className="absolute bottom-4 left-4 right-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-blue-500/30 z-40">
-        <div className="font-semibold mb-2 text-sm">AR Scene with Virtual Table</div>
+        <div className="font-semibold mb-2 text-sm">AR Scene with 3D Menu Item</div>
         <div className="text-xs text-gray-300 space-y-1">
           <div>✓ Camera feed visible with transparent AR layer</div>
           <div>✓ Restaurant background visible in transparent areas</div>
           <div>✓ Wooden table surface: Fixed in AR world</div>
-          <div>✓ Blue rotating cube: Positioned on table with shadow</div>
-          <div>✓ Layering: Background → Camera Feed → Table → Objects → UI</div>
+          <div>✓ 3D Menu item: Food image mapped to box geometry with floating animation</div>
+          <div>✓ Blue cube: Test object rotating on table with shadow</div>
+          <div>✓ Depth & realism: Thin box (0.15m) for 3D appearance</div>
         </div>
       </div>
     </div>
