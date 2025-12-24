@@ -102,8 +102,51 @@ export default function ARMenuPage() {
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext("2d");
 
+    // ===== VIRTUAL TABLE SURFACE =====
+    // Create a horizontal plane to simulate a dining table surface
+    // This plane will be fixed in AR space and objects can rest on it
+    const tableGeometry = new THREE.PlaneGeometry(3, 2.5);
+    
+    // Create a canvas texture for realistic wooden table appearance
+    const tableCanvas = document.createElement("canvas");
+    tableCanvas.width = 512;
+    tableCanvas.height = 512;
+    const tableCtx = tableCanvas.getContext("2d");
+    if (tableCtx) {
+      // Create wooden texture pattern
+      tableCtx.fillStyle = "#6B4423"; // Dark brown base
+      tableCtx.fillRect(0, 0, 512, 512);
+      
+      // Add wood grain pattern
+      for (let i = 0; i < 50; i++) {
+        tableCtx.strokeStyle = `rgba(${Math.random() * 50 + 60}, ${Math.random() * 40 + 40}, 20, 0.3)`;
+        tableCtx.lineWidth = Math.random() * 3 + 1;
+        tableCtx.beginPath();
+        tableCtx.moveTo(Math.random() * 512, 0);
+        tableCtx.lineTo(Math.random() * 512, 512);
+        tableCtx.stroke();
+      }
+    }
+    const tableTexture = new THREE.CanvasTexture(tableCanvas);
+    tableTexture.magFilter = THREE.NearestFilter; // Keep texture crisp
+    
+    const tableMaterial = new THREE.MeshPhongMaterial({
+      map: tableTexture,
+      color: 0x8B5A2B, // Wood brown color
+      shininess: 20, // Slight gloss for wood
+      side: THREE.DoubleSide
+    });
+    
+    const table = new THREE.Mesh(tableGeometry, tableMaterial);
+    table.rotation.x = -Math.PI / 2; // Rotate to horizontal (XZ plane)
+    table.position.set(0, -0.3, -3); // Slightly below the cube so it looks like a table
+    table.receiveShadow = true; // Table receives shadows from objects on it
+    table.castShadow = true;
+    table.userData.testId = "ar-table-surface"; // For testing
+    scene.add(table);
+
     // ===== TEST OBJECT: ROTATING CUBE =====
-    // Create a blue cube as test AR object
+    // Create a blue cube as test AR object positioned on the table
     const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const material = new THREE.MeshPhongMaterial({ 
       color: 0x4a90e2,
@@ -111,7 +154,7 @@ export default function ARMenuPage() {
       shininess: 100
     });
     const cube = new THREE.Mesh(geometry, material);
-    cube.position.set(0, 0, -3); // Position in front of camera
+    cube.position.set(0, 0.25, -3); // Position on top of table surface
     cube.castShadow = true;
     cube.receiveShadow = true;
     cube.userData.testId = "ar-test-cube"; // For testing
@@ -120,15 +163,27 @@ export default function ARMenuPage() {
 
     // ===== LIGHTING =====
     // Add ambient light for general illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    // This ensures the entire scene is lit without harsh shadows
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
-    // Add directional light for shadows
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
-    directionalLight.position.set(5, 10, 5);
+    // Add directional light for realistic shadows and depth
+    // Position to create shadows that fall toward the camera for natural look
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    directionalLight.position.set(5, 8, 5);
     directionalLight.castShadow = true;
+    
+    // Configure shadow map for high quality shadows
     directionalLight.shadow.mapSize.width = 2048;
     directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.left = -5;
+    directionalLight.shadow.camera.right = 5;
+    directionalLight.shadow.camera.top = 5;
+    directionalLight.shadow.camera.bottom = -5;
+    directionalLight.shadow.camera.near = 0.1;
+    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.bias = -0.005; // Reduce shadow acne
+    
     scene.add(directionalLight);
 
     // ===== ANIMATION LOOP =====
@@ -167,8 +222,10 @@ export default function ARMenuPage() {
 
     console.log("✓ AR Scene initialized successfully");
     console.log("✓ Camera feed: Active with transparent background");
-    console.log("✓ Test cube: Visible and rotating");
-    console.log("✓ Lighting: Ambient + Directional");
+    console.log("✓ Virtual table surface: Added with wooden texture");
+    console.log("✓ Test cube: Positioned on table and rotating");
+    console.log("✓ Lighting: Ambient + Directional with shadow mapping");
+    console.log("✓ Shadow casting: Cube casts soft shadows on table");
   };
 
   return (
@@ -245,12 +302,13 @@ export default function ARMenuPage() {
       </div>
 
       <div className="absolute bottom-4 left-4 right-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-blue-500/30 z-40">
-        <div className="font-semibold mb-2 text-sm">AR Scene with Background</div>
+        <div className="font-semibold mb-2 text-sm">AR Scene with Virtual Table</div>
         <div className="text-xs text-gray-300 space-y-1">
-          <div>✓ Camera feed visible over transparent AR layer</div>
+          <div>✓ Camera feed visible with transparent AR layer</div>
           <div>✓ Restaurant background visible in transparent areas</div>
-          <div>✓ Blue rotating cube visible (test object in AR space)</div>
-          <div>✓ Layering: Background → Camera Feed + AR Objects → UI</div>
+          <div>✓ Wooden table surface: Fixed in AR world</div>
+          <div>✓ Blue rotating cube: Positioned on table with shadow</div>
+          <div>✓ Layering: Background → Camera Feed → Table → Objects → UI</div>
         </div>
       </div>
     </div>
