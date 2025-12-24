@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import restaurantBackgroundImage from "@assets/generated_images/elegant_italian_restaurant_interior_background.png";
 
 export default function ARMenuPage() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const backgroundRef = useRef<HTMLDivElement>(null);
   const [cameraPermission, setCameraPermission] = useState<string>("requesting");
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -170,8 +172,41 @@ export default function ARMenuPage() {
   };
 
   return (
-    <div className="w-full h-screen bg-black relative overflow-hidden">
-      {/* Camera permission status overlay */}
+    <div className="w-full h-screen relative overflow-hidden">
+      {/* 
+        LAYER 1 - STATIC RESTAURANT BACKGROUND (z-index: 10)
+        - Provides restaurant-themed visual context
+        - Positioned behind AR content
+        - Responsive scaling
+      */}
+      <div
+        ref={backgroundRef}
+        className="absolute inset-0 z-10 bg-cover bg-center"
+        style={{
+          backgroundImage: `url(${restaurantBackgroundImage})`,
+          backgroundAttachment: "fixed", // Creates subtle parallax effect
+        }}
+        data-testid="background-layer"
+      />
+
+      {/* 
+        LAYER 2 - AR CANVAS WITH CAMERA FEED (z-index: 20)
+        - Three.js renderer with transparent background
+        - Camera feed shows through transparent areas
+        - AR objects render on top of camera feed
+        - Positioned above static background but below UI
+      */}
+      <div
+        ref={containerRef}
+        className="absolute inset-0 z-20"
+        data-testid="ar-container"
+      />
+
+      {/* 
+        LAYER 3 - PERMISSION STATUS OVERLAY (z-index: 50)
+        - Only visible when requesting or denied
+        - Blocks interaction until permission resolved
+      */}
       {cameraPermission === "requesting" && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50">
           <div className="text-white text-center">
@@ -194,14 +229,12 @@ export default function ARMenuPage() {
         </div>
       )}
 
-      {/* AR Canvas Container - Renders Three.js with transparent background for camera feed */}
-      <div
-        ref={containerRef}
-        className="w-full h-full"
-        data-testid="ar-container"
-      />
-
-      {/* Status Indicator Overlay */}
+      {/* 
+        LAYER 4 - UI OVERLAYS (z-index: 40)
+        - Status indicator (top-left)
+        - Instructions (bottom)
+        - Always visible and interactive
+      */}
       <div className="absolute top-4 left-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-green-500/30 z-40">
         <div className="text-sm font-semibold">AR Menu - Test Mode</div>
         <div className="text-xs text-gray-300 mt-1">
@@ -211,14 +244,13 @@ export default function ARMenuPage() {
         </div>
       </div>
 
-      {/* Instructions Overlay */}
       <div className="absolute bottom-4 left-4 right-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-blue-500/30 z-40">
-        <div className="font-semibold mb-2 text-sm">AR Scene Status</div>
+        <div className="font-semibold mb-2 text-sm">AR Scene with Background</div>
         <div className="text-xs text-gray-300 space-y-1">
-          <div>✓ Camera feed displayed with transparent background</div>
+          <div>✓ Camera feed visible over transparent AR layer</div>
+          <div>✓ Restaurant background visible in transparent areas</div>
           <div>✓ Blue rotating cube visible (test object in AR space)</div>
-          <div>✓ Lighting system active (ambient + directional)</div>
-          <div>✓ Ready for menu items integration</div>
+          <div>✓ Layering: Background → Camera Feed + AR Objects → UI</div>
         </div>
       </div>
     </div>
