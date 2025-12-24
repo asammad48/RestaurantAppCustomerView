@@ -168,6 +168,10 @@ export default function ARMenuPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   // WebGL support flag for fallback UI
   const [webglSupported] = useState(() => checkWebGLSupport());
+  // Track viewport orientation: portrait or landscape
+  const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
+  // Track if device is mobile
+  const [isMobileDevice] = useState(() => window.innerWidth < 768);
   // Three.js scene, renderer, and camera references
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -217,6 +221,34 @@ export default function ARMenuPage() {
       }, 300);
     }
   }, [activeSection]);
+
+  // ===== ORIENTATION CHANGE HANDLER =====
+  // Detects when device rotates between portrait and landscape
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      // Update landscape state when orientation changes
+      setIsLandscape(window.innerHeight < window.innerWidth);
+      
+      // Update renderer size to match new viewport
+      if (rendererRef.current && cameraRef.current) {
+        const newWidth = window.innerWidth;
+        const newHeight = window.innerHeight;
+        
+        rendererRef.current.setSize(newWidth, newHeight);
+        const camera = cameraRef.current as THREE.PerspectiveCamera;
+        camera.aspect = newWidth / newHeight;
+        camera.updateProjectionMatrix();
+      }
+    };
+
+    window.addEventListener("orientationchange", handleOrientationChange);
+    window.addEventListener("resize", handleOrientationChange);
+
+    return () => {
+      window.removeEventListener("orientationchange", handleOrientationChange);
+      window.removeEventListener("resize", handleOrientationChange);
+    };
+  }, []);
 
   useEffect(() => {
     // Request camera permissions first
@@ -749,59 +781,83 @@ export default function ARMenuPage() {
 
           {/* 
             LAYER 4 - UI OVERLAYS (z-index: 40)
-            - Status indicator (top-left)
-            - Section selector (top-right) with smooth transitions
+            - Status indicator (top-left) - responsive positioning
+            - Section selector (top-right) with smooth transitions - stacks vertically on portrait mobile
             - Selected item info and instructions
-            - Responsive layout for mobile and desktop
+            - Fully responsive layout for portrait/landscape and mobile/desktop
           */}
-          <div className="absolute top-4 left-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-green-500/30 z-40">
-            <div className="text-sm font-semibold">AR Menu - Polished</div>
-            <div className="text-xs text-gray-300 mt-1">
+          
+          {/* Status Indicator - Top Left, scales for mobile */}
+          <div className={`absolute text-white bg-black/70 rounded-lg border border-green-500/30 z-40 ${
+            isLandscape 
+              ? "top-2 left-2 px-3 py-1.5" 
+              : "top-3 left-3 px-4 py-2"
+          }`}>
+            <div className={`font-semibold ${isLandscape ? "text-xs" : "text-sm"}`}>AR Menu</div>
+            <div className={`text-gray-300 mt-0.5 ${isLandscape ? "text-xs" : "text-xs"}`}>
               Camera: <span className={cameraPermission === "granted" ? "text-green-400" : "text-gray-500"}>
-                {cameraPermission === "granted" ? "✓ Active" : "Inactive"}
+                {cameraPermission === "granted" ? "✓" : "✗"}
               </span>
             </div>
           </div>
 
-          {/* Section Selector Buttons - Mobile responsive */}
-          <div className="absolute top-4 right-4 flex gap-2 z-40 flex-wrap justify-end px-4">
+          {/* Section Selector Buttons - Responsive layout based on orientation */}
+          <div className={`absolute flex gap-1 sm:gap-2 z-40 flex-wrap justify-end ${
+            isLandscape
+              ? "top-2 right-2 w-fit"
+              : "top-3 right-3 sm:top-4 sm:right-4 w-fit"
+          }`}>
             {(["recommended", "menu", "deals"] as const).map((section) => (
               <button
                 key={section}
                 onClick={() => setActiveSection(section)}
                 disabled={isTransitioning}
-                className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all ${
+                className={`rounded-lg font-semibold transition-all border-2 ${
                   activeSection === section
-                    ? "bg-green-600 text-white border-2 border-green-400"
-                    : "bg-black/70 text-gray-300 border-2 border-gray-600 hover:border-green-500"
-                } disabled:opacity-50`}
+                    ? "bg-green-600 text-white border-green-400"
+                    : "bg-black/70 text-gray-300 border-gray-600 hover:border-green-500"
+                } disabled:opacity-50 ${
+                  isLandscape
+                    ? "px-2 py-1 text-xs"
+                    : "px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm"
+                }`}
                 data-testid={`button-section-${section}`}
               >
-                {section.charAt(0).toUpperCase() + section.slice(1)}
+                {isMobileDevice ? section.charAt(0).toUpperCase() : section.charAt(0).toUpperCase() + section.slice(1)}
               </button>
             ))}
           </div>
 
-          {/* Selected Item Overlay - Shows item details with smooth animations */}
+          {/* Selected Item Overlay - Shows item details with responsive positioning */}
           {selectedItemData && (
-            <div className="absolute top-20 left-4 right-4 text-white bg-black/80 px-4 py-3 rounded-lg border border-green-500/50 z-40 max-w-sm">
-              <div className="font-semibold text-sm mb-1">{selectedItemData.name}</div>
-              <div className="text-xs text-gray-300 mb-2">Price: {selectedItemData.price}</div>
-              <div className="text-xs text-green-400">
-                ✓ Item selected • Scaling up • Rotating smoothly • Lifting from table
+            <div className={`absolute text-white bg-black/80 rounded-lg border border-green-500/50 z-40 ${
+              isLandscape
+                ? "top-20 left-2 right-2 px-3 py-2 text-xs"
+                : "top-20 left-4 right-4 px-4 py-3 sm:max-w-sm"
+            }`}>
+              <div className={`font-semibold mb-1 ${isLandscape ? "text-xs" : "text-sm"}`}>{selectedItemData.name}</div>
+              <div className={`text-gray-300 mb-1 ${isLandscape ? "text-xs" : "text-xs"}`}>Price: {selectedItemData.price}</div>
+              <div className={`text-green-400 ${isLandscape ? "text-xs" : "text-xs"}`}>
+                ✓ Selected {isLandscape ? "" : "• Scaling • Rotating • Lifting"}
               </div>
             </div>
           )}
 
-          {/* Instructions and Feature List */}
-          <div className="absolute bottom-4 left-4 right-4 text-white bg-black/70 px-4 py-2 rounded-lg border border-blue-500/30 z-40 max-w-md">
-            <div className="font-semibold mb-2 text-sm">AR Menu - Polished Experience</div>
-            <div className="text-xs text-gray-300 space-y-1">
-              <div>✓ Enhanced lighting: Ambient + fill + directional</div>
-              <div>✓ Soft shadows for depth and realism</div>
-              <div>✓ Smooth easing animations for natural motion</div>
-              <div>✓ Click items to select with interactive feedback</div>
-              <div>✓ Three menu sections: Recommended, Menu, Deals</div>
+          {/* Instructions and Feature List - Responsive text size and layout */}
+          <div className={`absolute text-white bg-black/70 rounded-lg border border-blue-500/30 z-40 ${
+            isLandscape
+              ? "bottom-2 left-2 right-2 px-3 py-2"
+              : "bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 sm:max-w-md px-4 py-2"
+          }`}>
+            <div className={`font-semibold mb-1 ${isLandscape ? "text-xs" : "text-sm"}`}>AR Menu</div>
+            <div className={`text-gray-300 space-y-0.5 ${isLandscape ? "text-xs" : "text-xs"}`}>
+              <div>✓ Enhanced lighting & soft shadows</div>
+              {!isLandscape && (
+                <>
+                  <div>✓ Smooth easing animations</div>
+                  <div>✓ Three menu sections</div>
+                </>
+              )}
             </div>
           </div>
         </>
