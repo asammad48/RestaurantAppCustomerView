@@ -991,7 +991,7 @@ export default function RestaurantMenuPage() {
                   <Button
                     onClick={() => {
                       console.debug('🥽 Opening AR Menu');
-                      setLocation(`/ar-restaurant-menu?branchId=${selectedBranch?.branchId}`);
+                      setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`);
                     }}
                     className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2 w-fit"
                     size="sm"
@@ -1021,7 +1021,7 @@ export default function RestaurantMenuPage() {
                   <Button
                     onClick={() => {
                       console.debug('🥽 Opening AR Menu');
-                      setLocation(`/ar-restaurant-menu?branchId=${selectedBranch?.branchId}`);
+                      setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`);
                     }}
                     className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2"
                     size="sm"
