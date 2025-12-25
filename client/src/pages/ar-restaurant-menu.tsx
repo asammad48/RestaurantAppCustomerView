@@ -127,7 +127,10 @@ export default function ARRestaurantMenuPage() {
             ctx.textAlign = 'center';
             ctx.fillText(menuItem.name, 128, 128);
           }
-          resolve(new THREE.CanvasTexture(canvas));
+          const fallbackTexture = new THREE.CanvasTexture(canvas);
+          fallbackTexture.colorSpace = THREE.SRGBColorSpace;
+          fallbackTexture.needsUpdate = true;
+          resolve(fallbackTexture);
           return;
         }
 
@@ -166,7 +169,8 @@ export default function ARRestaurantMenuPage() {
           const texture = new THREE.CanvasTexture(canvas);
           texture.magFilter = THREE.LinearFilter;
           texture.minFilter = THREE.LinearFilter;
-          texture.encoding = THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.needsUpdate = true;
           resolve(texture);
         };
         
@@ -187,10 +191,20 @@ export default function ARRestaurantMenuPage() {
             ctx.font = 'bold 10px Arial';
             ctx.fillText('(Image failed)', 128, 140);
           }
-          resolve(new THREE.CanvasTexture(canvas));
+          const errorTexture = new THREE.CanvasTexture(canvas);
+          errorTexture.colorSpace = THREE.SRGBColorSpace;
+          errorTexture.needsUpdate = true;
+          resolve(errorTexture);
         };
         
         img.src = imageUrl;
+        // Add timeout in case image takes too long to load
+        setTimeout(() => {
+          if (!img.complete) {
+            console.warn(`⏱️ Image load timeout for ${menuItem.name}`);
+            img.onerror?.(new Event('timeout') as any);
+          }
+        }, 5000);
       });
     };
 
