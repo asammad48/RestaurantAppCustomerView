@@ -93,6 +93,64 @@ export default function ARRestaurantMenuPage() {
     setFilteredItems(items);
   }, [selectedCategory, apiMenuData]);
 
+  // Create and render 3D menu items in AR scene
+  useEffect(() => {
+    if (!sceneRef.current || filteredItems.length === 0) return;
+
+    // Remove old items from scene
+    itemsRef.current.forEach((mesh) => {
+      sceneRef.current?.remove(mesh);
+      if (mesh.geometry) mesh.geometry.dispose();
+      if (mesh.material && Array.isArray(mesh.material)) {
+        mesh.material.forEach((mat: THREE.Material) => mat.dispose());
+      } else if (mesh.material) {
+        (mesh.material as THREE.Material).dispose();
+      }
+    });
+    itemsRef.current = [];
+
+    // Create new items
+    const itemsPerRow = 3;
+    const itemWidth = 0.8;
+    const itemHeight = 0.8;
+    const spacing = 0.2;
+    const rowHeight = itemHeight + spacing;
+    const totalWidth = itemsPerRow * itemWidth + (itemsPerRow - 1) * spacing;
+    const startX = -totalWidth / 2 + itemWidth / 2;
+
+    filteredItems.slice(0, 9).forEach((menuItem, index) => {
+      const row = Math.floor(index / itemsPerRow);
+      const col = index % itemsPerRow;
+      
+      // Create a simple box for each menu item
+      const geometry = new THREE.BoxGeometry(itemWidth, itemHeight, 0.2);
+      
+      // Create material with a color based on item
+      const hue = (index % 12) / 12;
+      const material = new THREE.MeshPhongMaterial({
+        color: new THREE.Color().setHSL(hue, 0.7, 0.6),
+        shininess: 100,
+        emissive: new THREE.Color().setHSL(hue, 0.5, 0.3),
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      
+      // Position items in a grid on the table
+      const x = startX + col * (itemWidth + spacing);
+      const z = -3 + row * rowHeight;
+      mesh.position.set(x, 0.5, z);
+      
+      // Store item data on the mesh for click handling
+      (mesh as any).menuItem = menuItem;
+      (mesh as any).itemIndex = index;
+
+      sceneRef.current?.add(mesh);
+      itemsRef.current.push(mesh);
+    });
+  }, [filteredItems, sceneRef]);
+
   // Get unique categories
   const categories = ["all", ...new Set(apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [])];
 
@@ -213,6 +271,27 @@ export default function ARRestaurantMenuPage() {
     table.receiveShadow = true;
     scene.add(table);
 
+    // Handle clicks on menu items
+    const onCanvasClick = (event: MouseEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+      const intersects = raycasterRef.current.intersectObjects(itemsRef.current);
+
+      if (intersects.length > 0) {
+        const clickedMesh = intersects[0].object as any;
+        if (clickedMesh.menuItem) {
+          console.log("📦 Clicked menu item:", clickedMesh.menuItem);
+          setLastAddedItem(clickedMesh.menuItem);
+          setAddToCartModalOpen(true);
+        }
+      }
+    };
+
+    renderer.domElement.addEventListener("click", onCanvasClick);
+
     // Render loop
     let animationTime = 0;
     const animate = () => {
@@ -236,6 +315,10 @@ export default function ARRestaurantMenuPage() {
     animate();
 
     rendererRef.current = renderer;
+
+    return () => {
+      renderer.domElement.removeEventListener("click", onCanvasClick);
+    };
   };
 
   // Handle back navigation
