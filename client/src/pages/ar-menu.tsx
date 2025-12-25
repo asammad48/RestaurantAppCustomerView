@@ -349,6 +349,20 @@ export default function ARMenuPage() {
 
         scene.add(menuItem);
         menuItemsRef.current.push(menuItem);
+
+        // Initial Dimensions Log
+        const box = new THREE.Box3().setFromObject(menuItem);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        console.log(`🆕 Added 3D Item [${data.item.name}]:`, {
+          id: data.item.id,
+          initialDimensions: {
+            width: size.x.toFixed(3),
+            height: size.y.toFixed(3),
+            depth: size.z.toFixed(3)
+          },
+          position: position
+        });
       });
     } catch (error) {
       console.error(`Failed to load menu items for section ${section}:`, error);
@@ -541,8 +555,17 @@ export default function ARMenuPage() {
     const onDocumentClick = (event: MouseEvent) => {
       // Calculate normalized mouse position (-1 to 1)
       const rect = renderer.domElement.getBoundingClientRect();
-      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      mouseRef.current.x = x;
+      mouseRef.current.y = y;
+
+      console.log("🖱️ User Clicked AR Scene:", {
+        screenX: event.clientX,
+        screenY: event.clientY,
+        normalizedX: x.toFixed(3),
+        normalizedY: y.toFixed(3)
+      });
 
       // Update the picking ray with the camera and mouse position
       raycasterRef.current.setFromCamera(mouseRef.current, camera);
@@ -554,12 +577,22 @@ export default function ARMenuPage() {
         const selectedItem = intersects[0].object as THREE.Mesh;
         const itemId = selectedItem.userData.id;
 
+        console.log("📦 3D Item Intersected:", {
+          id: itemId,
+          name: selectedItem.userData.name,
+          price: selectedItem.userData.price,
+          position: selectedItem.position,
+          distance: intersects[0].distance
+        });
+
         // Toggle selection
         if (selectedItemId === itemId) {
+          console.log("🔄 Deselecting Item:", itemId);
           setSelectedItemId(null);
           setSelectedItemData(null);
           selectedItem.userData.isSelected = false;
         } else {
+          console.log("✨ Selecting New Item:", itemId);
           // Deselect previous item if any
           menuItemsRef.current.forEach((item) => {
             item.userData.isSelected = false;
@@ -572,7 +605,27 @@ export default function ARMenuPage() {
             name: selectedItem.userData.name,
             price: selectedItem.userData.price,
           });
+
+          // Log Dimensions
+          const box = new THREE.Box3().setFromObject(selectedItem);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          console.log("📏 Rendered Item Stats:", {
+            name: selectedItem.userData.name,
+            dimensions: {
+              width: size.x.toFixed(3),
+              height: size.y.toFixed(3),
+              depth: size.z.toFixed(3)
+            },
+            scale: {
+              x: selectedItem.scale.x.toFixed(3),
+              y: selectedItem.scale.y.toFixed(3),
+              z: selectedItem.scale.z.toFixed(3)
+            }
+          });
         }
+      } else {
+        console.log("💨 Click missed all items");
       }
     };
 
