@@ -110,7 +110,7 @@ export default function ARRestaurantMenuPage() {
     });
     itemsRef.current = [];
 
-    // Helper function to load image texture with fallback using Image element
+    // Helper function to load image texture using THREE.TextureLoader
     const loadImageTexture = (menuItem: ApiMenuItem): Promise<THREE.Texture> => {
       return new Promise((resolve) => {
         if (!menuItem.picture) {
@@ -137,74 +137,42 @@ export default function ARRestaurantMenuPage() {
         const imageUrl = getImageUrl(menuItem.picture);
         console.log(`📸 Loading image for ${menuItem.name}: ${imageUrl}`);
         
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
+        // Use THREE.TextureLoader to handle CORS properly
+        const textureLoader = new THREE.TextureLoader();
         
-        img.onload = () => {
-          console.log(`✅ Image loaded for ${menuItem.name}, creating texture...`);
-          // Create canvas and draw image properly
-          const canvas = document.createElement('canvas');
-          const width = img.naturalWidth || 512;
-          const height = img.naturalHeight || 512;
-          const size = Math.max(width, height);
-          
-          canvas.width = size;
-          canvas.height = size;
-          const ctx = canvas.getContext('2d');
-          
-          if (ctx) {
-            // Fill background with white
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, size, size);
-            
-            // Calculate position to center the image
-            const x = (size - width) / 2;
-            const y = (size - height) / 2;
-            
-            // Draw image centered on canvas
-            ctx.drawImage(img, x, y, width, height);
-            console.log(`✨ Canvas texture created: ${width}x${height} -> ${size}x${size}`);
+        textureLoader.load(
+          imageUrl,
+          (texture) => {
+            console.log(`✅ Image loaded for ${menuItem.name} using TextureLoader`);
+            texture.magFilter = THREE.LinearFilter;
+            texture.minFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            resolve(texture);
+          },
+          undefined,
+          (error) => {
+            console.error(`❌ Failed to load image for ${menuItem.name} from ${imageUrl}:`, error);
+            // Fallback if image fails to load
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.fillStyle = '#ff6b6b';
+              ctx.fillRect(0, 0, 256, 256);
+              ctx.fillStyle = '#fff';
+              ctx.font = 'bold 14px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText(menuItem.name, 128, 120);
+              ctx.font = 'bold 10px Arial';
+              ctx.fillText('(Image failed)', 128, 140);
+            }
+            const errorTexture = new THREE.CanvasTexture(canvas);
+            errorTexture.colorSpace = THREE.SRGBColorSpace;
+            errorTexture.needsUpdate = true;
+            resolve(errorTexture);
           }
-          
-          const texture = new THREE.CanvasTexture(canvas);
-          texture.magFilter = THREE.LinearFilter;
-          texture.minFilter = THREE.LinearFilter;
-          texture.colorSpace = THREE.SRGBColorSpace;
-          texture.needsUpdate = true;
-          resolve(texture);
-        };
-        
-        img.onerror = (error) => {
-          console.error(`❌ Failed to load image for ${menuItem.name} from ${imageUrl}:`, error);
-          // Fallback if image fails to load
-          const canvas = document.createElement('canvas');
-          canvas.width = 256;
-          canvas.height = 256;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.fillStyle = '#ff6b6b';
-            ctx.fillRect(0, 0, 256, 256);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(menuItem.name, 128, 120);
-            ctx.font = 'bold 10px Arial';
-            ctx.fillText('(Image failed)', 128, 140);
-          }
-          const errorTexture = new THREE.CanvasTexture(canvas);
-          errorTexture.colorSpace = THREE.SRGBColorSpace;
-          errorTexture.needsUpdate = true;
-          resolve(errorTexture);
-        };
-        
-        img.src = imageUrl;
-        // Add timeout in case image takes too long to load
-        setTimeout(() => {
-          if (!img.complete) {
-            console.warn(`⏱️ Image load timeout for ${menuItem.name}`);
-            img.onerror?.(new Event('timeout') as any);
-          }
-        }, 5000);
+        );
       });
     };
 
