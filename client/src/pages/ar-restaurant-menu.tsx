@@ -540,8 +540,8 @@ export default function ARRestaurantMenuPage() {
         </Button>
       </div>
 
-      {/* Category Filter - Beautiful Dropdown */}
-      <div className={`absolute bottom-0 left-0 right-0 z-40 ${
+      {/* Category Filter - Advanced Dropdown with Item Management */}
+      <div className={`absolute bottom-0 left-0 right-0 z-40 max-h-screen flex flex-col ${
         isLandscape ? "p-2" : "p-4"
       }`} style={{background: 'linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.7), transparent)'}}>
         <Collapsible open={categoryExpanded} onOpenChange={setCategoryExpanded}>
@@ -569,13 +569,13 @@ export default function ARRestaurantMenuPage() {
                   <span className="hidden sm:inline">Browse</span> {selectedCategory === "all" ? "All Items" : selectedCategory}
                 </span>
                 <span className={`transition-transform duration-300 ${categoryExpanded ? 'rotate-180' : ''}`}>
-                  <ChevronDown className={`w-5 h-5 ${isLandscape ? '' : ''}`} />
+                  <ChevronDown className={`w-5 h-5`} />
                 </span>
               </span>
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent 
-            className={`mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300`}
+            className={`mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300 max-h-96 overflow-y-auto flex flex-col gap-4`}
             style={{
               background: 'linear-gradient(135deg, rgba(23, 23, 23, 0.98), rgba(31, 31, 31, 0.95))',
               backdropFilter: 'blur(12px)',
@@ -585,72 +585,118 @@ export default function ARRestaurantMenuPage() {
               padding: isLandscape ? '12px' : '16px'
             }}
           >
-            <div className={`grid gap-3 ${
-              isLandscape ? "grid-cols-3" : "grid-cols-2"
-            }`}>
-              {categories.map((cat, idx) => {
-                const count = cat === "all" 
-                  ? filteredItems.length 
-                  : filteredItems.filter(item => item.categoryName === cat).length;
-                const isSelected = selectedCategory === cat;
-                
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => {
-                      setSelectedCategory(cat);
-                      setCategoryExpanded(false);
-                    }}
-                    className={`relative group overflow-hidden rounded-xl transition-all duration-300 transform ${
-                      isLandscape ? "text-xs p-2" : "text-sm p-3"
-                    }`}
-                    style={{
-                      background: isSelected 
-                        ? 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)'
-                        : 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
-                      border: isSelected
-                        ? '1.5px solid rgba(249, 115, 22, 0.6)'
-                        : '1.5px solid rgba(255,255,255,0.15)',
-                      boxShadow: isSelected
-                        ? '0 6px 20px rgba(249, 115, 22, 0.35), inset 0 1px 0 rgba(255,255,255,0.2)'
-                        : '0 4px 12px rgba(0, 0, 0, 0.3)',
-                      color: 'white'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }
-                    }}
-                  >
-                    <div className="relative z-10 capitalize flex flex-col items-start gap-1">
-                      <div className="flex items-center gap-2 w-full">
-                        <span className="text-lg">{cat === "all" ? "🍽️" : "✨"}</span>
-                        <span className="font-semibold flex-1">{cat}</span>
-                        {count > 0 && (
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                            isSelected 
-                              ? 'bg-white/30 text-white'
-                              : 'bg-orange-500/30 text-orange-300'
-                          }`}>
-                            {count}
-                          </span>
-                        )}
+            {/* Categories Grid */}
+            <div>
+              <div className="text-white/60 text-xs font-semibold uppercase mb-2 px-2">Categories</div>
+              <div className={`grid gap-3 ${
+                isLandscape ? "grid-cols-3" : "grid-cols-2"
+              }`}>
+                {categories.map((cat) => {
+                  const count = cat === "all" 
+                    ? filteredItems.length 
+                    : filteredItems.filter(item => item.categoryName === cat).length;
+                  const isSelected = selectedCategory === cat;
+                  
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        setSelectedCategory(cat);
+                        setCategoryExpanded(false);
+                      }}
+                      className={`relative group overflow-hidden rounded-xl transition-all duration-300 transform ${
+                        isLandscape ? "text-xs p-2" : "text-sm p-3"
+                      }`}
+                      style={{
+                        background: isSelected 
+                          ? 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)'
+                          : 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+                        border: isSelected
+                          ? '1.5px solid rgba(249, 115, 22, 0.6)'
+                          : '1.5px solid rgba(255,255,255,0.15)',
+                        boxShadow: isSelected
+                          ? '0 6px 20px rgba(249, 115, 22, 0.35), inset 0 1px 0 rgba(255,255,255,0.2)'
+                          : '0 4px 12px rgba(0, 0, 0, 0.3)',
+                        color: 'white'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }
+                      }}
+                    >
+                      <div className="relative z-10 capitalize flex flex-col items-start gap-1">
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="text-lg">{cat === "all" ? "🍽️" : "✨"}</span>
+                          <span className="font-semibold flex-1">{cat}</span>
+                          {count > 0 && (
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              isSelected 
+                                ? 'bg-white/30 text-white'
+                                : 'bg-orange-500/30 text-orange-300'
+                            }`}>
+                              {count}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/10 rounded-xl" />
-                    )}
-                  </button>
-                );
-              })}
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/10 rounded-xl" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Items List for Selected Category */}
+            {filteredItems.length > 0 && (
+              <div className="border-t border-white/10 pt-3">
+                <div className="text-white/60 text-xs font-semibold uppercase mb-2 px-2 flex items-center gap-2">
+                  <span>📦 Items ({filteredItems.length})</span>
+                </div>
+                <div className="max-h-48 overflow-y-auto space-y-1.5 px-2">
+                  {filteredItems.map((item) => {
+                    const discount = getDiscount(item);
+                    return (
+                      <div 
+                        key={item.itemId} 
+                        className="bg-white/5 hover:bg-white/10 rounded-lg p-2.5 transition-all duration-200 cursor-pointer border border-white/5 hover:border-orange-500/30"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-xs font-medium truncate">{item.name}</p>
+                            {item.description && (
+                              <p className="text-white/50 text-xs truncate mt-0.5">{item.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {discount > 0 && (
+                              <span className="bg-red-500/80 text-white text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap">
+                                -{discount}%
+                              </span>
+                            )}
+                            <span className="font-bold text-orange-400 text-xs whitespace-nowrap">₹{item.price}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredItems.length === 0 && (
+                    <div className="text-white/50 text-xs text-center py-4">
+                      No items in this category
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </CollapsibleContent>
         </Collapsible>
       </div>
