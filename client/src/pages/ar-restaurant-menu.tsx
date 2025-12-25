@@ -51,16 +51,18 @@ export default function ARRestaurantMenuPage() {
     setSelectedRestaurant,
     setLastAddedItem,
     setAddToCartModalOpen,
+    getCartCount,
+    setCartOpen,
   } = useCartStore();
 
-  const [, setLocation] = useLocation();
+  const cartTotalItems = getCartCount();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [filteredItems, setFilteredItems] = useState<ApiMenuItem[]>([]);
-  const [showCart, setShowCart] = useState(false);
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [selectedItemsFor3D, setSelectedItemsFor3D] = useState<ApiMenuItem[]>([]);
   const [detailItem, setDetailItem] = useState<ApiMenuItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -285,7 +287,8 @@ export default function ARRestaurantMenuPage() {
   }, [selectedItemsFor3D]);
 
   // Get unique categories
-  const categories = ["all", ...new Set(apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [])];
+  const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
+  const categories = ["all", ...Array.from(new Set(categoryList))];
 
     // Calculate discount percentage if applicable
   const getDiscount = (item: ApiMenuItem) => {
@@ -673,8 +676,18 @@ export default function ARRestaurantMenuPage() {
           Back
         </Button>
         <h1 className={`text-white font-bold ${isLandscape ? "text-sm" : "text-lg"}`}>AR Menu</h1>
-        <Button onClick={() => setShowCart(true)} variant="ghost" size="sm" className="text-white">
-          <ShoppingCart className="w-4 h-4" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative text-white bg-white/10 backdrop-blur-md rounded-full h-10 w-10 border border-white/20 shadow-xl flex items-center justify-center"
+          onClick={() => setCartOpen(true)}
+        >
+          <ShoppingCart className="h-5 w-5" />
+          {cartTotalItems > 0 && (
+            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center shadow-lg border border-slate-900">
+              {cartTotalItems}
+            </span>
+          )}
         </Button>
       </div>
 
@@ -896,7 +909,7 @@ export default function ARRestaurantMenuPage() {
       )}
 
       {/* Modals */}
-      <CartModal open={showCart} onOpenChange={setShowCart} />
+      <CartModal />
       <AddToCartModal />
       <PaymentModal />
       {detailItem && (
