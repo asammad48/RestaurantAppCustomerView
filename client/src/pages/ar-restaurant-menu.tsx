@@ -5,8 +5,9 @@ import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { ArrowLeft, ShoppingCart, Menu, X } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Menu, X, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import Navbar from "@/components/navbar";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
@@ -55,6 +56,7 @@ export default function ARRestaurantMenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [filteredItems, setFilteredItems] = useState<ApiMenuItem[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [categoryExpanded, setCategoryExpanded] = useState(false);
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -530,23 +532,46 @@ export default function ARRestaurantMenuPage() {
         </Button>
       </div>
 
-      {/* Category Filter */}
-      <div className={`absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/80 to-transparent overflow-x-auto ${
+      {/* Category Filter - Collapsible */}
+      <div className={`absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/80 to-transparent ${
         isLandscape ? "p-2" : "p-4"
       }`}>
-        <div className="flex gap-2 min-w-min">
-          {categories.slice(0, 5).map((cat) => (
+        <Collapsible open={categoryExpanded} onOpenChange={setCategoryExpanded}>
+          <CollapsibleTrigger asChild>
             <Button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              variant={selectedCategory === cat ? "default" : "outline"}
+              variant="default"
               size="sm"
-              className={`${isLandscape ? "text-xs px-2" : "text-sm"}`}
+              className={`w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 ${
+                isLandscape ? "text-xs" : "text-sm"
+              }`}
             >
-              {cat.substring(0, 8)}
+              <span className="flex-1">Add Item to Tables</span>
+              {categoryExpanded ? (
+                <ChevronUp className="w-4 h-4 ml-2" />
+              ) : (
+                <ChevronDown className="w-4 h-4 ml-2" />
+              )}
             </Button>
-          ))}
-        </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <Button
+                  key={cat}
+                  onClick={() => {
+                    setSelectedCategory(cat);
+                    setCategoryExpanded(false);
+                  }}
+                  variant={selectedCategory === cat ? "default" : "outline"}
+                  size="sm"
+                  className={`${isLandscape ? "text-xs px-2" : "text-sm"}`}
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Modals */}
