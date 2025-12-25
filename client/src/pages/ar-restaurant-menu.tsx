@@ -109,6 +109,42 @@ export default function ARRestaurantMenuPage() {
     });
     itemsRef.current = [];
 
+    // Helper function to create canvas texture with item name
+    const createTextTexture = (name: string, hue: number) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return new THREE.CanvasTexture(canvas);
+
+      // Background light color
+      const bgColor = new THREE.Color().setHSL(hue, 0.9, 0.95);
+      ctx.fillStyle = bgColor.getStyle();
+      ctx.fillRect(0, 0, 256, 256);
+
+      // Border darker color
+      const borderColor = new THREE.Color().setHSL(hue, 0.7, 0.5);
+      ctx.strokeStyle = borderColor.getStyle();
+      ctx.lineWidth = 3;
+      ctx.strokeRect(5, 5, 246, 246);
+
+      // Text
+      ctx.font = 'bold 20px Arial';
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const words = name.split(' ');
+      const lineHeight = 30;
+      const startY = 128 - (words.length * lineHeight) / 2;
+      
+      words.forEach((word, i) => {
+        ctx.fillText(word, 128, startY + i * lineHeight);
+      });
+
+      return new THREE.CanvasTexture(canvas);
+    };
+
     // Create new items
     const itemsPerRow = 3;
     const itemWidth = 0.8;
@@ -125,15 +161,24 @@ export default function ARRestaurantMenuPage() {
       // Create a simple box for each menu item
       const geometry = new THREE.BoxGeometry(itemWidth, itemHeight, 0.2);
       
-      // Create material with a color based on item
+      // Create color based on item
       const hue = (index % 12) / 12;
-      const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color().setHSL(hue, 0.7, 0.6),
-        shininess: 100,
-        emissive: new THREE.Color().setHSL(hue, 0.5, 0.3),
-      });
+      const itemColor = new THREE.Color().setHSL(hue, 0.7, 0.6);
+      
+      // Create canvas texture with menu item name
+      const frontTexture = createTextTexture(menuItem.name, hue);
+      
+      // Create array of materials (6 faces)
+      const materials = [
+        new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Right
+        new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Left
+        new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Top
+        new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Bottom
+        new THREE.MeshPhongMaterial({ map: frontTexture, shininess: 100 }), // Front (name)
+        new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Back
+      ];
 
-      const mesh = new THREE.Mesh(geometry, material);
+      const mesh = new THREE.Mesh(geometry, materials);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       
