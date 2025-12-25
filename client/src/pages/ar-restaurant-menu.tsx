@@ -181,6 +181,8 @@ export default function ARRestaurantMenuPage() {
     Promise.all(selectedItemsFor3D.slice(0, 9).map((item) => loadImageTexture(item))).then((textures) => {
       if (!sceneRef.current) return;
       
+      console.log(`🖼️ Rendering ${selectedItemsFor3D.length} items in 3D AR view`);
+      
       selectedItemsFor3D.slice(0, 9).forEach((menuItem, index) => {
         const row = Math.floor(index / itemsPerRow);
         const col = index % itemsPerRow;
@@ -207,6 +209,20 @@ export default function ARRestaurantMenuPage() {
 
         sceneRef.current!.add(mesh);
         itemsRef.current.push(mesh);
+
+        // Log dimensions and position
+        const box = new THREE.Box3().setFromObject(mesh);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        console.log(`📦 3D Item Rendered [${menuItem.name}]:`, {
+          id: menuItem.menuItemId,
+          dimensions: {
+            width: size.x.toFixed(3),
+            height: size.y.toFixed(3),
+            depth: size.z.toFixed(3)
+          },
+          position: { x: x.toFixed(2), y: 0.5, z: z.toFixed(2) }
+        });
       });
     });
   }, [selectedItemsFor3D]);
@@ -342,8 +358,17 @@ export default function ARRestaurantMenuPage() {
     // Handle clicks on menu items
     const onCanvasClick = (event: MouseEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
-      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      mouseRef.current.x = x;
+      mouseRef.current.y = y;
+
+      console.log("🖱️ User Clicked AR Scene:", {
+        screenX: event.clientX,
+        screenY: event.clientY,
+        normalizedX: x.toFixed(3),
+        normalizedY: y.toFixed(3)
+      });
 
       raycasterRef.current.setFromCamera(mouseRef.current, camera);
       const intersects = raycasterRef.current.intersectObjects(itemsRef.current);
@@ -351,10 +376,16 @@ export default function ARRestaurantMenuPage() {
       if (intersects.length > 0) {
         const clickedMesh = intersects[0].object as any;
         if (clickedMesh.menuItem) {
-          console.log("📦 Clicked menu item:", clickedMesh.menuItem);
+          console.log("✨ Item Intersected:", {
+            name: clickedMesh.menuItem.name,
+            id: clickedMesh.menuItem.menuItemId,
+            distance: intersects[0].distance
+          });
           setLastAddedItem(clickedMesh.menuItem);
           setAddToCartModalOpen(true);
         }
+      } else {
+        console.log("💨 Click missed all items");
       }
     };
 
