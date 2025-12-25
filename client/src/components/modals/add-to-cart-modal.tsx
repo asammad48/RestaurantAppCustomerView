@@ -462,9 +462,33 @@ export default function AddToCartModal() {
   return (
     <Dialog open={isAddToCartModalOpen} onOpenChange={setAddToCartModalOpen}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogTitle className="text-center text-xl font-bold">
-          {lastAddedItem && isDeal(lastAddedItem) ? 'Deal Details' : 'Customization'}
-        </DialogTitle>
+        {/* Item Image and Header */}
+        {lastAddedItem && (
+          <div className="space-y-3 -mt-6 -mx-6 mb-4 pb-4 border-b">
+            {(lastAddedItem.picture || 'picture' in lastAddedItem ? lastAddedItem.picture : undefined) && (
+              <div className="w-full h-40 bg-gray-100 rounded-none overflow-hidden">
+                <img
+                  src={lastAddedItem.picture || 'picture' in lastAddedItem ? lastAddedItem.picture : ''}
+                  alt={lastAddedItem.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            <div className="px-6 space-y-2">
+              <DialogTitle className="text-xl font-bold text-left">
+                {lastAddedItem.name}
+              </DialogTitle>
+              {lastAddedItem.description && (
+                <p className="text-sm text-gray-600">
+                  {lastAddedItem.description}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           {lastAddedItem && isDeal(lastAddedItem) && renderDealContent(lastAddedItem)}
