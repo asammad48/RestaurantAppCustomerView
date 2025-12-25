@@ -110,14 +110,11 @@ export default function ARRestaurantMenuPage() {
     });
     itemsRef.current = [];
 
-    const textureLoader = new THREE.TextureLoader();
-
-    // Helper function to load image texture with fallback
+    // Helper function to load image texture with fallback using Image element
     const loadImageTexture = (menuItem: ApiMenuItem): Promise<THREE.Texture> => {
       return new Promise((resolve) => {
         if (!menuItem.picture) {
           console.warn(`🖼️ No picture for ${menuItem.name}, using text fallback`);
-          // Create fallback text texture
           const canvas = document.createElement('canvas');
           canvas.width = 256;
           canvas.height = 256;
@@ -137,37 +134,47 @@ export default function ARRestaurantMenuPage() {
         const imageUrl = getImageUrl(menuItem.picture);
         console.log(`📸 Loading image for ${menuItem.name}: ${imageUrl}`);
         
-        textureLoader.load(
-          imageUrl,
-          (texture) => {
-            console.log(`✅ Successfully loaded texture for ${menuItem.name}`);
-            texture.magFilter = THREE.LinearFilter;
-            texture.minFilter = THREE.LinearMipMapLinearFilter;
-            resolve(texture);
-          },
-          (progress) => {
-            console.log(`📥 Loading progress for ${menuItem.name}: ${Math.round((progress.loaded / progress.total) * 100)}%`);
-          },
-          (error) => {
-            console.error(`❌ Failed to load image for ${menuItem.name}: ${imageUrl}`, error);
-            // Fallback if image fails to load
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.fillStyle = '#ff6b6b';
-              ctx.fillRect(0, 0, 256, 256);
-              ctx.fillStyle = '#fff';
-              ctx.font = 'bold 14px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText(menuItem.name, 128, 120);
-              ctx.font = 'bold 10px Arial';
-              ctx.fillText('(Image failed)', 128, 140);
-            }
-            resolve(new THREE.CanvasTexture(canvas));
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = () => {
+          console.log(`✅ Image loaded for ${menuItem.name}, creating texture...`);
+          // Draw image on canvas and create texture
+          const canvas = document.createElement('canvas');
+          canvas.width = 512;
+          canvas.height = 512;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            // Draw image on canvas
+            ctx.drawImage(img, 0, 0, 512, 512);
           }
-        );
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.magFilter = THREE.LinearFilter;
+          texture.minFilter = THREE.LinearFilter;
+          resolve(texture);
+        };
+        
+        img.onerror = (error) => {
+          console.error(`❌ Failed to load image for ${menuItem.name} from ${imageUrl}:`, error);
+          // Fallback if image fails to load
+          const canvas = document.createElement('canvas');
+          canvas.width = 256;
+          canvas.height = 256;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#ff6b6b';
+            ctx.fillRect(0, 0, 256, 256);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(menuItem.name, 128, 120);
+            ctx.font = 'bold 10px Arial';
+            ctx.fillText('(Image failed)', 128, 140);
+          }
+          resolve(new THREE.CanvasTexture(canvas));
+        };
+        
+        img.src = imageUrl;
       });
     };
 
