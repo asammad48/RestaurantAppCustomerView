@@ -69,6 +69,9 @@ export default function ARRestaurantMenuPage() {
   const deviceOrientationRef = useRef({ beta: 0, gamma: 0 }); // Phone tilt angles
   const scaleRef = useRef(1); // AR item zoom scale
   const lastPinchDistanceRef = useRef(0);
+  const dragItemRef = useRef<THREE.Object3D | null>(null);
+  const dragPlaneRef = useRef<THREE.Plane>(new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.5));
+  const dragOffsetRef = useRef<THREE.Vector3>(new THREE.Vector3());
 
   const getUrlParams = () => new URLSearchParams(window.location.search);
   const getBranchId = () => {
@@ -178,6 +181,26 @@ export default function ARRestaurantMenuPage() {
     const totalWidth = itemsPerRow * itemWidth + (itemsPerRow - 1) * spacing;
     const startX = -totalWidth / 2 + itemWidth / 2;
 
+    const createTextCanvas = (text: string, bgColor: string, fontSize: number = 40): THREE.Texture => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = bgColor;
+        ctx.roundRect(10, 10, 492, 108, 20);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 256, 64);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    };
+
     Promise.all(selectedItemsFor3D.slice(0, 9).map((item) => loadImageTexture(item))).then((textures) => {
       if (!sceneRef.current) return;
       
@@ -207,6 +230,25 @@ export default function ARRestaurantMenuPage() {
         (mesh as any).menuItem = menuItem;
         (mesh as any).itemIndex = index;
 
+        // Add Price Tag
+        const priceTagGeo = new THREE.PlaneGeometry(0.6, 0.15);
+        const priceTexture = createTextCanvas(`₹${getPrice(menuItem)}`, '#f97316');
+        const priceTagMat = new THREE.MeshBasicMaterial({ map: priceTexture, transparent: true, side: THREE.DoubleSide });
+        const priceTag = new THREE.Mesh(priceTagGeo, priceTagMat);
+        priceTag.position.set(0, -0.5, 0.05);
+        mesh.add(priceTag);
+
+        // Add Discount Tag if exists
+        const discount = getDiscount(menuItem);
+        if (discount > 0) {
+          const discTagGeo = new THREE.PlaneGeometry(0.5, 0.15);
+          const discTexture = createTextCanvas(`${discount}% OFF`, '#ef4444', 36);
+          const discTagMat = new THREE.MeshBasicMaterial({ map: discTexture, transparent: true, side: THREE.DoubleSide });
+          const discTag = new THREE.Mesh(discTagGeo, discTagMat);
+          discTag.position.set(0, 0.5, 0.05);
+          mesh.add(discTag);
+        }
+
         sceneRef.current!.add(mesh);
         itemsRef.current.push(mesh);
 
@@ -230,10 +272,22 @@ export default function ARRestaurantMenuPage() {
   // Get unique categories
   const categories = ["all", ...new Set(apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [])];
 
-  // Calculate discount percentage if applicable
+    // Calculate discount percentage if applicable
   const getDiscount = (item: ApiMenuItem) => {
-    if (item.originalPrice && item.price && item.originalPrice > item.price) {
-      return Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100);
+    if (item.discount?.value) {
+      return item.discount.value;
+    }
+    const variations = item.variations || [];
+    const variation = variations[0];
+    if (variation?.discountedPrice && variation?.price && variation.price > variation.discountedPrice) {
+      return Math.round(((variation.price - variation.discountedPrice) / variation.price) * 100);
+    }
+    return 0;
+  };
+
+  const getPrice = (item: ApiMenuItem) => {
+    if (item.variations && item.variations.length > 0) {
+      return item.variations[0].discountedPrice || item.variations[0].price;
     }
     return 0;
   };
@@ -355,44 +409,92 @@ export default function ARRestaurantMenuPage() {
     directionalLight.shadow.mapSize.height = 4096;
     scene.add(directionalLight);
 
-    // Handle clicks on menu items
-    const onCanvasClick = (event: MouseEvent) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    // Handle clicks and drags on menu items
+    const handleStart = (clientX: number, clientY: number) => {
+      if (!rendererRef.current || !cameraRef.current) return;
+      const rect = rendererRef.current.domElement.getBoundingClientRect();
+      const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((clientY - rect.top) / rect.height) * 2 + 1;
       mouseRef.current.x = x;
       mouseRef.current.y = y;
 
-      console.log("🖱️ User Clicked AR Scene:", {
-        screenX: event.clientX,
-        screenY: event.clientY,
-        normalizedX: x.toFixed(3),
-        normalizedY: y.toFixed(3)
-      });
-
-      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
       const intersects = raycasterRef.current.intersectObjects(itemsRef.current);
 
       if (intersects.length > 0) {
         const clickedMesh = intersects[0].object as any;
-        if (clickedMesh.menuItem) {
-          console.log("✨ Item Intersected:", {
-            name: clickedMesh.menuItem.name,
-            id: clickedMesh.menuItem.menuItemId,
-            distance: intersects[0].distance
-          });
-          setLastAddedItem(clickedMesh.menuItem);
-          setAddToCartModalOpen(true);
-        }
-      } else {
-        console.log("💨 Click missed all items");
+        console.log("🖱️ Drag Start / Click:", clickedMesh.menuItem?.name);
+        dragItemRef.current = clickedMesh;
+        
+        // Setup drag offset
+        const intersectPoint = new THREE.Vector3();
+        raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersectPoint);
+        dragOffsetRef.current.copy(clickedMesh.position).sub(intersectPoint);
+        
+        // Set drag timeout to distinguish between click and drag
+        (clickedMesh as any).clickStartTime = Date.now();
       }
     };
 
-    renderer.domElement.addEventListener("click", onCanvasClick);
+    const handleMove = (clientX: number, clientY: number) => {
+      if (!dragItemRef.current || !rendererRef.current || !cameraRef.current) return;
+      const rect = rendererRef.current.domElement.getBoundingClientRect();
+      mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      const intersectPoint = new THREE.Vector3();
+      if (raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersectPoint)) {
+        dragItemRef.current.position.copy(intersectPoint.add(dragOffsetRef.current));
+        // Keep height fixed at table level
+        dragItemRef.current.position.y = 0.5;
+        // Update base positions to prevent drift from orientation updates
+        dragItemRef.current.userData.baseX = dragItemRef.current.position.x;
+        dragItemRef.current.userData.baseZ = dragItemRef.current.position.z;
+      }
+    };
+
+    const handleEnd = () => {
+      if (dragItemRef.current) {
+        const duration = Date.now() - ((dragItemRef.current as any).clickStartTime || 0);
+        if (duration < 200) {
+          // It was a short click, not a long drag
+          const item = (dragItemRef.current as any).menuItem;
+          if (item) {
+            console.log("✨ Item Clicked:", item.name);
+            setLastAddedItem(item);
+            setAddToCartModalOpen(true);
+          }
+        }
+        console.log("🖱️ Drag End");
+        dragItemRef.current = null;
+      }
+    };
+
+    const onMouseDown = (e: MouseEvent) => handleStart(e.clientX, e.clientY);
+    const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
+    const onMouseUp = () => handleEnd();
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) handleStart(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        e.preventDefault();
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+    const onTouchEnd = () => handleEnd();
+
+    renderer.domElement.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    renderer.domElement.addEventListener("touchstart", onTouchStart, { passive: false });
+    renderer.domElement.addEventListener("touchmove", onTouchMove, { passive: false });
+    renderer.domElement.addEventListener("touchend", onTouchEnd);
 
     // Pinch zoom handler
-    const handleTouchMove = (event: TouchEvent) => {
+    const handlePinchMove = (event: TouchEvent) => {
       if (event.touches.length === 2) {
         event.preventDefault();
         
@@ -417,12 +519,12 @@ export default function ARRestaurantMenuPage() {
       }
     };
 
-    const handleTouchEnd = () => {
+    const handlePinchEnd = () => {
       lastPinchDistanceRef.current = 0;
     };
 
-    renderer.domElement.addEventListener("touchmove", handleTouchMove, { passive: false });
-    renderer.domElement.addEventListener("touchend", handleTouchEnd);
+    renderer.domElement.addEventListener("touchmove", handlePinchMove, { passive: false });
+    renderer.domElement.addEventListener("touchend", handlePinchEnd);
 
     // Device orientation listener
     const handleDeviceOrientation = (event: DeviceOrientationEvent) => {
@@ -477,9 +579,14 @@ export default function ARRestaurantMenuPage() {
     rendererRef.current = renderer;
 
     return () => {
-      renderer.domElement.removeEventListener("click", onCanvasClick);
-      renderer.domElement.removeEventListener("touchmove", handleTouchMove);
-      renderer.domElement.removeEventListener("touchend", handleTouchEnd);
+      renderer.domElement.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      renderer.domElement.removeEventListener("touchstart", onTouchStart);
+      renderer.domElement.removeEventListener("touchmove", onTouchMove);
+      renderer.domElement.removeEventListener("touchend", onTouchEnd);
+      renderer.domElement.removeEventListener("touchmove", handlePinchMove);
+      renderer.domElement.removeEventListener("touchend", handlePinchEnd);
       window.removeEventListener('deviceorientation', handleDeviceOrientation);
     };
   };
@@ -589,10 +696,11 @@ export default function ARRestaurantMenuPage() {
               <div className={`grid gap-3 ${
                 isLandscape ? "grid-cols-3" : "grid-cols-2"
               }`}>
-                {categories.map((cat) => {
+                  {categories.map((cat) => {
+                  const categoryItems = apiMenuData?.menuItems?.filter(item => item.categoryName === cat) || [];
                   const count = cat === "all" 
                     ? filteredItems.length 
-                    : filteredItems.filter(item => item.categoryName === cat).length;
+                    : categoryItems.length;
                   const isSelected = selectedCategory === cat;
                   
                   return (
@@ -666,19 +774,19 @@ export default function ARRestaurantMenuPage() {
                     return (
                       <button
                         key={item.itemId}
-                        onClick={() => {
-                          setSelectedItemsFor3D((prevItems) => {
-                            const isSelected = prevItems.some(i => i.menuItemId === item.menuItemId);
-                            if (isSelected) {
-                              console.log(`➖ Removing item from 3D view: ${item.name}`);
-                              return prevItems.filter(i => i.menuItemId !== item.menuItemId);
-                            } else {
-                              console.log(`➕ Adding item to 3D view: ${item.name}`);
-                              return [...prevItems, item];
-                            }
-                          });
-                          setCategoryExpanded(false);
-                        }}
+                          onClick={() => {
+                            setSelectedItemsFor3D((prevItems) => {
+                              const isSelected = prevItems.some(i => i.menuItemId === item.menuItemId);
+                              if (isSelected) {
+                                console.log(`➖ Removing item from 3D view: ${item.name}`);
+                                return prevItems.filter(i => i.menuItemId !== item.menuItemId);
+                              } else {
+                                console.log(`➕ Adding item to 3D view: ${item.name}`);
+                                return [...prevItems, item];
+                              }
+                            });
+                            setCategoryExpanded(false);
+                          }}
                         className="w-full text-left bg-white/5 hover:bg-white/15 rounded-lg p-2.5 transition-all duration-200 cursor-pointer border border-white/5 hover:border-orange-500/50 active:bg-orange-500/20"
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -688,13 +796,13 @@ export default function ARRestaurantMenuPage() {
                               <p className="text-white/50 text-xs truncate mt-0.5">{item.description}</p>
                             )}
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                             {discount > 0 && (
                               <span className="bg-red-500/80 text-white text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap">
                                 -{discount}%
                               </span>
                             )}
-                            <span className="font-bold text-orange-400 text-xs whitespace-nowrap">₹{item.price}</span>
+                            <span className="font-bold text-orange-400 text-xs whitespace-nowrap">₹{getPrice(item)}</span>
                           </div>
                         </div>
                       </button>
@@ -724,15 +832,13 @@ export default function ARRestaurantMenuPage() {
               {filteredItems.slice(0, 5).map((item) => {
                 const discount = getDiscount(item);
                 return (
-                  <div key={item.itemId} className="flex items-center justify-between text-xs text-white/80 hover:text-white transition-colors">
+                    <div key={item.menuItemId} className="flex items-center justify-between text-xs text-white/80 hover:text-white transition-colors">
                     <span className="truncate flex-1">{item.name}</span>
                     <div className="flex items-center gap-2 ml-2">
                       {discount > 0 && (
-                        <span className="bg-red-500/80 text-white text-xs font-bold px-1.5 py-0.5 rounded">
-                          -{discount}%
-                        </span>
+                        <span className="text-red-400 font-bold">-{discount}%</span>
                       )}
-                      <span className="font-bold text-orange-400">₹{item.price}</span>
+                      <span className="text-orange-400 font-bold">₹{getPrice(item)}</span>
                     </div>
                   </div>
                 );
