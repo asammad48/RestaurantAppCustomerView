@@ -540,62 +540,117 @@ export default function ARRestaurantMenuPage() {
         </Button>
       </div>
 
-      {/* Category Filter - Enhanced Dropdown */}
-      <div className={`absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/90 via-black/70 to-transparent ${
+      {/* Category Filter - Beautiful Dropdown */}
+      <div className={`absolute bottom-0 left-0 right-0 z-40 ${
         isLandscape ? "p-2" : "p-4"
-      }`}>
+      }`} style={{background: 'linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.7), transparent)'}}>
         <Collapsible open={categoryExpanded} onOpenChange={setCategoryExpanded}>
           <CollapsibleTrigger asChild>
             <Button
-              variant="default"
-              size="sm"
-              className={`w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white border-0 shadow-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
-                isLandscape ? "text-xs py-2" : "text-sm py-3"
+              className={`w-full relative overflow-hidden group text-white font-bold border-0 shadow-2xl transition-all duration-300 ${
+                isLandscape ? "text-xs py-2 px-3" : "text-base py-4 px-4"
               }`}
+              style={{
+                background: 'linear-gradient(135deg, #f97316 0%, #dc2626 50%, #b91c1c 100%)',
+                boxShadow: '0 10px 30px rgba(249, 115, 22, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 15px 40px rgba(249, 115, 22, 0.5), inset 0 1px 0 rgba(255,255,255,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 10px 30px rgba(249, 115, 22, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)';
+              }}
             >
-              <span className="flex-1 flex items-center gap-2">
-                <span className="text-lg">📋</span>
-                Browse {selectedCategory === "all" ? "All Items" : selectedCategory}
-              </span>
-              <span className="transition-transform duration-300 transform">
-                {categoryExpanded ? (
-                  <ChevronUp className="w-5 h-5 ml-2" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 ml-2" />
-                )}
+              <span className="flex-1 flex items-center gap-3 justify-between">
+                <span className="flex items-center gap-2">
+                  <span className="text-xl animate-bounce">🍽️</span>
+                  <span className="hidden sm:inline">Browse</span> {selectedCategory === "all" ? "All Items" : selectedCategory}
+                </span>
+                <span className={`transition-transform duration-300 ${categoryExpanded ? 'rotate-180' : ''}`}>
+                  <ChevronDown className={`w-5 h-5 ${isLandscape ? '' : ''}`} />
+                </span>
               </span>
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className={`mt-3 space-y-2 max-h-48 overflow-y-auto ${
-            isLandscape ? "grid grid-cols-3 gap-2" : "grid grid-cols-2 gap-2"
-          }`}>
-            {categories.map((cat) => {
-              const count = cat === "all" 
-                ? filteredItems.length 
-                : filteredItems.filter(item => item.categoryName === cat).length;
-              return (
-                <Button
-                  key={cat}
-                  onClick={() => {
-                    setSelectedCategory(cat);
-                    setCategoryExpanded(false);
-                  }}
-                  variant={selectedCategory === cat ? "default" : "outline"}
-                  size="sm"
-                  className={`relative overflow-hidden group transition-all duration-300 transform hover:scale-105 ${
-                    selectedCategory === cat
-                      ? "bg-gradient-to-r from-orange-500 to-red-600 text-white border-0 shadow-md"
-                      : "bg-white/10 text-white border border-white/30 hover:bg-white/20"
-                  } ${isLandscape ? "text-xs px-2 py-1" : "text-sm px-3 py-2"}`}
-                >
-                  <span className="relative z-10 capitalize flex items-center gap-2">
-                    {cat === "all" ? "🍽️" : "✨"}
-                    {cat} 
-                    {count > 0 && <span className="text-xs bg-white/30 rounded-full px-2">({count})</span>}
-                  </span>
-                </Button>
-              );
-            })}
+          <CollapsibleContent 
+            className={`mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300`}
+            style={{
+              background: 'linear-gradient(135deg, rgba(23, 23, 23, 0.98), rgba(31, 31, 31, 0.95))',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '16px',
+              border: '1px solid rgba(249, 115, 22, 0.3)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(249, 115, 22, 0.1)',
+              padding: isLandscape ? '12px' : '16px'
+            }}
+          >
+            <div className={`grid gap-3 ${
+              isLandscape ? "grid-cols-3" : "grid-cols-2"
+            }`}>
+              {categories.map((cat, idx) => {
+                const count = cat === "all" 
+                  ? filteredItems.length 
+                  : filteredItems.filter(item => item.categoryName === cat).length;
+                const isSelected = selectedCategory === cat;
+                
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      setCategoryExpanded(false);
+                    }}
+                    className={`relative group overflow-hidden rounded-xl transition-all duration-300 transform ${
+                      isLandscape ? "text-xs p-2" : "text-sm p-3"
+                    }`}
+                    style={{
+                      background: isSelected 
+                        ? 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)'
+                        : 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+                      border: isSelected
+                        ? '1.5px solid rgba(249, 115, 22, 0.6)'
+                        : '1.5px solid rgba(255,255,255,0.15)',
+                      boxShadow: isSelected
+                        ? '0 6px 20px rgba(249, 115, 22, 0.35), inset 0 1px 0 rgba(255,255,255,0.2)'
+                        : '0 4px 12px rgba(0, 0, 0, 0.3)',
+                      color: 'white'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }
+                    }}
+                  >
+                    <div className="relative z-10 capitalize flex flex-col items-start gap-1">
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="text-lg">{cat === "all" ? "🍽️" : "✨"}</span>
+                        <span className="font-semibold flex-1">{cat}</span>
+                        {count > 0 && (
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            isSelected 
+                              ? 'bg-white/30 text-white'
+                              : 'bg-orange-500/30 text-orange-300'
+                          }`}>
+                            {count}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/10 rounded-xl" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </CollapsibleContent>
         </Collapsible>
       </div>
