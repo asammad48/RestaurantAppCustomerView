@@ -116,6 +116,7 @@ export default function ARRestaurantMenuPage() {
     const loadImageTexture = (menuItem: ApiMenuItem): Promise<THREE.Texture> => {
       return new Promise((resolve) => {
         if (!menuItem.picture) {
+          console.warn(`🖼️ No picture for ${menuItem.name}, using text fallback`);
           // Create fallback text texture
           const canvas = document.createElement('canvas');
           canvas.width = 256;
@@ -134,27 +135,35 @@ export default function ARRestaurantMenuPage() {
         }
 
         const imageUrl = getImageUrl(menuItem.picture);
+        console.log(`📸 Loading image for ${menuItem.name}: ${imageUrl}`);
+        
         textureLoader.load(
           imageUrl,
           (texture) => {
+            console.log(`✅ Successfully loaded texture for ${menuItem.name}`);
             texture.magFilter = THREE.LinearFilter;
             texture.minFilter = THREE.LinearMipMapLinearFilter;
             resolve(texture);
           },
-          undefined,
-          () => {
+          (progress) => {
+            console.log(`📥 Loading progress for ${menuItem.name}: ${Math.round((progress.loaded / progress.total) * 100)}%`);
+          },
+          (error) => {
+            console.error(`❌ Failed to load image for ${menuItem.name}: ${imageUrl}`, error);
             // Fallback if image fails to load
             const canvas = document.createElement('canvas');
             canvas.width = 256;
             canvas.height = 256;
             const ctx = canvas.getContext('2d');
             if (ctx) {
-              ctx.fillStyle = '#ddd';
+              ctx.fillStyle = '#ff6b6b';
               ctx.fillRect(0, 0, 256, 256);
-              ctx.fillStyle = '#666';
-              ctx.font = 'bold 16px Arial';
+              ctx.fillStyle = '#fff';
+              ctx.font = 'bold 14px Arial';
               ctx.textAlign = 'center';
-              ctx.fillText(menuItem.name, 128, 128);
+              ctx.fillText(menuItem.name, 128, 120);
+              ctx.font = 'bold 10px Arial';
+              ctx.fillText('(Image failed)', 128, 140);
             }
             resolve(new THREE.CanvasTexture(canvas));
           }
@@ -172,7 +181,9 @@ export default function ARRestaurantMenuPage() {
     const startX = -totalWidth / 2 + itemWidth / 2;
 
     // Load all textures and create meshes
+    console.log(`🎨 Loading textures for ${filteredItems.length} items`);
     Promise.all(filteredItems.slice(0, 9).map((item) => loadImageTexture(item))).then((textures) => {
+      console.log(`✨ All textures loaded, creating meshes...`);
       filteredItems.slice(0, 9).forEach((menuItem, index) => {
         const row = Math.floor(index / itemsPerRow);
         const col = index % itemsPerRow;
@@ -184,14 +195,17 @@ export default function ARRestaurantMenuPage() {
         const hue = (index % 12) / 12;
         const itemColor = new THREE.Color().setHSL(hue, 0.7, 0.6);
         
-        // Create array of materials (6 faces)
+        // Get the texture for this item
+        const texture = textures[index];
+        
+        // Create array of materials (6 faces) - apply texture to all visible faces
         const materials = [
-          new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Right
-          new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Left
-          new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Top
-          new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Bottom
-          new THREE.MeshPhongMaterial({ map: textures[index], shininess: 100 }), // Front (image)
-          new THREE.MeshPhongMaterial({ color: itemColor, shininess: 100 }), // Back
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Right
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Left
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Top
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Bottom
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Front (image)
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Back
         ];
 
         const mesh = new THREE.Mesh(geometry, materials);
@@ -212,6 +226,7 @@ export default function ARRestaurantMenuPage() {
           itemsRef.current.push(mesh);
         }
       });
+      console.log(`🎯 Created ${filteredItems.slice(0, 9).length} menu item meshes with textures`);
     });
   }, [filteredItems, sceneRef]);
 
