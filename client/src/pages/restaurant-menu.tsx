@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info } from "lucide-react";
+import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info, Glasses } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/navbar";
@@ -986,8 +986,21 @@ export default function RestaurantMenuPage() {
                     </Button>
                   </div>
                 </div>
-                {/* Mobile AI Estimator Button */}
-                <div className="lg:hidden">
+                {/* Mobile Action Buttons */}
+                <div className="flex gap-2 lg:hidden">
+                  <Button
+                    onClick={() => {
+                      console.debug('🥽 Opening AR Menu');
+                      setLocation(`/ar-restaurant-menu?branchId=${selectedBranch?.branchId}`);
+                    }}
+                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2 w-fit"
+                    size="sm"
+                    data-testid="button-ar-menu-mobile"
+                  >
+                    <Glasses className="w-4 h-4" />
+                    <span className="hidden xs:inline">AR Menu</span>
+                    <span className="xs:hidden">AR</span>
+                  </Button>
                   <Button
                     onClick={() => {
                       console.debug('🤖 Opening AI Estimator Modal from restaurant menu');
@@ -1000,6 +1013,22 @@ export default function RestaurantMenuPage() {
                     <Bot className="w-4 h-4" />
                     <span className="hidden xs:inline">AI Estimator</span>
                     <span className="xs:hidden">AI</span>
+                  </Button>
+                </div>
+                
+                {/* Desktop AR Menu Button */}
+                <div className="hidden lg:block">
+                  <Button
+                    onClick={() => {
+                      console.debug('🥽 Opening AR Menu');
+                      setLocation(`/ar-restaurant-menu?branchId=${selectedBranch?.branchId}`);
+                    }}
+                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2"
+                    size="sm"
+                    data-testid="button-ar-menu-desktop"
+                  >
+                    <Glasses className="w-4 h-4" />
+                    AR Menu
                   </Button>
                 </div>
               </div>
