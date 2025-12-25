@@ -100,15 +100,11 @@ export default function ARRestaurantMenuPage() {
     setFilteredItems(items);
   }, [selectedCategory, apiMenuData]);
 
-  // Create and render 3D menu items in AR scene
+  // Create and render 3D menu items in AR scene - trigger only when items change
   useEffect(() => {
-    if (!sceneRef.current) return;
+    if (!sceneRef.current || selectedItemsFor3D.length === 0) return;
 
-    // Only display selected items if any have been added
-    const itemsToDisplay = selectedItemsFor3D.length > 0 ? selectedItemsFor3D : [];
-    if (itemsToDisplay.length === 0) return;
-
-    // Remove old items from scene
+    // Remove old items
     itemsRef.current.forEach((mesh) => {
       sceneRef.current?.remove(mesh);
       if (mesh.geometry) mesh.geometry.dispose();
@@ -120,7 +116,6 @@ export default function ARRestaurantMenuPage() {
     });
     itemsRef.current = [];
 
-    // Helper function to load image texture using THREE.TextureLoader
     const loadImageTexture = (menuItem: ApiMenuItem): Promise<THREE.Texture> => {
       return new Promise((resolve) => {
         if (!menuItem.picture) {
@@ -144,9 +139,7 @@ export default function ARRestaurantMenuPage() {
         }
 
         const imageUrl = getImageUrl(menuItem.picture);
-        const textureLoader = new THREE.TextureLoader();
-        
-        textureLoader.load(
+        new THREE.TextureLoader().load(
           imageUrl,
           (texture) => {
             texture.magFilter = THREE.LinearFilter;
@@ -177,7 +170,6 @@ export default function ARRestaurantMenuPage() {
       });
     };
 
-    // Create items layout
     const itemsPerRow = 3;
     const itemWidth = 0.8;
     const itemHeight = 0.8;
@@ -186,25 +178,19 @@ export default function ARRestaurantMenuPage() {
     const totalWidth = itemsPerRow * itemWidth + (itemsPerRow - 1) * spacing;
     const startX = -totalWidth / 2 + itemWidth / 2;
 
-    // Load all textures and create meshes
-    Promise.all(itemsToDisplay.slice(0, 9).map((item) => loadImageTexture(item))).then((textures) => {
+    Promise.all(selectedItemsFor3D.slice(0, 9).map((item) => loadImageTexture(item))).then((textures) => {
       if (!sceneRef.current) return;
       
-      itemsToDisplay.slice(0, 9).forEach((menuItem, index) => {
+      selectedItemsFor3D.slice(0, 9).forEach((menuItem, index) => {
         const row = Math.floor(index / itemsPerRow);
         const col = index % itemsPerRow;
         
         const geometry = new THREE.BoxGeometry(itemWidth, itemHeight, 0.2);
         const texture = textures[index];
         
-        const materials = [
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
-        ];
+        const materials = Array(6).fill(null).map(() => 
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 })
+        );
 
         const mesh = new THREE.Mesh(geometry, materials);
         mesh.castShadow = true;
@@ -213,14 +199,13 @@ export default function ARRestaurantMenuPage() {
         const x = startX + col * (itemWidth + spacing);
         const z = -3 + row * rowHeight;
         mesh.position.set(x, 0.5, z);
-        
         mesh.userData.baseX = x;
         mesh.userData.baseZ = z;
         
         (mesh as any).menuItem = menuItem;
         (mesh as any).itemIndex = index;
 
-        sceneRef.current.add(mesh);
+        sceneRef.current!.add(mesh);
         itemsRef.current.push(mesh);
       });
     });
@@ -651,11 +636,8 @@ export default function ARRestaurantMenuPage() {
                       <button
                         key={item.itemId}
                         onClick={() => {
-                          // Add item to 3D scene display
                           setSelectedItemsFor3D((prevItems) => {
-                            if (prevItems.find(i => i.itemId === item.itemId)) {
-                              return prevItems; // Skip duplicates
-                            }
+                            if (prevItems.find(i => i.itemId === item.itemId)) return prevItems;
                             return [...prevItems, item];
                           });
                           setCategoryExpanded(false);
