@@ -666,9 +666,14 @@ export default function ARRestaurantMenuPage() {
                   {filteredItems.map((item) => {
                     const discount = getDiscount(item);
                     return (
-                      <div 
-                        key={item.itemId} 
-                        className="bg-white/5 hover:bg-white/10 rounded-lg p-2.5 transition-all duration-200 cursor-pointer border border-white/5 hover:border-orange-500/30"
+                      <button
+                        key={item.itemId}
+                        onClick={() => {
+                          setLastAddedItem(item);
+                          setAddToCartModalOpen(true);
+                          setCategoryExpanded(false);
+                        }}
+                        className="w-full text-left bg-white/5 hover:bg-white/15 rounded-lg p-2.5 transition-all duration-200 cursor-pointer border border-white/5 hover:border-orange-500/50 active:bg-orange-500/20"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
@@ -686,7 +691,7 @@ export default function ARRestaurantMenuPage() {
                             <span className="font-bold text-orange-400 text-xs whitespace-nowrap">₹{item.price}</span>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                   {filteredItems.length === 0 && (
