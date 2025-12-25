@@ -668,8 +668,14 @@ export default function ARRestaurantMenuPage() {
                         key={item.itemId}
                         onClick={() => {
                           setSelectedItemsFor3D((prevItems) => {
-                            if (prevItems.find(i => i.itemId === item.itemId)) return prevItems;
-                            return [...prevItems, item];
+                            const isSelected = prevItems.some(i => i.menuItemId === item.menuItemId);
+                            if (isSelected) {
+                              console.log(`➖ Removing item from 3D view: ${item.name}`);
+                              return prevItems.filter(i => i.menuItemId !== item.menuItemId);
+                            } else {
+                              console.log(`➕ Adding item to 3D view: ${item.name}`);
+                              return [...prevItems, item];
+                            }
                           });
                           setCategoryExpanded(false);
                         }}
