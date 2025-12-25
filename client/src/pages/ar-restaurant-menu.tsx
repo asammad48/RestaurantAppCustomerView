@@ -292,13 +292,23 @@ export default function ARRestaurantMenuPage() {
   const initializeARScene = async (mediaStream: MediaStream) => {
     if (!containerRef.current) return;
 
-    // Create video element
+    // Create and style video element as background
     const video = document.createElement("video");
     videoRef.current = video;
     video.srcObject = mediaStream;
     video.play().catch((err) => console.error("Video play error:", err));
     video.playsInline = true;
     video.autoplay = true;
+    video.muted = true;
+    
+    // Style video as full-screen background
+    video.style.position = "absolute";
+    video.style.top = "0";
+    video.style.left = "0";
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.objectFit = "cover";
+    video.style.zIndex = "10";
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -310,24 +320,27 @@ export default function ARRestaurantMenuPage() {
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     cameraRef.current = camera;
 
-    // Renderer setup
+    // Renderer setup with transparency
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
       preserveDrawingBuffer: false,
     });
     renderer.setSize(width, height);
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000000, 0); // Transparent background
     renderer.shadowMap.enabled = true;
 
+    // Clear container and add video first (behind), then renderer (on top)
     containerRef.current.innerHTML = "";
-    containerRef.current.appendChild(renderer.domElement);
-
-    // Canvas for video texture
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext("2d");
+    containerRef.current.appendChild(video);
+    
+    // Make renderer canvas overlay on top
+    const rendererCanvas = renderer.domElement;
+    rendererCanvas.style.position = "absolute";
+    rendererCanvas.style.top = "0";
+    rendererCanvas.style.left = "0";
+    rendererCanvas.style.zIndex = "20";
+    containerRef.current.appendChild(rendererCanvas);
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
@@ -381,10 +394,6 @@ export default function ARRestaurantMenuPage() {
     const animate = () => {
       requestAnimationFrame(animate);
       animationTime += 0.016;
-
-      if (ctx && video.readyState === video.HAVE_ENOUGH_DATA) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      }
 
       itemsRef.current.forEach((item, index) => {
         const staggeredTime = animationTime + (index * 0.05);
