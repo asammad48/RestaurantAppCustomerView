@@ -247,6 +247,14 @@ export default function ARRestaurantMenuPage() {
   // Get unique categories
   const categories = ["all", ...new Set(apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [])];
 
+  // Calculate discount percentage if applicable
+  const getDiscount = (item: ApiMenuItem) => {
+    if (item.originalPrice && item.price && item.originalPrice > item.price) {
+      return Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100);
+    }
+    return 0;
+  };
+
   // Orientation handling
   useEffect(() => {
     const handleOrientationChange = () => {
@@ -532,8 +540,8 @@ export default function ARRestaurantMenuPage() {
         </Button>
       </div>
 
-      {/* Category Filter - Collapsible */}
-      <div className={`absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/80 to-transparent ${
+      {/* Category Filter - Enhanced Dropdown */}
+      <div className={`absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/90 via-black/70 to-transparent ${
         isLandscape ? "p-2" : "p-4"
       }`}>
         <Collapsible open={categoryExpanded} onOpenChange={setCategoryExpanded}>
@@ -541,21 +549,31 @@ export default function ARRestaurantMenuPage() {
             <Button
               variant="default"
               size="sm"
-              className={`w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 ${
-                isLandscape ? "text-xs" : "text-sm"
+              className={`w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white border-0 shadow-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                isLandscape ? "text-xs py-2" : "text-sm py-3"
               }`}
             >
-              <span className="flex-1">Add Item to Tables</span>
-              {categoryExpanded ? (
-                <ChevronUp className="w-4 h-4 ml-2" />
-              ) : (
-                <ChevronDown className="w-4 h-4 ml-2" />
-              )}
+              <span className="flex-1 flex items-center gap-2">
+                <span className="text-lg">📋</span>
+                Browse {selectedCategory === "all" ? "All Items" : selectedCategory}
+              </span>
+              <span className="transition-transform duration-300 transform">
+                {categoryExpanded ? (
+                  <ChevronUp className="w-5 h-5 ml-2" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 ml-2" />
+                )}
+              </span>
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3">
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
+          <CollapsibleContent className={`mt-3 space-y-2 max-h-48 overflow-y-auto ${
+            isLandscape ? "grid grid-cols-3 gap-2" : "grid grid-cols-2 gap-2"
+          }`}>
+            {categories.map((cat) => {
+              const count = cat === "all" 
+                ? filteredItems.length 
+                : filteredItems.filter(item => item.categoryName === cat).length;
+              return (
                 <Button
                   key={cat}
                   onClick={() => {
@@ -564,15 +582,53 @@ export default function ARRestaurantMenuPage() {
                   }}
                   variant={selectedCategory === cat ? "default" : "outline"}
                   size="sm"
-                  className={`${isLandscape ? "text-xs px-2" : "text-sm"}`}
+                  className={`relative overflow-hidden group transition-all duration-300 transform hover:scale-105 ${
+                    selectedCategory === cat
+                      ? "bg-gradient-to-r from-orange-500 to-red-600 text-white border-0 shadow-md"
+                      : "bg-white/10 text-white border border-white/30 hover:bg-white/20"
+                  } ${isLandscape ? "text-xs px-2 py-1" : "text-sm px-3 py-2"}`}
                 >
-                  {cat}
+                  <span className="relative z-10 capitalize flex items-center gap-2">
+                    {cat === "all" ? "🍽️" : "✨"}
+                    {cat} 
+                    {count > 0 && <span className="text-xs bg-white/30 rounded-full px-2">({count})</span>}
+                  </span>
                 </Button>
-              ))}
-            </div>
+              );
+            })}
           </CollapsibleContent>
         </Collapsible>
       </div>
+
+      {/* Price & Item Info Overlay - Shows on item hover/selection */}
+      {filteredItems.length > 0 && (
+        <div className={`absolute top-20 right-4 z-30 max-w-xs ${isLandscape ? "hidden" : "block"}`}>
+          <div className="bg-white/10 backdrop-blur-md border border-white/30 rounded-lg p-4 shadow-lg">
+            <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+              <span className="text-lg">💰</span>
+              Category Items
+            </h3>
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {filteredItems.slice(0, 5).map((item) => {
+                const discount = getDiscount(item);
+                return (
+                  <div key={item.itemId} className="flex items-center justify-between text-xs text-white/80 hover:text-white transition-colors">
+                    <span className="truncate flex-1">{item.name}</span>
+                    <div className="flex items-center gap-2 ml-2">
+                      {discount > 0 && (
+                        <span className="bg-red-500/80 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                          -{discount}%
+                        </span>
+                      )}
+                      <span className="font-bold text-orange-400">₹{item.price}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <CartModal />
