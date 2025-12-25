@@ -106,7 +106,6 @@ export default function ARRestaurantMenuPage() {
 
     // Only display selected items if any have been added
     const itemsToDisplay = selectedItemsFor3D.length > 0 ? selectedItemsFor3D : [];
-    
     if (itemsToDisplay.length === 0) return;
 
     // Remove old items from scene
@@ -189,6 +188,8 @@ export default function ARRestaurantMenuPage() {
 
     // Load all textures and create meshes
     Promise.all(itemsToDisplay.slice(0, 9).map((item) => loadImageTexture(item))).then((textures) => {
+      if (!sceneRef.current) return;
+      
       itemsToDisplay.slice(0, 9).forEach((menuItem, index) => {
         const row = Math.floor(index / itemsPerRow);
         const col = index % itemsPerRow;
@@ -219,13 +220,11 @@ export default function ARRestaurantMenuPage() {
         (mesh as any).menuItem = menuItem;
         (mesh as any).itemIndex = index;
 
-        if (sceneRef.current) {
-          sceneRef.current.add(mesh);
-          itemsRef.current.push(mesh);
-        }
+        sceneRef.current.add(mesh);
+        itemsRef.current.push(mesh);
       });
     });
-  }, [filteredItems, selectedItemsFor3D, sceneRef]);
+  }, [selectedItemsFor3D]);
 
   // Get unique categories
   const categories = ["all", ...new Set(apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [])];
@@ -652,13 +651,12 @@ export default function ARRestaurantMenuPage() {
                       <button
                         key={item.itemId}
                         onClick={() => {
-                          // Add item to 3D scene
+                          // Add item to 3D scene display
                           setSelectedItemsFor3D((prevItems) => {
-                            // Check if item already exists
                             if (prevItems.find(i => i.itemId === item.itemId)) {
-                              return prevItems; // Don't add duplicate
+                              return prevItems; // Skip duplicates
                             }
-                            return [...prevItems, item]; // Add new item
+                            return [...prevItems, item];
                           });
                           setCategoryExpanded(false);
                         }}
