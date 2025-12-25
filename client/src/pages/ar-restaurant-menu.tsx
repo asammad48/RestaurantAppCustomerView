@@ -63,6 +63,7 @@ export default function ARRestaurantMenuPage() {
   const itemsRef = useRef<THREE.Mesh[]>([]);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const deviceOrientationRef = useRef({ beta: 0, gamma: 0 }); // Phone tilt angles
 
   const getUrlParams = () => new URLSearchParams(window.location.search);
   const getBranchId = () => {
@@ -222,6 +223,10 @@ export default function ARRestaurantMenuPage() {
         const z = -3 + row * rowHeight;
         mesh.position.set(x, 0.5, z);
         
+        // Store base position for device orientation offsetting
+        mesh.userData.baseX = x;
+        mesh.userData.baseZ = z;
+        
         // Store item data on the mesh for click handling
         (mesh as any).menuItem = menuItem;
         (mesh as any).itemIndex = index;
@@ -376,17 +381,46 @@ export default function ARRestaurantMenuPage() {
 
     renderer.domElement.addEventListener("click", onCanvasClick);
 
+    // Device orientation listener
+    const handleDeviceOrientation = (event: DeviceOrientationEvent) => {
+      deviceOrientationRef.current.beta = event.beta || 0;  // Forward/backward tilt (-90 to 90)
+      deviceOrientationRef.current.gamma = event.gamma || 0; // Left/right tilt (-90 to 90)
+      console.log(`📱 Device orientation - Beta: ${deviceOrientationRef.current.beta.toFixed(1)}, Gamma: ${deviceOrientationRef.current.gamma.toFixed(1)}`);
+    };
+
+    // Request permission for iOS 13+
+    if (typeof DeviceOrientationEvent !== 'undefined' && (DeviceOrientationEvent as any).requestPermission) {
+      (DeviceOrientationEvent as any).requestPermission()
+        .then((permission: string) => {
+          if (permission === 'granted') {
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+          }
+        })
+        .catch(console.error);
+    } else {
+      // For non-iOS devices
+      window.addEventListener('deviceorientation', handleDeviceOrientation);
+    }
+
     // Render loop
     let animationTime = 0;
     const animate = () => {
       requestAnimationFrame(animate);
       animationTime += 0.016;
 
+      const { beta, gamma } = deviceOrientationRef.current;
+      // Convert device angles to position offsets (scaled for visual effect)
+      const xOffset = (gamma / 90) * 2;  // Left/right movement
+      const zOffset = (beta / 90) * 1.5; // Forward/backward movement
+
       itemsRef.current.forEach((item, index) => {
-        const staggeredTime = animationTime + (index * 0.05);
-        item.rotation.y += 0.005;
-        const floatAmount = Math.sin(staggeredTime * 1.5) * 0.15;
-        item.position.y = 0.5 + floatAmount;
+        // Apply device orientation to position
+        const baseX = item.userData.baseX || item.position.x;
+        const baseZ = item.userData.baseZ || item.position.z;
+        
+        item.position.x = baseX + xOffset;
+        item.position.z = baseZ + zOffset;
+        item.position.y = 0.5;
       });
 
       renderer.render(scene, camera);
@@ -398,6 +432,7 @@ export default function ARRestaurantMenuPage() {
 
     return () => {
       renderer.domElement.removeEventListener("click", onCanvasClick);
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
     };
   };
 
