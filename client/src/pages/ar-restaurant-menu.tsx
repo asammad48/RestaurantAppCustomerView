@@ -139,18 +139,34 @@ export default function ARRestaurantMenuPage() {
         
         img.onload = () => {
           console.log(`✅ Image loaded for ${menuItem.name}, creating texture...`);
-          // Draw image on canvas and create texture
+          // Create canvas and draw image properly
           const canvas = document.createElement('canvas');
-          canvas.width = 512;
-          canvas.height = 512;
+          const width = img.naturalWidth || 512;
+          const height = img.naturalHeight || 512;
+          const size = Math.max(width, height);
+          
+          canvas.width = size;
+          canvas.height = size;
           const ctx = canvas.getContext('2d');
+          
           if (ctx) {
-            // Draw image on canvas
-            ctx.drawImage(img, 0, 0, 512, 512);
+            // Fill background with white
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Calculate position to center the image
+            const x = (size - width) / 2;
+            const y = (size - height) / 2;
+            
+            // Draw image centered on canvas
+            ctx.drawImage(img, x, y, width, height);
+            console.log(`✨ Canvas texture created: ${width}x${height} -> ${size}x${size}`);
           }
+          
           const texture = new THREE.CanvasTexture(canvas);
           texture.magFilter = THREE.LinearFilter;
           texture.minFilter = THREE.LinearFilter;
+          texture.encoding = THREE.sRGBEncoding;
           resolve(texture);
         };
         
