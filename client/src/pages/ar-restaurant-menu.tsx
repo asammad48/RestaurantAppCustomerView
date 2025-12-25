@@ -57,6 +57,7 @@ export default function ARRestaurantMenuPage() {
   const [filteredItems, setFilteredItems] = useState<ApiMenuItem[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [categoryExpanded, setCategoryExpanded] = useState(false);
+  const [selectedItemsFor3D, setSelectedItemsFor3D] = useState<ApiMenuItem[]>([]);
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -101,7 +102,12 @@ export default function ARRestaurantMenuPage() {
 
   // Create and render 3D menu items in AR scene
   useEffect(() => {
-    if (!sceneRef.current || filteredItems.length === 0) return;
+    if (!sceneRef.current) return;
+
+    // Combine filtered items and selected items for display
+    const itemsToDisplay = selectedItemsFor3D.length > 0 ? selectedItemsFor3D : filteredItems;
+    
+    if (itemsToDisplay.length === 0) return;
 
     // Remove old items from scene
     itemsRef.current.forEach((mesh) => {
@@ -119,15 +125,14 @@ export default function ARRestaurantMenuPage() {
     const loadImageTexture = (menuItem: ApiMenuItem): Promise<THREE.Texture> => {
       return new Promise((resolve) => {
         if (!menuItem.picture) {
-          console.warn(`🖼️ No picture for ${menuItem.name}, using text fallback`);
           const canvas = document.createElement('canvas');
           canvas.width = 256;
           canvas.height = 256;
           const ctx = canvas.getContext('2d');
           if (ctx) {
-            ctx.fillStyle = '#ddd';
+            ctx.fillStyle = '#ff6b6b';
             ctx.fillRect(0, 0, 256, 256);
-            ctx.fillStyle = '#666';
+            ctx.fillStyle = '#fff';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'center';
             ctx.fillText(menuItem.name, 128, 128);
@@ -140,24 +145,18 @@ export default function ARRestaurantMenuPage() {
         }
 
         const imageUrl = getImageUrl(menuItem.picture);
-        console.log(`📸 Loading image for ${menuItem.name}: ${imageUrl}`);
-        
-        // Use THREE.TextureLoader to handle CORS properly
         const textureLoader = new THREE.TextureLoader();
         
         textureLoader.load(
           imageUrl,
           (texture) => {
-            console.log(`✅ Image loaded for ${menuItem.name} using TextureLoader`);
             texture.magFilter = THREE.LinearFilter;
             texture.minFilter = THREE.LinearFilter;
             texture.colorSpace = THREE.SRGBColorSpace;
             resolve(texture);
           },
           undefined,
-          (error) => {
-            console.error(`❌ Failed to load image for ${menuItem.name} from ${imageUrl}:`, error);
-            // Fallback if image fails to load
+          () => {
             const canvas = document.createElement('canvas');
             canvas.width = 256;
             canvas.height = 256;
@@ -169,8 +168,6 @@ export default function ARRestaurantMenuPage() {
               ctx.font = 'bold 14px Arial';
               ctx.textAlign = 'center';
               ctx.fillText(menuItem.name, 128, 120);
-              ctx.font = 'bold 10px Arial';
-              ctx.fillText('(Image failed)', 128, 140);
             }
             const errorTexture = new THREE.CanvasTexture(canvas);
             errorTexture.colorSpace = THREE.SRGBColorSpace;
@@ -181,7 +178,7 @@ export default function ARRestaurantMenuPage() {
       });
     };
 
-    // Create new items
+    // Create items layout
     const itemsPerRow = 3;
     const itemWidth = 0.8;
     const itemHeight = 0.8;
@@ -191,47 +188,34 @@ export default function ARRestaurantMenuPage() {
     const startX = -totalWidth / 2 + itemWidth / 2;
 
     // Load all textures and create meshes
-    console.log(`🎨 Loading textures for ${filteredItems.length} items`);
-    Promise.all(filteredItems.slice(0, 9).map((item) => loadImageTexture(item))).then((textures) => {
-      console.log(`✨ All textures loaded, creating meshes...`);
-      filteredItems.slice(0, 9).forEach((menuItem, index) => {
+    Promise.all(itemsToDisplay.slice(0, 9).map((item) => loadImageTexture(item))).then((textures) => {
+      itemsToDisplay.slice(0, 9).forEach((menuItem, index) => {
         const row = Math.floor(index / itemsPerRow);
         const col = index % itemsPerRow;
         
-        // Create a box for each menu item
         const geometry = new THREE.BoxGeometry(itemWidth, itemHeight, 0.2);
-        
-        // Create color based on item
-        const hue = (index % 12) / 12;
-        const itemColor = new THREE.Color().setHSL(hue, 0.7, 0.6);
-        
-        // Get the texture for this item
         const texture = textures[index];
         
-        // Create array of materials (6 faces) - apply texture to all visible faces
         const materials = [
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Right
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Left
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Top
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Bottom
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Front (image)
-          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }), // Back
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
+          new THREE.MeshPhongMaterial({ map: texture, shininess: 100 }),
         ];
 
         const mesh = new THREE.Mesh(geometry, materials);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         
-        // Position items in a grid on the table
         const x = startX + col * (itemWidth + spacing);
         const z = -3 + row * rowHeight;
         mesh.position.set(x, 0.5, z);
         
-        // Store base position for device orientation offsetting
         mesh.userData.baseX = x;
         mesh.userData.baseZ = z;
         
-        // Store item data on the mesh for click handling
         (mesh as any).menuItem = menuItem;
         (mesh as any).itemIndex = index;
 
@@ -240,9 +224,8 @@ export default function ARRestaurantMenuPage() {
           itemsRef.current.push(mesh);
         }
       });
-      console.log(`🎯 Created ${filteredItems.slice(0, 9).length} menu item meshes with textures`);
     });
-  }, [filteredItems, sceneRef]);
+  }, [filteredItems, selectedItemsFor3D, sceneRef]);
 
   // Get unique categories
   const categories = ["all", ...new Set(apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [])];
@@ -669,8 +652,10 @@ export default function ARRestaurantMenuPage() {
                       <button
                         key={item.itemId}
                         onClick={() => {
-                          setLastAddedItem(item);
-                          setAddToCartModalOpen(true);
+                          // Add item to 3D scene
+                          if (!selectedItemsFor3D.find(i => i.itemId === item.itemId)) {
+                            setSelectedItemsFor3D([...selectedItemsFor3D, item]);
+                          }
                           setCategoryExpanded(false);
                         }}
                         className="w-full text-left bg-white/5 hover:bg-white/15 rounded-lg p-2.5 transition-all duration-200 cursor-pointer border border-white/5 hover:border-orange-500/50 active:bg-orange-500/20"
