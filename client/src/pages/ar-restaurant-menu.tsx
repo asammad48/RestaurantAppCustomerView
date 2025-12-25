@@ -236,10 +236,10 @@ export default function ARRestaurantMenuPage() {
         // Add Price Tag (Hanging)
         const priceTagGroup = new THREE.Group();
         
-        // Hanging String
+        // Hanging String - from bottom edge
         const stringGeo = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(0, 0, 0),
-          new THREE.Vector3(0, -0.2, 0)
+          new THREE.Vector3(0, 0.5, 0), // Start from the bottom edge of the 1x1 plane (0.5 since we scale it later or just relative to center)
+          new THREE.Vector3(0, 0.2, 0)
         ]);
         const stringMat = new THREE.LineBasicMaterial({ color: 0xcccccc });
         const hangingString = new THREE.Line(stringGeo, stringMat);
@@ -249,10 +249,11 @@ export default function ARRestaurantMenuPage() {
         const priceTexture = createTextCanvas(`₹${getPrice(menuItem)}`, '#f97316');
         const priceTagMat = new THREE.MeshBasicMaterial({ map: priceTexture, transparent: true, side: THREE.DoubleSide });
         const priceTag = new THREE.Mesh(priceTagGeo, priceTagMat);
-        priceTag.position.set(0, -0.275, 0.05);
+        priceTag.position.set(0, 0.125, 0.05); // Position relative to group
         priceTagGroup.add(priceTag);
         
-        priceTagGroup.position.set(0.2, -0.4, 0);
+        // Attach group to the bottom edge of the main mesh
+        priceTagGroup.position.set(0.2, -1.0, 0); 
         mesh.add(priceTagGroup);
 
         // Add Discount Tag (Hanging) if exists
@@ -261,8 +262,8 @@ export default function ARRestaurantMenuPage() {
           const discTagGroup = new THREE.Group();
           
           const dStringGeo = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 0.2, 0)
+            new THREE.Vector3(0, -0.5, 0), // Start from top edge relative to center
+            new THREE.Vector3(0, -0.2, 0)
           ]);
           const dHangingString = new THREE.Line(dStringGeo, stringMat);
           discTagGroup.add(dHangingString);
@@ -271,10 +272,11 @@ export default function ARRestaurantMenuPage() {
           const discTexture = createTextCanvas(`${discount}% OFF`, '#ef4444', 36);
           const discTagMat = new THREE.MeshBasicMaterial({ map: discTexture, transparent: true, side: THREE.DoubleSide });
           const discTag = new THREE.Mesh(discTagGeo, discTagMat);
-          discTag.position.set(0, 0.275, 0.05);
+          discTag.position.set(0, -0.125, 0.05);
           discTagGroup.add(discTag);
           
-          discTagGroup.position.set(-0.2, 0.4, 0);
+          // Attach group to the top edge of the main mesh
+          discTagGroup.position.set(-0.2, 1.0, 0);
           mesh.add(discTagGroup);
         }
 
