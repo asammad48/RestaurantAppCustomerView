@@ -355,19 +355,6 @@ export default function ARRestaurantMenuPage() {
     directionalLight.shadow.mapSize.height = 4096;
     scene.add(directionalLight);
 
-    // Table surface
-    const tableGeometry = new THREE.PlaneGeometry(3, 2.5);
-    const tableMaterial = new THREE.MeshPhongMaterial({
-      color: 0x8B5A2B,
-      shininess: 20,
-      side: THREE.DoubleSide,
-    });
-    const table = new THREE.Mesh(tableGeometry, tableMaterial);
-    table.rotation.x = -Math.PI / 2;
-    table.position.set(0, -0.3, -3);
-    table.receiveShadow = true;
-    scene.add(table);
-
     // Handle clicks on menu items
     const onCanvasClick = (event: MouseEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
