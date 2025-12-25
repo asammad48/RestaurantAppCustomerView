@@ -64,6 +64,8 @@ export default function ARRestaurantMenuPage() {
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const deviceOrientationRef = useRef({ beta: 0, gamma: 0 }); // Phone tilt angles
+  const scaleRef = useRef(1); // AR item zoom scale
+  const lastPinchDistanceRef = useRef(0);
 
   const getUrlParams = () => new URLSearchParams(window.location.search);
   const getBranchId = () => {
@@ -381,6 +383,39 @@ export default function ARRestaurantMenuPage() {
 
     renderer.domElement.addEventListener("click", onCanvasClick);
 
+    // Pinch zoom handler
+    const handleTouchMove = (event: TouchEvent) => {
+      if (event.touches.length === 2) {
+        event.preventDefault();
+        
+        // Calculate distance between two fingers
+        const touch1 = event.touches[0];
+        const touch2 = event.touches[1];
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        const currentDistance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (lastPinchDistanceRef.current > 0) {
+          // Calculate scale change
+          const scaleChange = currentDistance / lastPinchDistanceRef.current;
+          scaleRef.current *= scaleChange;
+          
+          // Clamp scale between 0.5 and 3
+          scaleRef.current = Math.max(0.5, Math.min(3, scaleRef.current));
+          console.log(`🔍 Pinch zoom scale: ${scaleRef.current.toFixed(2)}`);
+        }
+        
+        lastPinchDistanceRef.current = currentDistance;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      lastPinchDistanceRef.current = 0;
+    };
+
+    renderer.domElement.addEventListener("touchmove", handleTouchMove, { passive: false });
+    renderer.domElement.addEventListener("touchend", handleTouchEnd);
+
     // Device orientation listener
     const handleDeviceOrientation = (event: DeviceOrientationEvent) => {
       deviceOrientationRef.current.beta = event.beta || 0;  // Forward/backward tilt (-90 to 90)
@@ -421,6 +456,9 @@ export default function ARRestaurantMenuPage() {
         item.position.x = baseX + xOffset;
         item.position.z = baseZ + zOffset;
         item.position.y = 0.5;
+        
+        // Apply pinch zoom scale
+        item.scale.set(scaleRef.current, scaleRef.current, scaleRef.current);
       });
 
       renderer.render(scene, camera);
@@ -432,6 +470,8 @@ export default function ARRestaurantMenuPage() {
 
     return () => {
       renderer.domElement.removeEventListener("click", onCanvasClick);
+      renderer.domElement.removeEventListener("touchmove", handleTouchMove);
+      renderer.domElement.removeEventListener("touchend", handleTouchEnd);
       window.removeEventListener('deviceorientation', handleDeviceOrientation);
     };
   };
