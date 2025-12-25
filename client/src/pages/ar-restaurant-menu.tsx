@@ -233,24 +233,60 @@ export default function ARRestaurantMenuPage() {
         (mesh as any).menuItem = menuItem;
         (mesh as any).itemIndex = index;
 
-        // Add Price Tag
+        // Add Price Tag (Hanging)
+        const priceTagGroup = new THREE.Group();
+        
+        // Hanging String
+        const stringGeo = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, -0.2, 0)
+        ]);
+        const stringMat = new THREE.LineBasicMaterial({ color: 0xcccccc });
+        const hangingString = new THREE.Line(stringGeo, stringMat);
+        priceTagGroup.add(hangingString);
+
         const priceTagGeo = new THREE.PlaneGeometry(0.6, 0.15);
         const priceTexture = createTextCanvas(`₹${getPrice(menuItem)}`, '#f97316');
         const priceTagMat = new THREE.MeshBasicMaterial({ map: priceTexture, transparent: true, side: THREE.DoubleSide });
         const priceTag = new THREE.Mesh(priceTagGeo, priceTagMat);
-        priceTag.position.set(0, -0.5, 0.05);
-        mesh.add(priceTag);
+        priceTag.position.set(0, -0.275, 0.05);
+        priceTagGroup.add(priceTag);
+        
+        priceTagGroup.position.set(0.2, -0.4, 0);
+        mesh.add(priceTagGroup);
 
-        // Add Discount Tag if exists
+        // Add Discount Tag (Hanging) if exists
         const discount = getDiscount(menuItem);
         if (discount > 0) {
+          const discTagGroup = new THREE.Group();
+          
+          const dStringGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 0.2, 0)
+          ]);
+          const dHangingString = new THREE.Line(dStringGeo, stringMat);
+          discTagGroup.add(dHangingString);
+
           const discTagGeo = new THREE.PlaneGeometry(0.5, 0.15);
           const discTexture = createTextCanvas(`${discount}% OFF`, '#ef4444', 36);
           const discTagMat = new THREE.MeshBasicMaterial({ map: discTexture, transparent: true, side: THREE.DoubleSide });
           const discTag = new THREE.Mesh(discTagGeo, discTagMat);
-          discTag.position.set(0, 0.5, 0.05);
-          mesh.add(discTag);
+          discTag.position.set(0, 0.275, 0.05);
+          discTagGroup.add(discTag);
+          
+          discTagGroup.position.set(-0.2, 0.4, 0);
+          mesh.add(discTagGroup);
         }
+
+        // Add 3D "+" Button
+        const plusButtonGeo = new THREE.CircleGeometry(0.12, 32);
+        const plusTexture = createTextCanvas('+', '#22c55e', 80);
+        const plusButtonMat = new THREE.MeshBasicMaterial({ map: plusTexture, transparent: true, side: THREE.DoubleSide });
+        const plusButton = new THREE.Mesh(plusButtonGeo, plusButtonMat);
+        plusButton.position.set(0.35, 0.35, 0.11);
+        plusButton.userData.isPlusButton = true;
+        plusButton.userData.menuItem = menuItem;
+        mesh.add(plusButton);
 
         sceneRef.current!.add(mesh);
         itemsRef.current.push(mesh);
@@ -422,20 +458,38 @@ export default function ARRestaurantMenuPage() {
       mouseRef.current.y = y;
 
       raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-      const intersects = raycasterRef.current.intersectObjects(itemsRef.current);
+      const intersects = raycasterRef.current.intersectObjects(sceneRef.current!.children, true);
 
       if (intersects.length > 0) {
-        const clickedMesh = intersects[0].object as any;
-        console.log("🖱️ Drag Start / Click:", clickedMesh.menuItem?.name);
-        dragItemRef.current = clickedMesh;
+        const intersectedObject = intersects[0].object;
         
-        // Setup drag offset
-        const intersectPoint = new THREE.Vector3();
-        raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersectPoint);
-        dragOffsetRef.current.copy(clickedMesh.position).sub(intersectPoint);
-        
-        // Set drag timeout to distinguish between click and drag
-        (clickedMesh as any).clickStartTime = Date.now();
+        // Check if plus button was clicked
+        if (intersectedObject.userData.isPlusButton) {
+          console.log("➕ 3D Plus Button Clicked:", intersectedObject.userData.menuItem?.name);
+          setDetailItem(intersectedObject.userData.menuItem);
+          setIsDetailModalOpen(true);
+          dragItemRef.current = null; // Don't drag if plus button clicked
+          return;
+        }
+
+        // Fallback to item drag/click logic (search up parents for menu item data)
+        let clickedMesh: any = intersectedObject;
+        while (clickedMesh && !clickedMesh.menuItem && clickedMesh.parent) {
+          clickedMesh = clickedMesh.parent;
+        }
+
+        if (clickedMesh && clickedMesh.menuItem) {
+          console.log("🖱️ Drag Start / Click:", clickedMesh.menuItem?.name);
+          dragItemRef.current = clickedMesh;
+          
+          // Setup drag offset
+          const intersectPoint = new THREE.Vector3();
+          raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersectPoint);
+          dragOffsetRef.current.copy(clickedMesh.position).sub(intersectPoint);
+          
+          // Set drag timeout to distinguish between click and drag
+          (clickedMesh as any).clickStartTime = Date.now();
+        }
       }
     };
 
