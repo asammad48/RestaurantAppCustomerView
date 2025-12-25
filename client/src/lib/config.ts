@@ -27,11 +27,6 @@ const environments: Record<Environment, EnvironmentConfig> = {
 function getCurrentEnvironment(): Environment {
   const env = import.meta.env.VITE_APP_ENV || import.meta.env.MODE || 'development';
   
-  // For Replit, always use development
-  if (import.meta.env.VITE_REPLIT || typeof window !== 'undefined' && window.location.hostname.includes('replit')) {
-    return 'development';
-  }
-  
   // Validate environment
   if (env === 'qa' || env === 'production' || env === 'development') {
     return env;
@@ -140,9 +135,7 @@ export function getProfilePictureUrl(profilePicture: string | null | undefined):
   return profilePicture;
 }
 
-// Console log the current environment for debugging (development only)
-if (currentEnvironment === 'development') {
-  console.log(`🌍 Environment: ${currentEnvironment}`);
-  console.log(`🔗 API Base URL: ${config.apiBaseUrl}`);
-  console.log(`📡 SignalR Hub URL: ${config.signalRHubUrl}`);
-}
+// Console log the current environment for debugging
+console.log(`🌍 Environment: ${currentEnvironment}`);
+console.log(`🔗 API Base URL: ${config.apiBaseUrl}`);
+console.log(`📡 SignalR Hub URL: ${config.signalRHubUrl}`);
