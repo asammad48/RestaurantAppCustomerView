@@ -104,8 +104,8 @@ export default function ARRestaurantMenuPage() {
   useEffect(() => {
     if (!sceneRef.current) return;
 
-    // Combine filtered items and selected items for display
-    const itemsToDisplay = selectedItemsFor3D.length > 0 ? selectedItemsFor3D : filteredItems;
+    // Only display selected items if any have been added
+    const itemsToDisplay = selectedItemsFor3D.length > 0 ? selectedItemsFor3D : [];
     
     if (itemsToDisplay.length === 0) return;
 
@@ -653,9 +653,13 @@ export default function ARRestaurantMenuPage() {
                         key={item.itemId}
                         onClick={() => {
                           // Add item to 3D scene
-                          if (!selectedItemsFor3D.find(i => i.itemId === item.itemId)) {
-                            setSelectedItemsFor3D([...selectedItemsFor3D, item]);
-                          }
+                          setSelectedItemsFor3D((prevItems) => {
+                            // Check if item already exists
+                            if (prevItems.find(i => i.itemId === item.itemId)) {
+                              return prevItems; // Don't add duplicate
+                            }
+                            return [...prevItems, item]; // Add new item
+                          });
                           setCategoryExpanded(false);
                         }}
                         className="w-full text-left bg-white/5 hover:bg-white/15 rounded-lg p-2.5 transition-all duration-200 cursor-pointer border border-white/5 hover:border-orange-500/50 active:bg-orange-500/20"
