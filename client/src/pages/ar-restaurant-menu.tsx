@@ -5,13 +5,14 @@ import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { ArrowLeft, ShoppingCart, Menu, X, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Menu, X, ChevronUp, ChevronDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import Navbar from "@/components/navbar";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
+import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { getImageUrl } from "@/lib/config";
 
 // ===== EASING FUNCTIONS =====
@@ -58,6 +59,8 @@ export default function ARRestaurantMenuPage() {
   const [showCart, setShowCart] = useState(false);
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [selectedItemsFor3D, setSelectedItemsFor3D] = useState<ApiMenuItem[]>([]);
+  const [detailItem, setDetailItem] = useState<ApiMenuItem | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -772,8 +775,12 @@ export default function ARRestaurantMenuPage() {
                   {filteredItems.map((item) => {
                     const discount = getDiscount(item);
                     return (
-                      <button
-                        key={item.itemId}
+                      <div
+                        key={item.menuItemId}
+                        className="w-full flex items-center bg-white/5 hover:bg-white/15 rounded-lg p-2.5 transition-all duration-200 border border-white/5 hover:border-orange-500/50 active:bg-orange-500/20 group"
+                      >
+                        <div 
+                          className="flex-1 min-w-0 cursor-pointer"
                           onClick={() => {
                             setSelectedItemsFor3D((prevItems) => {
                               const isSelected = prevItems.some(i => i.menuItemId === item.menuItemId);
@@ -787,25 +794,35 @@ export default function ARRestaurantMenuPage() {
                             });
                             setCategoryExpanded(false);
                           }}
-                        className="w-full text-left bg-white/5 hover:bg-white/15 rounded-lg p-2.5 transition-all duration-200 cursor-pointer border border-white/5 hover:border-orange-500/50 active:bg-orange-500/20"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white text-xs font-medium truncate">{item.name}</p>
-                            {item.description && (
-                              <p className="text-white/50 text-xs truncate mt-0.5">{item.description}</p>
-                            )}
-                          </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                        >
+                          <p className="text-white text-xs font-medium truncate group-hover:text-orange-300 transition-colors">{item.name}</p>
+                          {item.description && (
+                            <p className="text-white/50 text-xs truncate mt-0.5">{item.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <div className="flex flex-col items-end mr-1">
                             {discount > 0 && (
-                              <span className="bg-red-500/80 text-white text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap">
+                              <span className="bg-red-500/80 text-white text-[10px] font-bold px-1 py-0.5 rounded whitespace-nowrap mb-0.5">
                                 -{discount}%
                               </span>
                             )}
                             <span className="font-bold text-orange-400 text-xs whitespace-nowrap">₹{getPrice(item)}</span>
                           </div>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-8 w-8 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg flex-shrink-0 transition-transform active:scale-95"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDetailItem(item);
+                              setIsDetailModalOpen(true);
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                   {filteredItems.length === 0 && (
@@ -849,9 +866,16 @@ export default function ARRestaurantMenuPage() {
       )}
 
       {/* Modals */}
-      <CartModal />
+      <CartModal open={showCart} onOpenChange={setShowCart} />
       <AddToCartModal />
       <PaymentModal />
+      {detailItem && (
+        <MenuItemDetailModal 
+          item={detailItem}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
