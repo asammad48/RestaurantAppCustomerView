@@ -14,6 +14,7 @@ import PaymentModal from "@/components/modals/payment-modal";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { getImageUrl } from "@/lib/config";
 import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 
 // --- UI Components for 3D Objects ---
 
@@ -196,6 +197,17 @@ export default function ARRestaurantMenuPage() {
           >
             <ambientLight intensity={0.6} />
             <directionalLight position={[5, 5, 5]} />
+            <OrbitControls
+              enablePan={false}
+              enableZoom={true}
+              enableRotate={true}
+              rotateSpeed={0.5}
+              zoomSpeed={0.8}
+              minDistance={3}
+              maxDistance={10}
+              enableDamping={true}
+              dampingFactor={0.1}
+            />
           </Canvas>
 
           {/* Representative 3D Scene with the 3 objects */}
