@@ -3,7 +3,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 import { ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -13,6 +13,7 @@ import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { getImageUrl } from "@/lib/config";
+import { Canvas } from "@react-three/fiber";
 
 // --- UI Components for 3D Objects ---
 
@@ -188,9 +189,17 @@ export default function ARRestaurantMenuPage() {
       
       <div className="flex-1 relative overflow-hidden">
         {/* AR / 3D Scene Area */}
-        <div className="absolute inset-0 z-0 bg-slate-900 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center">
+          <Canvas
+            camera={{ position: [0, 2, 6], fov: 50 }}
+            style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
+          >
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[5, 5, 5]} />
+          </Canvas>
+
           {/* Representative 3D Scene with the 3 objects */}
-          <div className="relative w-full h-full flex items-center justify-around px-10">
+          <div className="relative w-full h-full flex items-center justify-around px-10 pointer-events-none">
             {objects3D.map((obj, index) => {
               const price = getPrice(obj);
               const discount = getDiscount(obj);
