@@ -254,7 +254,7 @@ export default function ARRestaurantMenuPage() {
               minDistance={3}
               maxDistance={15}
               dampingFactor={0.05}
-              autoRotate={!activeObjectId}
+              autoRotate={false}
               autoRotateSpeed={0.5}
               onChange={() => {
                 if (activeObjectId !== null) {
