@@ -61,7 +61,7 @@ interface Product3DProps {
 function Product3D({ model, position, onSelect }: Product3DProps) {
   const ref = useRef<THREE.Group>(null);
   const [rotation, setRotation] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const isDragging = useRef(false);
   const lastPointerX = useRef(0);
 
   useFrame(() => {
@@ -79,20 +79,29 @@ function Product3D({ model, position, onSelect }: Product3DProps) {
         position={position} 
         onPointerDown={(e: any) => {
           e.stopPropagation();
-          setIsDragging(true);
+          isDragging.current = true;
           lastPointerX.current = e.clientX;
           onSelect();
         }}
         onPointerMove={(e: any) => {
-          if (isDragging) {
+          if (isDragging.current) {
             e.stopPropagation();
             const deltaX = e.clientX - lastPointerX.current;
-            setRotation(prev => prev + deltaX * 0.01);
+            // Lower sensitivity slightly for more precise control
+            setRotation(prev => prev + deltaX * 0.007);
             lastPointerX.current = e.clientX;
           }
         }}
-        onPointerUp={() => setIsDragging(false)}
-        onPointerOut={() => setIsDragging(false)}
+        onPointerUp={(e: any) => {
+          if (isDragging.current) {
+            e.stopPropagation();
+            isDragging.current = false;
+          }
+        }}
+        onPointerOut={(e: any) => {
+          e.stopPropagation();
+          isDragging.current = false;
+        }}
       />
     );
   } catch (error) {
