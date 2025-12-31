@@ -28,7 +28,7 @@ function PlusButton({ itemId, setActiveItem, activeItem }: PlusButtonProps) {
     <Button
       size="icon"
       className={`h-6 w-6 rounded-lg border-none transition-all ${
-        isActive ? 'bg-orange-500 hover:bg-orange-600 scale-110' : 'bg-green-500 hover:bg-green-600'
+        isActive ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'
       }`}
       onPointerDown={(e) => {
         e.stopPropagation();
@@ -68,7 +68,7 @@ interface ItemDetailCardProps {
 
 function ItemDetailCard({ item, setActiveItem, onAddToCart }: ItemDetailCardProps) {
   return (
-    <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md rounded-2xl p-3 flex flex-col justify-between border border-white/10 animate-in fade-in zoom-in duration-200">
+    <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md rounded-2xl p-3 flex flex-col justify-between border border-white/10 animate-in fade-in slide-in-from-bottom-2 duration-200">
       <CloseButton setActiveItem={setActiveItem} />
       <div className="overflow-hidden">
         <h2 className="text-sm font-bold leading-tight mb-1 pr-6 truncate">{item.name}</h2>
@@ -241,9 +241,9 @@ export default function ARRestaurantMenuPage() {
           <div className="absolute inset-0 z-0 bg-slate-900 flex flex-col items-center justify-center pointer-events-none">
             {/* Visual indicator of 3D transforms */}
             <div 
-              className="w-48 h-48 bg-orange-500/20 border-2 border-orange-500 rounded-xl flex items-center justify-center transition-transform duration-75"
+              className="w-48 h-48 bg-orange-500/20 border-2 border-orange-500 rounded-xl flex items-center justify-center transition-opacity duration-200"
               style={{ 
-                transform: `rotateY(${rotation}deg) scale(${zoom})`,
+                transform: `rotateY(${rotation}deg) translateZ(${(zoom - 1) * 100}px)`,
                 perspective: "1000px"
               }}
             >
