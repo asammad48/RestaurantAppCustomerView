@@ -72,12 +72,14 @@ const ProductObject = ({
   // Independent rotation in game loop
   useFrame((_state, delta) => {
     if (isSelected && meshRef.current) {
+      console.log(`Rotating Object ID: ${item.menuItemId}, Current Y: ${meshRef.current.rotation.y}`);
       meshRef.current.rotation.y += delta * 0.5;
     }
   });
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation();
+    console.log(`Object Selected: ${item.menuItemId} at position:`, position);
     onSelect();
   };
 
@@ -180,6 +182,7 @@ export default function ARRestaurantMenuPage() {
   };
 
   const handleUpdateScale = (id: number, delta: number) => {
+    console.log(`Updating scale for ID: ${id}, Delta: ${delta}`);
     setScales(prev => ({
       ...prev,
       [id]: Math.min(Math.max(0.5, (prev[id] || 1) + delta), 2.5)
@@ -187,10 +190,13 @@ export default function ARRestaurantMenuPage() {
   };
 
   const selectedPos = useMemo(() => {
-    if (activeObjectId === null) return new THREE.Vector3(0, 0, 0);
-    const index = arItems.findIndex(i => i.menuItemId === activeObjectId);
-    if (index === -1) return new THREE.Vector3(0, 0, 0);
-    return new THREE.Vector3((index - (arItems.length - 1) / 2) * 2.5, 0, 0);
+    const pos = activeObjectId === null ? new THREE.Vector3(0, 0, 0) : (() => {
+      const index = arItems.findIndex(i => i.menuItemId === activeObjectId);
+      if (index === -1) return new THREE.Vector3(0, 0, 0);
+      return new THREE.Vector3((index - (arItems.length - 1) / 2) * 2.5, 0, 0);
+    })();
+    console.log(`Camera Target Pos for ID ${activeObjectId}:`, pos);
+    return pos;
   }, [activeObjectId, arItems]);
 
   return (
