@@ -61,8 +61,9 @@ const ProductObject = ({
   isSelected: boolean; 
   onSelect: () => void;
 }) => {
-  const meshRef = useRef<THREE.Group>(null!);
+  const meshRef = useRef<THREE.Object3D>(null!);
   const [scale, setScale] = useState(1);
+  const [loadError, setLoadError] = useState(false);
   const modelPath = `/models/food_${(item.menuItemId % 3) + 1}.glb`;
   
   // Calculate fixed position in world space
@@ -88,8 +89,17 @@ const ProductObject = ({
     }
   };
 
-  const gltf = useGLTF(modelPath);
-  const clonedScene = useMemo(() => gltf.scene.clone(), [gltf.scene]);
+  let gltf: any;
+  try {
+    gltf = useGLTF(modelPath);
+  } catch (err) {
+    if (!loadError) setLoadError(true);
+  }
+
+  const clonedScene = useMemo(() => {
+    if (gltf?.scene) return gltf.scene.clone();
+    return null;
+  }, [gltf?.scene]);
 
   const price = item.variations?.[0]?.discountedPrice || item.variations?.[0]?.price || 0;
   const discount = item.discount?.value || 0;
@@ -100,11 +110,18 @@ const ProductObject = ({
       onPointerDown={handlePointerDown}
       onWheel={handleWheel}
     >
-      <primitive 
-        ref={meshRef} 
-        object={clonedScene}
-        scale={scale}
-      />
+      {clonedScene ? (
+        <primitive 
+          ref={meshRef} 
+          object={clonedScene}
+          scale={scale}
+        />
+      ) : (
+        <mesh ref={meshRef as any} scale={scale}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={["#ff4d4d", "#4d79ff", "#4dff88"][item.menuItemId % 3]} />
+        </mesh>
+      )}
       
       {/* UI Tags attached to object */}
       <Html position={[0.6, 1.2, 0]} center>
