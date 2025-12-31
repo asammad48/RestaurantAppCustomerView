@@ -54,7 +54,8 @@ const ProductObject = ({
   total,
   isSelected, 
   onSelect,
-  scale: externalScale
+  scale: externalScale,
+  activeObjectId
 }: { 
   item: ApiMenuItem; 
   index: number;
@@ -62,6 +63,7 @@ const ProductObject = ({
   isSelected: boolean; 
   onSelect: () => void;
   scale: number;
+  activeObjectId: number | null;
 }) => {
   const meshRef = useRef<THREE.Object3D>(null!);
   const modelPath = `/models/food_${(item.menuItemId % 3) + 1}.glb`;
@@ -235,6 +237,7 @@ export default function ARRestaurantMenuPage() {
                   isSelected={activeObjectId === item.menuItemId}
                   onSelect={() => setActiveObjectId(activeObjectId === item.menuItemId ? null : item.menuItemId)}
                   scale={scales[item.menuItemId] || 1}
+                  activeObjectId={activeObjectId}
                 />
               ))}
             </Suspense>
