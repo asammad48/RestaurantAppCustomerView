@@ -71,12 +71,15 @@ const ProductObject = ({
   // Calculate fixed position in world space
   const position: [number, number, number] = [(index - (total - 1) / 2) * 2.5, 0, 0];
 
-  // Independent rotation in game loop
+  // Independent rotation in game loop (removed auto-rotation)
   useFrame((_state, delta) => {
+    // Rotation logic removed as per user request
+    /*
     if (isSelected && meshRef.current) {
       console.log(`Rotating Object ID: ${item.menuItemId}, Current Y: ${meshRef.current.rotation.y}`);
       meshRef.current.rotation.y += delta * 0.5;
     }
+    */
   });
 
   const handlePointerDown = (e: any) => {
