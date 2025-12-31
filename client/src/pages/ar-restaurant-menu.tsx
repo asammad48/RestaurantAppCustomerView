@@ -53,17 +53,17 @@ const ProductObject = ({
   index,
   total,
   isSelected, 
-  onSelect 
+  onSelect,
+  scale: externalScale
 }: { 
   item: ApiMenuItem; 
   index: number;
   total: number;
   isSelected: boolean; 
   onSelect: () => void;
+  scale: number;
 }) => {
   const meshRef = useRef<THREE.Object3D>(null!);
-  const [scale, setScale] = useState(1);
-  const [loadError, setLoadError] = useState(false);
   const modelPath = `/models/food_${(item.menuItemId % 3) + 1}.glb`;
   
   // Calculate fixed position in world space
@@ -81,19 +81,11 @@ const ProductObject = ({
     onSelect();
   };
 
-  const handleWheel = (e: any) => {
-    if (isSelected && e.ctrlKey) {
-      e.stopPropagation();
-      const delta = e.deltaY * -0.001;
-      setScale(prev => Math.min(Math.max(0.5, prev + delta), 2.5));
-    }
-  };
-
   let gltf: any;
   try {
     gltf = useGLTF(modelPath);
   } catch (err) {
-    if (!loadError) setLoadError(true);
+    // Fallback handled by gltf check below
   }
 
   const clonedScene = useMemo(() => {
@@ -108,16 +100,15 @@ const ProductObject = ({
     <group 
       position={position} 
       onPointerDown={handlePointerDown}
-      onWheel={handleWheel}
     >
       {clonedScene ? (
         <primitive 
           ref={meshRef} 
           object={clonedScene}
-          scale={scale}
+          scale={externalScale}
         />
       ) : (
-        <mesh ref={meshRef as any} scale={scale}>
+        <mesh ref={meshRef as any} scale={externalScale}>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color={["#ff4d4d", "#4d79ff", "#4dff88"][item.menuItemId % 3]} />
         </mesh>
@@ -137,24 +128,12 @@ const ProductObject = ({
         </div>
       </Html>
 
-      {/* Independent Scale Controls */}
+      {/* Select Highlight */}
       {isSelected && (
-        <Html position={[0, -1.2, 0]} center>
-          <div className="flex gap-2 pointer-events-auto">
-            <button 
-              className="w-10 h-10 rounded-full bg-white shadow-xl flex items-center justify-center text-black text-xl font-bold hover:bg-gray-100 transition-transform active:scale-95"
-              onClick={(e) => { e.stopPropagation(); setScale(s => Math.min(s + 0.2, 2.5)); }}
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-            <button 
-              className="w-10 h-10 rounded-full bg-red-500 shadow-xl flex items-center justify-center text-white text-xl font-bold hover:bg-red-600 transition-transform active:scale-95"
-              onClick={(e) => { e.stopPropagation(); onSelect(); }}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </Html>
+        <mesh position={[0, -0.55, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.8, 1, 32]} />
+          <meshBasicMaterial color="#f97316" transparent opacity={0.5} />
+        </mesh>
       )}
     </group>
   );
@@ -162,8 +141,9 @@ const ProductObject = ({
 
 // --- Main Page Component ---
 export default function ARRestaurantMenuPage() {
-  const [activeObject, setActiveObject] = useState<number | null>(null);
+  const [activeObjectId, setActiveObjectId] = useState<number | null>(null);
   const [arItems, setArItems] = useState<ApiMenuItem[]>([]);
+  const [scales, setScales] = useState<Record<number, number>>({});
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [, setLocation] = useLocation();
 
@@ -190,15 +170,28 @@ export default function ARRestaurantMenuPage() {
       if (prev.find(i => i.menuItemId === item.menuItemId)) return prev;
       return [...prev, item];
     });
+    setScales(prev => ({ ...prev, [item.menuItemId]: 1 }));
     setCategoryExpanded(false);
   };
 
+  const handleRemoveItemFromAR = (id: number) => {
+    setArItems(prev => prev.filter(i => i.menuItemId !== id));
+    if (activeObjectId === id) setActiveObjectId(null);
+  };
+
+  const handleUpdateScale = (id: number, delta: number) => {
+    setScales(prev => ({
+      ...prev,
+      [id]: Math.min(Math.max(0.5, (prev[id] || 1) + delta), 2.5)
+    }));
+  };
+
   const selectedPos = useMemo(() => {
-    if (activeObject === null) return new THREE.Vector3(0, 0, 0);
-    const index = arItems.findIndex(i => i.menuItemId === activeObject);
+    if (activeObjectId === null) return new THREE.Vector3(0, 0, 0);
+    const index = arItems.findIndex(i => i.menuItemId === activeObjectId);
     if (index === -1) return new THREE.Vector3(0, 0, 0);
     return new THREE.Vector3((index - (arItems.length - 1) / 2) * 2.5, 0, 0);
-  }, [activeObject, arItems]);
+  }, [activeObjectId, arItems]);
 
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white">
@@ -214,6 +207,12 @@ export default function ARRestaurantMenuPage() {
             camera={{ position: [0, 2, 8], fov: 50 }}
             style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
             gl={{ alpha: true, antialias: true }}
+            onWheel={(e) => {
+              if (activeObjectId !== null && e.ctrlKey) {
+                e.preventDefault();
+                handleUpdateScale(activeObjectId, e.deltaY * -0.001);
+              }
+            }}
           >
             <ambientLight intensity={0.7} />
             <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
@@ -227,8 +226,9 @@ export default function ARRestaurantMenuPage() {
                   item={item}
                   index={index}
                   total={arItems.length}
-                  isSelected={activeObject === item.menuItemId}
-                  onSelect={() => setActiveObject(activeObject === item.menuItemId ? null : item.menuItemId)}
+                  isSelected={activeObjectId === item.menuItemId}
+                  onSelect={() => setActiveObjectId(activeObjectId === item.menuItemId ? null : item.menuItemId)}
+                  scale={scales[item.menuItemId] || 1}
                 />
               ))}
             </Suspense>
@@ -242,13 +242,30 @@ export default function ARRestaurantMenuPage() {
               minDistance={3}
               maxDistance={15}
               dampingFactor={0.05}
-              autoRotate={!activeObject}
+              autoRotate={!activeObjectId}
               autoRotateSpeed={0.5}
             />
           </Canvas>
 
-          {/* Interaction Instructions */}
-          {!activeObject && arItems.length > 0 && (
+          {/* Scale UI Controls */}
+          {activeObjectId !== null && (
+            <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-auto z-50">
+              <button 
+                className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-lg border border-white/20 flex items-center justify-center text-white hover:bg-white/30 active:scale-90 transition-all shadow-2xl"
+                onClick={() => handleUpdateScale(activeObjectId, 0.2)}
+              >
+                <Plus className="w-6 h-6" />
+              </button>
+              <button 
+                className="w-14 h-14 rounded-full bg-red-500/80 backdrop-blur-lg border border-red-400/20 flex items-center justify-center text-white hover:bg-red-500 active:scale-90 transition-all shadow-2xl"
+                onClick={() => handleRemoveItemFromAR(activeObjectId)}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          )}
+
+          {!activeObjectId && arItems.length > 0 && (
             <div className="absolute bottom-40 text-center px-6 pointer-events-none animate-pulse">
               <p className="text-xs font-bold text-white/60 uppercase tracking-widest">Tap an item to interact</p>
             </div>
