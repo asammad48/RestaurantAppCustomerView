@@ -14,7 +14,39 @@ import PaymentModal from "@/components/modals/payment-modal";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { getImageUrl } from "@/lib/config";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, useGLTF } from "@react-three/drei";
+
+// --- 3D Object Component ---
+
+interface Product3DProps {
+  model: string;
+  position: [number, number, number];
+  onSelect: () => void;
+}
+
+function Product3D({ model, position, onSelect }: Product3DProps) {
+  try {
+    const gltf = useGLTF(model);
+    return (
+      <primitive 
+        object={gltf.scene} 
+        position={position} 
+        onPointerDown={(e: any) => {
+          e.stopPropagation();
+          onSelect();
+        }} 
+      />
+    );
+  } catch (error) {
+    console.error(`Error loading model: ${model}`, error);
+    return (
+      <mesh position={position} onPointerDown={onSelect}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="orange" />
+      </mesh>
+    );
+  }
+}
 
 // --- UI Components for 3D Objects ---
 
@@ -197,6 +229,16 @@ export default function ARRestaurantMenuPage() {
           >
             <ambientLight intensity={0.6} />
             <directionalLight position={[5, 5, 5]} />
+            <Suspense fallback={null}>
+              {objects3D.map((obj, index) => (
+                <Product3D 
+                  key={obj.menuItemId}
+                  model={`/models/food_${index + 1}.glb`} // Placeholder paths
+                  position={[(index - 1) * 2.5, 0, 0]} 
+                  onSelect={() => setActiveObject(obj.menuItemId)} 
+                />
+              ))}
+            </Suspense>
             <OrbitControls
               enablePan={false}
               enableZoom={true}
@@ -219,22 +261,13 @@ export default function ARRestaurantMenuPage() {
               return (
                 <div 
                   key={obj.menuItemId} 
-                  className={`relative w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-white/10 border-2 transition-all duration-500 flex flex-col items-center justify-center p-2 group pointer-events-auto cursor-pointer ${
-                    activeObject === obj.menuItemId ? 'border-orange-500 ring-4 ring-orange-500/20 scale-110' : 'border-white/20 hover:border-white/40'
+                  className={`relative w-24 h-24 sm:w-32 sm:h-32 transition-all duration-500 flex flex-col items-center justify-center p-2 group pointer-events-none ${
+                    activeObject === obj.menuItemId ? 'scale-110' : ''
                   }`}
                   style={{ 
-                    marginTop: index === 1 ? '-40px' : '40px',
-                    perspective: '1000px',
-                    transform: `translateZ(0) rotateX(10deg)`
+                    marginTop: index === 1 ? '-120px' : '80px', // Adjusted to align with 3D space
                   }}
-                  onPointerDown={() => setActiveObject(obj.menuItemId)}
                 >
-                  <img 
-                    src={getImageUrl(obj.picture)} 
-                    alt={obj.name}
-                    className="w-full h-full object-cover rounded-xl shadow-lg"
-                  />
-                  
                   {/* Plus Button */}
                   <PlusButton 
                     objectId={obj.menuItemId} 
@@ -243,7 +276,8 @@ export default function ARRestaurantMenuPage() {
                   />
 
                   {/* Price & Discount Tags (Always Visible) */}
-                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg">
+                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg pointer-events-auto cursor-pointer"
+                       onClick={() => setActiveObject(obj.menuItemId)}>
                     <span className="text-xs font-black">₹{price}</span>
                     {discount > 0 && (
                       <span className="text-[10px] font-bold text-red-400">-{discount}%</span>
