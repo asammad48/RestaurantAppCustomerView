@@ -4,7 +4,7 @@ import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ShoppingCart, Menu, X, ChevronUp, ChevronDown, Plus } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Menu, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import Navbar from "@/components/navbar";
@@ -13,90 +13,6 @@ import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { getImageUrl } from "@/lib/config";
-
-// --- Components ---
-
-interface PlusButtonProps {
-  itemId: number;
-  setActiveItem: (id: number | null) => void;
-  activeItem: number | null;
-}
-
-function PlusButton({ itemId, setActiveItem, activeItem }: PlusButtonProps) {
-  const isActive = activeItem === itemId;
-  return (
-    <Button
-      size="icon"
-      className={`h-6 w-6 rounded-lg border-none transition-all ${
-        isActive ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'
-      }`}
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        setActiveItem(isActive ? null : itemId);
-      }}
-    >
-      <Plus className="h-3 w-3 text-white" />
-    </Button>
-  );
-}
-
-interface CloseButtonProps {
-  setActiveItem: (id: number | null) => void;
-}
-
-function CloseButton({ setActiveItem }: CloseButtonProps) {
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/20 hover:bg-black/40 text-white"
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        setActiveItem(null);
-      }}
-    >
-      <X className="h-3 w-3" />
-    </Button>
-  );
-}
-
-interface ItemDetailCardProps {
-  item: ApiMenuItem;
-  setActiveItem: (id: number | null) => void;
-  onAddToCart: () => void;
-}
-
-function ItemDetailCard({ item, setActiveItem, onAddToCart }: ItemDetailCardProps) {
-  return (
-    <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md rounded-2xl p-3 flex flex-col justify-between border border-white/10 animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <CloseButton setActiveItem={setActiveItem} />
-      <div className="overflow-hidden">
-        <h2 className="text-sm font-bold leading-tight mb-1 pr-6 truncate">{item.name}</h2>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-orange-400 font-bold text-sm">₹{item.variations?.[0]?.discountedPrice || item.variations?.[0]?.price}</span>
-          {(item.discount?.value || 0) > 0 && (
-            <span className="text-[10px] bg-red-500 px-1 rounded font-bold">-{item.discount?.value}%</span>
-          )}
-        </div>
-        <p className="text-[10px] text-white/60 line-clamp-2 leading-tight">
-          {item.description || "Delicious menu item prepared fresh for you."}
-        </p>
-      </div>
-      <Button 
-        size="sm" 
-        className="w-full bg-green-500 hover:bg-green-600 text-xs h-7"
-        onClick={(e) => {
-          e.stopPropagation();
-          onAddToCart();
-        }}
-      >
-        Add to Cart
-      </Button>
-    </div>
-  );
-}
-
-// --- Main Page Component ---
 
 export default function ARRestaurantMenuPage() {
   const [cameraPermission, setCameraPermission] = useState<string>("requesting");
@@ -107,8 +23,6 @@ export default function ARRestaurantMenuPage() {
     selectedBranch,
     getCartCount,
     setCartOpen,
-    setLastAddedItem,
-    setAddToCartModalOpen,
   } = useCartStore();
 
   const cartTotalItems = getCartCount();
@@ -117,7 +31,6 @@ export default function ARRestaurantMenuPage() {
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [detailItem, setDetailItem] = useState<ApiMenuItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<number | null>(null);
   const [, setLocation] = useLocation();
 
   const getUrlParams = () => new URLSearchParams(window.location.search);
@@ -193,7 +106,7 @@ export default function ARRestaurantMenuPage() {
       <div className="flex-1 relative overflow-hidden">
         <div className="absolute inset-0 z-0 bg-slate-900 flex flex-col items-center justify-center">
           <p className="text-sm font-medium text-white/60">AR Placeholder View</p>
-          <p className="text-[10px] text-white/40 mt-1">Interactive menu system active</p>
+          <p className="text-[10px] text-white/40 mt-1">Camera active: {cameraPermission}</p>
         </div>
 
         <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
@@ -268,26 +181,13 @@ export default function ARRestaurantMenuPage() {
             {filteredItems.map((item) => (
               <div 
                 key={item.menuItemId}
-                className="relative flex-shrink-0 w-32 bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-2 flex flex-col items-center gap-2 group transition-all"
+                className="relative flex-shrink-0 w-32 bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-2 flex flex-col items-center gap-2 group transition-all cursor-pointer"
+                onClick={() => {
+                  setDetailItem(item);
+                  setIsDetailModalOpen(true);
+                }}
               >
-                {activeItem === item.menuItemId && (
-                  <ItemDetailCard 
-                    item={item} 
-                    setActiveItem={setActiveItem} 
-                    onAddToCart={() => {
-                      setLastAddedItem(item);
-                      setAddToCartModalOpen(true);
-                    }}
-                  />
-                )}
-
-                <div 
-                  className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-800 cursor-pointer"
-                  onClick={() => {
-                    setDetailItem(item);
-                    setIsDetailModalOpen(true);
-                  }}
-                >
+                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-800">
                   <img 
                     src={getImageUrl(item.picture)} 
                     alt={item.name}
@@ -303,12 +203,6 @@ export default function ARRestaurantMenuPage() {
                   <p className="text-[10px] font-bold truncate mb-1">{item.name}</p>
                   <p className="text-[10px] font-bold text-orange-400">₹{getPrice(item)}</p>
                 </div>
-                
-                <PlusButton 
-                  itemId={item.menuItemId} 
-                  activeItem={activeItem} 
-                  setActiveItem={setActiveItem} 
-                />
               </div>
             ))}
           </div>
