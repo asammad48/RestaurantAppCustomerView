@@ -1,0 +1,170 @@
+You are working on an existing React project created by Replit.  
+
+TASK: Implement UI features for **three objects rendered as 3D models** in the scene. Each object should have a **Plus (+) button, Close (❌) button, Price & Discount tags, and multi-object management**. The UI must be mobile-friendly and touch-optimized.
+
+==================================================
+1) IDENTIFY THE 3D OBJECTS
+==================================================
+- There are **three 3D models** rendered in the scene
+- Each 3D model is represented by a unique `id` or reference
+- You need to attach the UI elements directly to these objects
+
+==================================================
+2) ACTIVE OBJECT STATE
+==================================================
+- Only **one object** can have its detail card open at a time
+- Use a state variable to track the currently active object
+
+```jsx
+const [activeObject, setActiveObject] = useState(null);
+````
+
+==================================================
+3) PLUS (+) BUTTON
+==================
+
+* Displayed near or overlayed on each 3D object
+* Clicking/tapping opens the detail card for that object
+* Only one object can have an active card at a time
+
+```jsx
+function PlusButton({ objectId, activeObject, setActiveObject }) {
+  const isActive = activeObject === objectId;
+  return (
+    <button
+      className={`plus-button ${isActive ? 'active' : ''}`}
+      onPointerDown={() => setActiveObject(objectId)}
+    >
+      +
+    </button>
+  );
+}
+```
+
+**Logic:**
+
+```
+if (activeObject === objectId) -> keep card open
+else -> setActiveObject = objectId
+```
+
+==================================================
+4) CLOSE (❌) BUTTON
+===================
+
+* Closes the active detail card
+* Resets `activeObject` to null
+
+```jsx
+function CloseButton({ setActiveObject }) {
+  return (
+    <button
+      className="close-button"
+      onPointerDown={() => setActiveObject(null)}
+    >
+      ❌
+    </button>
+  );
+}
+```
+
+==================================================
+5) OBJECT DETAIL CARD
+=====================
+
+* Shows object name, price, discount
+* Includes Close button
+
+```jsx
+function ObjectDetailCard({ object, setActiveObject }) {
+  return (
+    <div className="object-card">
+      <h2>{object.name}</h2>
+      <div className="price-section">
+        <span className="price-tag">${object.price}</span>
+        {object.discount > 0 && (
+          <span className="discount-tag">-{object.discount}%</span>
+        )}
+      </div>
+      <CloseButton setActiveObject={setActiveObject} />
+    </div>
+  );
+}
+```
+
+==================================================
+6) RENDER UI FOR ALL THREE 3D OBJECTS
+=====================================
+
+```jsx
+{objects3D.map(obj => (
+  <div key={obj.id} className="object-container">
+    <PlusButton
+      objectId={obj.id}
+      activeObject={activeObject}
+      setActiveObject={setActiveObject}
+    />
+    <div className="price-section">
+      <span className="price-tag">${obj.price}</span>
+      {obj.discount > 0 && (
+        <span className="discount-tag">-{obj.discount}%</span>
+      )}
+    </div>
+    {activeObject === obj.id && (
+      <ObjectDetailCard object={obj} setActiveObject={setActiveObject} />
+    )}
+  </div>
+))}
+```
+
+**Logic Summary:**
+
+* `activeObject` tracks the currently active 3D model
+* Plus button opens the card for that object
+* Close button closes it
+* Only one detail card active at a time
+* Price/discount tags always visible
+
+==================================================
+7) MOBILE-FRIENDLY UX
+=====================
+
+* Use `onPointerDown` for touch events
+* Buttons should have sufficient padding
+* Text and icons must be crisp and readable on small screens
+
+```css
+button {
+  font-size: 16px;
+  padding: 12px 16px;
+  touch-action: manipulation;
+}
+.object-card {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: white;
+  padding: 16px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+}
+.price-tag {
+  font-weight: bold;
+}
+.discount-tag {
+  color: red;
+  margin-left: 8px;
+}
+```
+
+==================================================
+EXPECTED RESULT
+===============
+
+* Three 3D objects have Plus (+) buttons and Price/Discount tags
+* Tapping Plus opens that object’s detail card
+* Tapping Close closes the card
+* Only **one card active at a time**
+* Mobile-friendly, touch-optimized, and crisp UI
+
+```
