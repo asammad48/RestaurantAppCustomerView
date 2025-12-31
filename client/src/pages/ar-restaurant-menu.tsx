@@ -3,7 +3,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ArrowLeft, ShoppingCart, Menu, X, ChevronUp, ChevronDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -70,14 +70,17 @@ function ItemDetailCard({ item, setActiveItem, onAddToCart }: ItemDetailCardProp
   return (
     <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md rounded-2xl p-3 flex flex-col justify-between border border-white/10 animate-in fade-in zoom-in duration-200">
       <CloseButton setActiveItem={setActiveItem} />
-      <div>
-        <h2 className="text-sm font-bold leading-tight mb-1 pr-6">{item.name}</h2>
+      <div className="overflow-hidden">
+        <h2 className="text-sm font-bold leading-tight mb-1 pr-6 truncate">{item.name}</h2>
         <div className="flex items-center gap-2 mb-2">
           <span className="text-orange-400 font-bold text-sm">₹{item.variations?.[0]?.discountedPrice || item.variations?.[0]?.price}</span>
           {(item.discount?.value || 0) > 0 && (
             <span className="text-[10px] bg-red-500 px-1 rounded font-bold">-{item.discount?.value}%</span>
           )}
         </div>
+        <p className="text-[10px] text-white/60 line-clamp-2 leading-tight">
+          {item.description || "Delicious menu item prepared fresh for you."}
+        </p>
       </div>
       <Button 
         size="sm" 
@@ -98,12 +101,16 @@ function ItemDetailCard({ item, setActiveItem, onAddToCart }: ItemDetailCardProp
 export default function ARRestaurantMenuPage() {
   const [cameraPermission, setCameraPermission] = useState<string>("requesting");
   const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
-  const [isMobileDevice] = useState(() => window.innerWidth < 768);
+  
+  // Gesture state
+  const [rotation, setRotation] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
+  const lastPinchDistRef = useRef<number | null>(null);
 
   const {
     selectedRestaurant,
     selectedBranch,
-    addItem,
     getCartCount,
     setCartOpen,
     setLastAddedItem,
@@ -116,7 +123,7 @@ export default function ARRestaurantMenuPage() {
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [detailItem, setDetailItem] = useState<ApiMenuItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<number | null>(null); // Track active detail card
+  const [activeItem, setActiveItem] = useState<number | null>(null);
   const [, setLocation] = useLocation();
 
   const getUrlParams = () => new URLSearchParams(window.location.search);
@@ -129,7 +136,7 @@ export default function ARRestaurantMenuPage() {
 
   const branchId = getBranchId();
 
-  const { data: menuData, isLoading } = useQuery({
+  const { data: menuData } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
@@ -158,9 +165,7 @@ export default function ARRestaurantMenuPage() {
   };
 
   const getDiscount = (item: ApiMenuItem) => {
-    if (item.discount?.value) {
-      return item.discount.value;
-    }
+    if (item.discount?.value) return item.discount.value;
     const variations = item.variations || [];
     const variation = variations[0];
     if (variation?.discountedPrice && variation?.price && variation.price > variation.discountedPrice) {
@@ -170,9 +175,7 @@ export default function ARRestaurantMenuPage() {
   };
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsLandscape(window.innerHeight < window.innerWidth);
-    };
+    const handleResize = () => setIsLandscape(window.innerHeight < window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -190,16 +193,69 @@ export default function ARRestaurantMenuPage() {
     requestPermissions();
   }, []);
 
+  // Gesture Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      lastPinchDistRef.current = dist;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && lastTouchRef.current) {
+      const deltaX = e.touches[0].clientX - lastTouchRef.current.x;
+      setRotation(prev => prev + deltaX * 0.5);
+      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2 && lastPinchDistRef.current) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const scale = dist / lastPinchDistRef.current;
+      setZoom(prev => Math.max(0.5, Math.min(2, prev * scale)));
+      lastPinchDistRef.current = dist;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    lastTouchRef.current = null;
+    lastPinchDistRef.current = null;
+  };
+
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white">
       <Navbar />
       
-      <div className="flex-1 relative overflow-hidden">
+      <div 
+        className="flex-1 relative overflow-hidden touch-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {cameraPermission === "granted" ? (
-          <div className="absolute inset-0 z-0 bg-slate-900 flex items-center justify-center">
-            <div className="text-center p-6">
-              <p className="text-xl font-medium mb-2">Camera active (Placeholder)</p>
-              <p className="text-slate-400">AR functionality would render here.</p>
+          <div className="absolute inset-0 z-0 bg-slate-900 flex flex-col items-center justify-center pointer-events-none">
+            {/* Visual indicator of 3D transforms */}
+            <div 
+              className="w-48 h-48 bg-orange-500/20 border-2 border-orange-500 rounded-xl flex items-center justify-center transition-transform duration-75"
+              style={{ 
+                transform: `rotateY(${rotation}deg) scale(${zoom})`,
+                perspective: "1000px"
+              }}
+            >
+              <div className="text-center p-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mb-1">Depth Engine</p>
+                <p className="text-[10px] text-white/40">Rotate: {Math.round(rotation)}°</p>
+                <p className="text-[10px] text-white/40">Zoom: {zoom.toFixed(2)}x</p>
+              </div>
+            </div>
+            <div className="mt-8 text-center px-6">
+              <p className="text-sm font-medium text-white/60">Gesture Controls Active</p>
+              <p className="text-[10px] text-white/40 mt-1">Drag to rotate • Pinch to zoom</p>
             </div>
           </div>
         ) : (
