@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
@@ -58,11 +59,13 @@ interface Product3DProps {
 }
 
 function Product3D({ model, position, onSelect }: Product3DProps) {
+  const ref = useRef<THREE.Group>(null);
   try {
     const gltf = useGLTF(model);
     return (
       <primitive 
-        object={gltf.scene} 
+        ref={ref}
+        object={gltf.scene.clone()} 
         position={position} 
         onPointerDown={(e: any) => {
           e.stopPropagation();
