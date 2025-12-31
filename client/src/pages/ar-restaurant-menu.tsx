@@ -79,7 +79,7 @@ const ProductObject = ({
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation();
-    console.log(`Object Selected: ${item.menuItemId} at position:`, position);
+    console.log(`[DEBUG] Object Clicked: ${item.menuItemId}. Current Active: ${activeObjectId}`);
     onSelect();
   };
 
@@ -250,6 +250,12 @@ export default function ARRestaurantMenuPage() {
               dampingFactor={0.05}
               autoRotate={!activeObjectId}
               autoRotateSpeed={0.5}
+              onChange={() => {
+                if (activeObjectId !== null) {
+                  // This ensures the controls are locked to the target
+                  // console.log("Orbiting active object:", activeObjectId);
+                }
+              }}
             />
           </Canvas>
 
