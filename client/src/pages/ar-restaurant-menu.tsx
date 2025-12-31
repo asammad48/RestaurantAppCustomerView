@@ -3,7 +3,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ShoppingCart, Menu, X, ChevronUp, ChevronDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -14,7 +14,7 @@ import PaymentModal from "@/components/modals/payment-modal";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { getImageUrl } from "@/lib/config";
 
-// --- New Components ---
+// --- Components ---
 
 interface PlusButtonProps {
   itemId: number;
@@ -102,12 +102,6 @@ export default function ARRestaurantMenuPage() {
   const [cameraPermission, setCameraPermission] = useState<string>("requesting");
   const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
   
-  // Gesture state
-  const [rotation, setRotation] = useState(0);
-  const [zoom, setZoom] = useState(1);
-  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
-  const lastPinchDistRef = useRef<number | null>(null);
-
   const {
     selectedRestaurant,
     selectedBranch,
@@ -154,8 +148,7 @@ export default function ARRestaurantMenuPage() {
     setFilteredItems(items);
   }, [selectedCategory, apiMenuData]);
 
-  const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
-  const categories = ["all", ...Array.from(new Set(categoryList))];
+  const categories = ["all", ...Array.from(new Set(apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || []))];
 
   const getPrice = (item: ApiMenuItem) => {
     if (item.variations && item.variations.length > 0) {
@@ -193,83 +186,15 @@ export default function ARRestaurantMenuPage() {
     requestPermissions();
   }, []);
 
-  // Gesture Handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    } else if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      lastPinchDistRef.current = dist;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && lastTouchRef.current) {
-      const deltaX = e.touches[0].clientX - lastTouchRef.current.x;
-      setRotation(prev => prev + deltaX * 0.5);
-      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    } else if (e.touches.length === 2 && lastPinchDistRef.current) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const scale = dist / lastPinchDistRef.current;
-      setZoom(prev => Math.max(0.5, Math.min(2, prev * scale)));
-      lastPinchDistRef.current = dist;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    lastTouchRef.current = null;
-    lastPinchDistRef.current = null;
-  };
-
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white">
       <Navbar />
       
-      <div 
-        className="flex-1 relative overflow-hidden touch-none"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {cameraPermission === "granted" ? (
-          <div className="absolute inset-0 z-0 bg-slate-900 flex flex-col items-center justify-center pointer-events-none">
-            {/* Visual indicator of 3D transforms */}
-            <div 
-              className="w-48 h-48 bg-orange-500/20 border-2 border-orange-500 rounded-xl flex items-center justify-center transition-opacity duration-200"
-              style={{ 
-                transform: `rotateY(${rotation}deg) translateZ(${(zoom - 1) * 100}px)`,
-                perspective: "1000px"
-              }}
-            >
-              <div className="text-center p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mb-1">Depth Engine</p>
-                <p className="text-[10px] text-white/40">Rotate: {Math.round(rotation)}°</p>
-                <p className="text-[10px] text-white/40">Zoom: {zoom.toFixed(2)}x</p>
-              </div>
-            </div>
-            <div className="mt-8 text-center px-6">
-              <p className="text-sm font-medium text-white/60">Gesture Controls Active</p>
-              <p className="text-[10px] text-white/40 mt-1">Drag to rotate • Pinch to zoom</p>
-            </div>
-          </div>
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-900 z-10 p-6 text-center">
-            {cameraPermission === "requesting" ? (
-              <p className="text-xl">Requesting camera access...</p>
-            ) : (
-              <div>
-                <p className="text-xl text-red-400 mb-4">Camera access denied</p>
-                <Button onClick={() => window.location.reload()}>Retry</Button>
-              </div>
-            )}
-          </div>
-        )}
+      <div className="flex-1 relative overflow-hidden">
+        <div className="absolute inset-0 z-0 bg-slate-900 flex flex-col items-center justify-center">
+          <p className="text-sm font-medium text-white/60">AR Placeholder View</p>
+          <p className="text-[10px] text-white/40 mt-1">Interactive menu system active</p>
+        </div>
 
         <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
           <Button 
