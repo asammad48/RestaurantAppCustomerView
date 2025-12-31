@@ -16,6 +16,39 @@ import { getImageUrl } from "@/lib/config";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 
+// --- Camera Feed Component ---
+
+function CameraFeed() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error("Error accessing camera:", err);
+      }
+    }
+    startCamera();
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      className="absolute inset-0 w-full h-full object-cover"
+      style={{ filter: "brightness(0.7)" }}
+    />
+  );
+}
+
 // --- 3D Object Component ---
 
 interface Product3DProps {
@@ -222,10 +255,13 @@ export default function ARRestaurantMenuPage() {
       
       <div className="flex-1 relative overflow-hidden">
         {/* AR / 3D Scene Area */}
-        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black">
+          <CameraFeed />
+          
           <Canvas
             camera={{ position: [0, 2, 6], fov: 50 }}
             style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
+            gl={{ alpha: true }}
           >
             <ambientLight intensity={0.6} />
             <directionalLight position={[5, 5, 5]} />
@@ -251,42 +287,6 @@ export default function ARRestaurantMenuPage() {
               dampingFactor={0.1}
             />
           </Canvas>
-
-          {/* Representative 3D Scene with the 3 objects */}
-          <div className="relative w-full h-full flex items-center justify-around px-10 pointer-events-none">
-            {objects3D.map((obj, index) => {
-              const price = getPrice(obj);
-              const discount = getDiscount(obj);
-              
-              return (
-                <div 
-                  key={obj.menuItemId} 
-                  className={`relative w-24 h-24 sm:w-32 sm:h-32 transition-all duration-500 flex flex-col items-center justify-center p-2 group pointer-events-none ${
-                    activeObject === obj.menuItemId ? 'scale-110' : ''
-                  }`}
-                  style={{ 
-                    marginTop: index === 1 ? '-120px' : '80px', // Adjusted to align with 3D space
-                  }}
-                >
-                  {/* Plus Button */}
-                  <PlusButton 
-                    objectId={obj.menuItemId} 
-                    activeObject={activeObject} 
-                    setActiveObject={setActiveObject} 
-                  />
-
-                  {/* Price & Discount Tags (Always Visible) */}
-                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center whitespace-nowrap bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg pointer-events-auto cursor-pointer"
-                       onClick={() => setActiveObject(obj.menuItemId)}>
-                    <span className="text-xs font-black">₹{price}</span>
-                    {discount > 0 && (
-                      <span className="text-[10px] font-bold text-red-400">-{discount}%</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
 
           {/* Active Detail Card Overlay */}
           {activeObject && (
