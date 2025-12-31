@@ -14,7 +14,7 @@ import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { getImageUrl } from "@/lib/config";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 
 // --- Camera Feed Component ---
@@ -60,6 +60,16 @@ interface Product3DProps {
 
 function Product3D({ model, position, onSelect }: Product3DProps) {
   const ref = useRef<THREE.Group>(null);
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const lastPointerX = useRef(0);
+
+  useFrame(() => {
+    if (ref.current) {
+      ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, rotation, 0.1);
+    }
+  });
+
   try {
     const gltf = useGLTF(model);
     return (
@@ -69,8 +79,20 @@ function Product3D({ model, position, onSelect }: Product3DProps) {
         position={position} 
         onPointerDown={(e: any) => {
           e.stopPropagation();
+          setIsDragging(true);
+          lastPointerX.current = e.clientX;
           onSelect();
-        }} 
+        }}
+        onPointerMove={(e: any) => {
+          if (isDragging) {
+            e.stopPropagation();
+            const deltaX = e.clientX - lastPointerX.current;
+            setRotation(prev => prev + deltaX * 0.01);
+            lastPointerX.current = e.clientX;
+          }
+        }}
+        onPointerUp={() => setIsDragging(false)}
+        onPointerOut={() => setIsDragging(false)}
       />
     );
   } catch (error) {
