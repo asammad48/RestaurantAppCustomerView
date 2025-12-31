@@ -87,7 +87,6 @@ function Product3D({ model, position, onSelect }: Product3DProps) {
           if (isDragging.current) {
             e.stopPropagation();
             const deltaX = e.clientX - lastPointerX.current;
-            // Lower sensitivity slightly for more precise control
             setRotation(prev => prev + deltaX * 0.007);
             lastPointerX.current = e.clientX;
           }
@@ -99,8 +98,10 @@ function Product3D({ model, position, onSelect }: Product3DProps) {
           }
         }}
         onPointerOut={(e: any) => {
-          e.stopPropagation();
-          isDragging.current = false;
+          if (isDragging.current) {
+            e.stopPropagation();
+            isDragging.current = false;
+          }
         }}
       />
     );
@@ -116,30 +117,6 @@ function Product3D({ model, position, onSelect }: Product3DProps) {
 }
 
 // --- UI Components for 3D Objects ---
-
-interface PlusButtonProps {
-  objectId: number;
-  activeObject: number | null;
-  setActiveObject: (id: number | null) => void;
-}
-
-function PlusButton({ objectId, activeObject, setActiveObject }: PlusButtonProps) {
-  const isActive = activeObject === objectId;
-  return (
-    <button
-      className={`absolute -top-4 -right-4 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold transition-all z-10 ${
-        isActive ? 'bg-orange-600 scale-110' : 'bg-orange-500 hover:bg-orange-600'
-      }`}
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        setActiveObject(isActive ? null : objectId);
-      }}
-      style={{ touchAction: 'manipulation' }}
-    >
-      <Plus className="w-5 h-5" />
-    </button>
-  );
-}
 
 interface CloseButtonProps {
   setActiveObject: (id: number | null) => void;
@@ -163,9 +140,10 @@ function CloseButton({ setActiveObject }: CloseButtonProps) {
 interface ObjectDetailCardProps {
   object: ApiMenuItem;
   setActiveObject: (id: number | null) => void;
+  onRemove: (id: number) => void;
 }
 
-function ObjectDetailCard({ object, setActiveObject }: ObjectDetailCardProps) {
+function ObjectDetailCard({ object, setActiveObject, onRemove }: ObjectDetailCardProps) {
   const price = object.variations?.[0]?.discountedPrice || object.variations?.[0]?.price || 0;
   const discount = object.discount?.value || 0;
 
@@ -186,9 +164,17 @@ function ObjectDetailCard({ object, setActiveObject }: ObjectDetailCardProps) {
         {object.description || "Fresh and delicious menu item prepared with the finest ingredients."}
       </p>
       <CloseButton setActiveObject={setActiveObject} />
-      <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 rounded-xl">
-        Add to Order
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold h-12 rounded-xl"
+          onClick={() => onRemove(object.menuItemId)}
+        >
+          Remove
+        </Button>
+        <Button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 rounded-xl">
+          Add to Order
+        </Button>
+      </div>
     </div>
   );
 }
@@ -197,6 +183,9 @@ export default function ARRestaurantMenuPage() {
   const [cameraPermission, setCameraPermission] = useState<string>("requesting");
   const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
   const [activeObject, setActiveObject] = useState<number | null>(null);
+  const [arItems, setArItems] = useState<ApiMenuItem[]>([]);
+  const [categoryExpanded, setCategoryExpanded] = useState(false);
+  const [, setLocation] = useLocation();
 
   const {
     selectedRestaurant,
@@ -206,12 +195,6 @@ export default function ARRestaurantMenuPage() {
   } = useCartStore();
 
   const cartTotalItems = getCartCount();
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [filteredItems, setFilteredItems] = useState<ApiMenuItem[]>([]);
-  const [categoryExpanded, setCategoryExpanded] = useState(false);
-  const [detailItem, setDetailItem] = useState<ApiMenuItem | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [, setLocation] = useLocation();
 
   const getUrlParams = () => new URLSearchParams(window.location.search);
   const getBranchId = () => {
@@ -233,38 +216,6 @@ export default function ARRestaurantMenuPage() {
   const apiMenuData = menuData as ApiMenuResponse;
 
   useEffect(() => {
-    if (!apiMenuData?.menuItems) return;
-    
-    const items = apiMenuData.menuItems.filter((item: ApiMenuItem) =>
-      selectedCategory === "all" || item.categoryName === selectedCategory
-    );
-    // For this UI requirement, we focus on the first 3 items as "3D objects"
-    setFilteredItems(items);
-  }, [selectedCategory, apiMenuData]);
-
-  // We'll treat the first 3 items as our "3D objects" for this specific task
-  const objects3D = filteredItems.slice(0, 3);
-
-  const categories = ["all", ...Array.from(new Set(apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || []))];
-
-  const getPrice = (item: ApiMenuItem) => {
-    if (item.variations && item.variations.length > 0) {
-      return item.variations[0].discountedPrice || item.variations[0].price;
-    }
-    return 0;
-  };
-
-  const getDiscount = (item: ApiMenuItem) => {
-    if (item.discount?.value) return item.discount.value;
-    const variations = item.variations || [];
-    const variation = variations[0];
-    if (variation?.discountedPrice && variation?.price && variation.price > variation.discountedPrice) {
-      return Math.round(((variation.price - variation.discountedPrice) / variation.price) * 100);
-    }
-    return 0;
-  };
-
-  useEffect(() => {
     const handleResize = () => setIsLandscape(window.innerHeight < window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -283,6 +234,19 @@ export default function ARRestaurantMenuPage() {
     requestPermissions();
   }, []);
 
+  const handleAddItemToAR = (item: ApiMenuItem) => {
+    setArItems(prev => {
+      if (prev.find(i => i.menuItemId === item.menuItemId)) return prev;
+      return [...prev, item];
+    });
+    setCategoryExpanded(false);
+  };
+
+  const handleRemoveItemFromAR = (id: number) => {
+    setArItems(prev => prev.filter(i => i.menuItemId !== id));
+    setActiveObject(null);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white">
       <Navbar />
@@ -300,12 +264,12 @@ export default function ARRestaurantMenuPage() {
             <ambientLight intensity={0.6} />
             <directionalLight position={[5, 5, 5]} />
             <Suspense fallback={null}>
-              {objects3D.map((obj, index) => (
+              {arItems.map((item, index) => (
                 <Product3D 
-                  key={obj.menuItemId}
-                  model={`/models/food_${index + 1}.glb`} // Placeholder paths
-                  position={[(index - 1) * 2.5, 0, 0]} 
-                  onSelect={() => setActiveObject(obj.menuItemId)} 
+                  key={`${item.menuItemId}-${index}`}
+                  model={`/models/food_${(item.menuItemId % 3) + 1}.glb`}
+                  position={[(index - (arItems.length - 1) / 2) * 2.5, 0, 0]} 
+                  onSelect={() => setActiveObject(item.menuItemId)} 
                 />
               ))}
             </Suspense>
@@ -326,8 +290,9 @@ export default function ARRestaurantMenuPage() {
           {activeObject && (
             <div className="absolute inset-0 pointer-events-none z-50">
               <ObjectDetailCard 
-                object={objects3D.find(o => o.menuItemId === activeObject)!} 
+                object={arItems.find(o => o.menuItemId === activeObject)!} 
                 setActiveObject={setActiveObject} 
+                onRemove={handleRemoveItemFromAR}
               />
             </div>
           )}
@@ -381,25 +346,21 @@ export default function ARRestaurantMenuPage() {
                       <Menu className="h-5 w-5" />
                     </div>
                     <div className="text-left">
-                      <p className="text-[10px] text-white/60 uppercase tracking-wider font-bold">Categories</p>
-                      <p className="text-sm font-bold capitalize">{selectedCategory}</p>
+                      <p className="text-[10px] text-white/60 uppercase tracking-wider font-bold">Menu</p>
+                      <p className="text-sm font-bold capitalize">Tap to add items</p>
                     </div>
                     {categoryExpanded ? <ChevronDown className="h-4 w-4 ml-2" /> : <ChevronUp className="h-4 w-4 ml-2" />}
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl mt-2 p-2 max-h-[300px] overflow-y-auto w-48">
-                  {categories.map((cat) => (
+                <CollapsibleContent className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl mt-2 p-2 max-h-[300px] overflow-y-auto w-64">
+                  {apiMenuData?.menuItems?.map((item) => (
                     <button
-                      key={cat}
-                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                        selectedCategory === cat ? "bg-orange-500 text-white" : "text-white/70 hover:bg-white/10"
-                      }`}
-                      onClick={() => {
-                        setSelectedCategory(cat);
-                        setCategoryExpanded(false);
-                      }}
+                      key={item.menuItemId}
+                      className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors text-white/70 hover:bg-white/10 flex justify-between items-center"
+                      onClick={() => handleAddItemToAR(item)}
                     >
-                      <span className="capitalize">{cat}</span>
+                      <span className="truncate flex-1">{item.name}</span>
+                      <Plus className="h-4 w-4 text-orange-500 ml-2" />
                     </button>
                   ))}
                 </CollapsibleContent>
@@ -412,13 +373,6 @@ export default function ARRestaurantMenuPage() {
       <CartModal />
       <AddToCartModal />
       <PaymentModal />
-      {detailItem && (
-        <MenuItemDetailModal
-          isOpen={isDetailModalOpen}
-          onClose={() => setIsDetailModalOpen(false)}
-          item={detailItem}
-        />
-      )}
     </div>
   );
 }
