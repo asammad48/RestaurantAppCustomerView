@@ -94,25 +94,19 @@ const ProductObject = ({
   // Bind gestures
   const bind = useGesture(
     {
-      onDrag: ({ offset: [x, y], memo, active, pinching, event }) => {
-        if (pinching) return memo;
+      onDrag: ({ delta: [dx, dy], pinching, event }) => {
+        if (pinching) return;
         event.stopPropagation();
         
         if (!isSelected) {
           onSelect();
-          return [x, y];
+          return;
         }
 
-        // IMPROVED: More sensitive and direct movement calculation
+        // Use delta for immediate, responsive movement
         const aspect = size.width / viewport.width;
-        const dx = (x - (memo?.[0] || x)) / aspect;
-        const dy = (y - (memo?.[1] || y)) / aspect;
-
-        // Allow movement with any drag when selected
-        targetPos.current.x += dx;
-        targetPos.current.y -= dy;
-        
-        return [x, y];
+        targetPos.current.x += dx / aspect;
+        targetPos.current.y -= dy / aspect;
       },
       onPinch: ({ offset: [d], event }) => {
         event.stopPropagation();
