@@ -103,10 +103,10 @@ const ProductObject = ({
           return;
         }
 
-        // Use delta for immediate, responsive movement
-        const aspect = size.width / viewport.width;
-        targetPos.current.x += dx / aspect;
-        targetPos.current.y -= dy / aspect;
+        // IMPROVED: Direct screen-to-world mapping for absolute movement
+        const sensitivity = 0.02; 
+        targetPos.current.x += dx * sensitivity;
+        targetPos.current.y -= dy * sensitivity;
       },
       onPinch: ({ offset: [d], event }) => {
         event.stopPropagation();
