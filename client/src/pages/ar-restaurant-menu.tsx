@@ -104,7 +104,11 @@ const ProductObject = ({
         }
 
         const touches = (event as any).touches?.length || 0;
-        if (event.shiftKey || touches === 2) {
+        // Simplify movement on mobile/touch: Always allow movement if it's a drag
+        const isMobile = 'ontouchstart' in window;
+        
+        if (event.shiftKey || touches >= 1) {
+          // Allow single finger drag on mobile to move the object
           // Two finger drag or Shift+Drag = Move on X/Y
           const aspect = size.width / viewport.width;
           targetPos.current.x += (x - (memo?.[0] || x)) / aspect;
