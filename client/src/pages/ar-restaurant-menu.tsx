@@ -99,10 +99,10 @@ const ProductObject = ({
           onSelect();
         }
 
-        // Mapping screen delta to world space movement
-        const aspect = size.width / viewport.width;
-        targetPos.current.x += dx / aspect;
-        targetPos.current.y -= dy / aspect;
+        // IMPROVED: Direct sensitivity for free movement
+        const sensitivity = 0.05; 
+        targetPos.current.x += dx * sensitivity;
+        targetPos.current.y -= dy * sensitivity;
       },
       onPinch: ({ delta: [d] }) => {
         const s = Math.max(0.5, Math.min(3, targetScale.current.x + d / 200));
