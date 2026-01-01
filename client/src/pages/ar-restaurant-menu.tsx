@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html, PerspectiveCamera, Environment, ContactShadows, useGLTF } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Html, PerspectiveCamera, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
@@ -14,6 +14,7 @@ import Navbar from "@/components/navbar";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
+import { useGesture } from '@use-gesture/react';
 
 // --- Camera Feed Component ---
 function CameraFeed() {
@@ -47,64 +48,104 @@ function CameraFeed() {
   );
 }
 
-// --- Independent Product Component ---
+// --- Gesture Enabled Product Component ---
 const ProductObject = ({ 
   item, 
   index,
   total,
   isSelected, 
   onSelect,
-  scale: externalScale,
-  activeObjectId
 }: { 
   item: ApiMenuItem; 
   index: number;
   total: number;
   isSelected: boolean; 
   onSelect: () => void;
-  scale: number;
-  activeObjectId: number | null;
 }) => {
-  const meshRef = useRef<THREE.Object3D>(null!);
+  const groupRef = useRef<THREE.Group>(null!);
   const modelPath = `/models/food_${(item.menuItemId % 3) + 1}.glb`;
+  const { size, viewport } = useThree();
   
-  // Calculate fixed position in world space
-  const position: [number, number, number] = [(index - (total - 1) / 2) * 2.5, 0, 0];
-
-  // Rigorous rotation isolation logic
-  useFrame((_state, delta) => {
-    if (meshRef.current) {
-      if (isSelected) {
-        // Only the selected object rotates
-        meshRef.current.rotation.y += delta * 0.5;
-      } else {
-        // Ensure non-selected objects remain stationary
-        // We don't reset to 0 to avoid snapping, but we ensure no rotation happens
-      }
-    }
+  // Initial state for gestures
+  const [config, setConfig] = useState({
+    position: new THREE.Vector3((index - (total - 1) / 2) * 2.5, 0, 0),
+    rotation: new THREE.Euler(0, 0, 0),
+    scale: new THREE.Vector3(1, 1, 1)
   });
 
-  // Log selection changes for "proper testing" verification
-  useEffect(() => {
-    if (isSelected) {
-      console.log(`[TEST] Object ${item.menuItemId} SELECTED and STARTING rotation.`);
-    } else {
-      console.log(`[TEST] Object ${item.menuItemId} DESELECTED and STOPPING rotation.`);
-    }
-  }, [isSelected, item.menuItemId]);
-
-  const handlePointerDown = (e: any) => {
-    e.stopPropagation();
-    console.log(`[DEBUG] Object Clicked: ${item.menuItemId}. Current Active: ${activeObjectId}`);
-    onSelect();
+  // Reset function
+  const reset = () => {
+    setConfig({
+      position: new THREE.Vector3((index - (total - 1) / 2) * 2.5, 0, 0),
+      rotation: new THREE.Euler(0, 0, 0),
+      scale: new THREE.Vector3(1, 1, 1)
+    });
   };
+
+  // Bind gestures
+  const bind = useGesture(
+    {
+      onDrag: ({ offset: [x, y], memo, active, pinching, event }) => {
+        if (pinching) return memo;
+        event.stopPropagation();
+        
+        if (event.shiftKey || (event as any).touches?.length === 2) {
+          // Two finger drag or Shift+Drag = Move on X/Y
+          const aspect = size.width / viewport.width;
+          setConfig(prev => ({
+            ...prev,
+            position: new THREE.Vector3(
+              prev.position.x + (x - (memo?.[0] || x)) / aspect,
+              prev.position.y - (y - (memo?.[1] || y)) / aspect,
+              prev.position.z
+            )
+          }));
+          return [x, y];
+        } else {
+          // Single finger/mouse drag = Rotate
+          setConfig(prev => ({
+            ...prev,
+            rotation: new THREE.Euler(
+              prev.rotation.x + (y - (memo?.[1] || y)) * 0.01,
+              prev.rotation.y + (x - (memo?.[0] || x)) * 0.01,
+              0
+            )
+          }));
+          return [x, y];
+        }
+      },
+      onPinch: ({ offset: [d], event }) => {
+        event.stopPropagation();
+        const s = Math.max(0.5, Math.min(3, 1 + d / 200));
+        setConfig(prev => ({
+          ...prev,
+          scale: new THREE.Vector3(s, s, s)
+        }));
+      },
+      onWheel: ({ event, last }) => {
+        event.stopPropagation();
+        if (last) return;
+        const delta = (event as any).deltaY;
+        setConfig(prev => {
+          const s = Math.max(0.5, Math.min(3, prev.scale.x - delta * 0.001));
+          return { ...prev, scale: new THREE.Vector3(s, s, s) };
+        });
+      },
+      onDoubleClick: ({ event }) => {
+        event.stopPropagation();
+        reset();
+      }
+    },
+    { 
+      drag: { filterTaps: true, threshold: 10 },
+      enabled: isSelected
+    }
+  );
 
   let gltf: any;
   try {
     gltf = useGLTF(modelPath);
-  } catch (err) {
-    // Fallback handled by gltf check below
-  }
+  } catch (err) {}
 
   const clonedScene = useMemo(() => {
     if (gltf?.scene) return gltf.scene.clone();
@@ -116,23 +157,25 @@ const ProductObject = ({
 
   return (
     <group 
-      position={position} 
-      onPointerDown={handlePointerDown}
+      ref={groupRef}
+      position={config.position}
+      rotation={config.rotation}
+      scale={config.scale}
+      {...(bind() as any)}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
     >
       {clonedScene ? (
-        <primitive 
-          ref={meshRef} 
-          object={clonedScene}
-          scale={externalScale}
-        />
+        <primitive object={clonedScene} />
       ) : (
-        <mesh ref={meshRef as any} scale={externalScale}>
+        <mesh>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color={["#ff4d4d", "#4d79ff", "#4dff88"][item.menuItemId % 3]} />
         </mesh>
       )}
       
-      {/* UI Tags attached to object */}
       <Html position={[0.6, 1.2, 0]} center>
         <div className="flex flex-col gap-1 pointer-events-none select-none">
           <span className="bg-black/80 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap border border-white/10">
@@ -146,7 +189,6 @@ const ProductObject = ({
         </div>
       </Html>
 
-      {/* Select Highlight */}
       {isSelected && (
         <mesh position={[0, -0.55, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.8, 1, 32]} />
@@ -161,7 +203,6 @@ const ProductObject = ({
 export default function ARRestaurantMenuPage() {
   const [activeObjectId, setActiveObjectId] = useState<number | null>(null);
   const [arItems, setArItems] = useState<ApiMenuItem[]>([]);
-  const [scales, setScales] = useState<Record<number, number>>({});
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [, setLocation] = useLocation();
 
@@ -188,7 +229,6 @@ export default function ARRestaurantMenuPage() {
       if (prev.find(i => i.menuItemId === item.menuItemId)) return prev;
       return [...prev, item];
     });
-    setScales(prev => ({ ...prev, [item.menuItemId]: 1 }));
     setCategoryExpanded(false);
   };
 
@@ -196,24 +236,6 @@ export default function ARRestaurantMenuPage() {
     setArItems(prev => prev.filter(i => i.menuItemId !== id));
     if (activeObjectId === id) setActiveObjectId(null);
   };
-
-  const handleUpdateScale = (id: number, delta: number) => {
-    console.log(`Updating scale for ID: ${id}, Delta: ${delta}`);
-    setScales(prev => ({
-      ...prev,
-      [id]: Math.min(Math.max(0.5, (prev[id] || 1) + delta), 2.5)
-    }));
-  };
-
-  const selectedPos = useMemo(() => {
-    const pos = activeObjectId === null ? new THREE.Vector3(0, 0, 0) : (() => {
-      const index = arItems.findIndex(i => i.menuItemId === activeObjectId);
-      if (index === -1) return new THREE.Vector3(0, 0, 0);
-      return new THREE.Vector3((index - (arItems.length - 1) / 2) * 2.5, 0, 0);
-    })();
-    console.log(`Camera Target Pos for ID ${activeObjectId}:`, pos);
-    return pos;
-  }, [activeObjectId, arItems]);
 
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white">
@@ -229,12 +251,6 @@ export default function ARRestaurantMenuPage() {
             camera={{ position: [0, 2, 8], fov: 50 }}
             style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
             gl={{ alpha: true, antialias: true }}
-            onWheel={(e) => {
-              if (activeObjectId !== null && e.ctrlKey) {
-                e.preventDefault();
-                handleUpdateScale(activeObjectId, e.deltaY * -0.001);
-              }
-            }}
           >
             <ambientLight intensity={0.7} />
             <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
@@ -250,37 +266,16 @@ export default function ARRestaurantMenuPage() {
                   total={arItems.length}
                   isSelected={activeObjectId === item.menuItemId}
                   onSelect={() => setActiveObjectId(activeObjectId === item.menuItemId ? null : item.menuItemId)}
-                  scale={scales[item.menuItemId] || 1}
-                  activeObjectId={activeObjectId}
                 />
               ))}
             </Suspense>
 
             <ContactShadows position={[0, -0.6, 0]} opacity={0.4} scale={15} blur={2.5} far={2} />
-
-            <OrbitControls
-              makeDefault
-              target={[0, 0, 0]}
-              enableRotate={activeObjectId === null}
-              enableZoom={activeObjectId === null}
-              enablePan={false}
-              minDistance={3}
-              maxDistance={15}
-              dampingFactor={0.05}
-              autoRotate={false}
-              autoRotateSpeed={0.5}
-            />
           </Canvas>
 
           {/* Scale UI Controls */}
           {activeObjectId !== null && (
             <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-auto z-50">
-              <button 
-                className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-lg border border-white/20 flex items-center justify-center text-white hover:bg-white/30 active:scale-90 transition-all shadow-2xl"
-                onClick={() => handleUpdateScale(activeObjectId, 0.2)}
-              >
-                <Plus className="w-6 h-6" />
-              </button>
               <button 
                 className="w-14 h-14 rounded-full bg-red-500/80 backdrop-blur-lg border border-red-400/20 flex items-center justify-center text-white hover:bg-red-500 active:scale-90 transition-all shadow-2xl"
                 onClick={() => handleRemoveItemFromAR(activeObjectId)}
