@@ -94,11 +94,7 @@ const ProductObject = ({
   // Bind gestures
   const bind = useGesture(
     {
-      onDrag: ({ delta: [dx, dy], event }) => {
-        // Stop browser touch actions
-        if (event.cancelable) event.preventDefault();
-        event.stopPropagation();
-        
+      onDrag: ({ delta: [dx, dy] }) => {
         if (!isSelected) {
           onSelect();
         }
@@ -108,9 +104,7 @@ const ProductObject = ({
         targetPos.current.x += dx / aspect;
         targetPos.current.y -= dy / aspect;
       },
-      onPinch: ({ delta: [d], event }) => {
-        if (event.cancelable) event.preventDefault();
-        event.stopPropagation();
+      onPinch: ({ delta: [d] }) => {
         const s = Math.max(0.5, Math.min(3, targetScale.current.x + d / 200));
         targetScale.current.set(s, s, s);
       }
