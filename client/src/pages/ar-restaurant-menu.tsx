@@ -66,20 +66,29 @@ const ProductObject = ({
   const modelPath = `/models/food_${(item.menuItemId % 3) + 1}.glb`;
   const { size, viewport } = useThree();
   
-  // Initial state for gestures
-  const [config, setConfig] = useState({
-    position: new THREE.Vector3((index - (total - 1) / 2) * 2.5, 0, 0),
-    rotation: new THREE.Euler(0, 0, 0),
-    scale: new THREE.Vector3(1, 1, 1)
+  // Ref-based state for smooth lerping in useFrame
+  const targetPos = useRef(new THREE.Vector3((index - (total - 1) / 2) * 2.5, 0, 0));
+  const targetRot = useRef(new THREE.Euler(0, 0, 0));
+  const targetScale = useRef(new THREE.Vector3(1, 1, 1));
+
+  // Handle frame-based smoothing (lerp)
+  useFrame(() => {
+    if (groupRef.current) {
+      groupRef.current.position.lerp(targetPos.current, 0.2);
+      
+      // Smooth rotation
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRot.current.x, 0.2);
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRot.current.y, 0.2);
+      
+      groupRef.current.scale.lerp(targetScale.current, 0.2);
+    }
   });
 
   // Reset function
   const reset = () => {
-    setConfig({
-      position: new THREE.Vector3((index - (total - 1) / 2) * 2.5, 0, 0),
-      rotation: new THREE.Euler(0, 0, 0),
-      scale: new THREE.Vector3(1, 1, 1)
-    });
+    targetPos.current.set((index - (total - 1) / 2) * 2.5, 0, 0);
+    targetRot.current.set(0, 0, 0);
+    targetScale.current.set(1, 1, 1);
   };
 
   // Bind gestures
@@ -89,47 +98,36 @@ const ProductObject = ({
         if (pinching) return memo;
         event.stopPropagation();
         
-        if (event.shiftKey || (event as any).touches?.length === 2) {
+        if (!isSelected) {
+          onSelect();
+          return [x, y];
+        }
+
+        const touches = (event as any).touches?.length || 0;
+        if (event.shiftKey || touches === 2) {
           // Two finger drag or Shift+Drag = Move on X/Y
           const aspect = size.width / viewport.width;
-          setConfig(prev => ({
-            ...prev,
-            position: new THREE.Vector3(
-              prev.position.x + (x - (memo?.[0] || x)) / aspect,
-              prev.position.y - (y - (memo?.[1] || y)) / aspect,
-              prev.position.z
-            )
-          }));
+          targetPos.current.x += (x - (memo?.[0] || x)) / aspect;
+          targetPos.current.y -= (y - (memo?.[1] || y)) / aspect;
           return [x, y];
         } else {
           // Single finger/mouse drag = Rotate
-          setConfig(prev => ({
-            ...prev,
-            rotation: new THREE.Euler(
-              prev.rotation.x + (y - (memo?.[1] || y)) * 0.01,
-              prev.rotation.y + (x - (memo?.[0] || x)) * 0.01,
-              0
-            )
-          }));
+          targetRot.current.y += (x - (memo?.[0] || x)) * 0.01;
+          targetRot.current.x += (y - (memo?.[1] || y)) * 0.01;
           return [x, y];
         }
       },
       onPinch: ({ offset: [d], event }) => {
         event.stopPropagation();
+        if (!isSelected) return;
         const s = Math.max(0.5, Math.min(3, 1 + d / 200));
-        setConfig(prev => ({
-          ...prev,
-          scale: new THREE.Vector3(s, s, s)
-        }));
+        targetScale.current.set(s, s, s);
       },
-      onWheel: ({ event, last }) => {
+      onWheel: ({ event, delta: [, dy] }) => {
         event.stopPropagation();
-        if (last) return;
-        const delta = (event as any).deltaY;
-        setConfig(prev => {
-          const s = Math.max(0.5, Math.min(3, prev.scale.x - delta * 0.001));
-          return { ...prev, scale: new THREE.Vector3(s, s, s) };
-        });
+        if (!isSelected) return;
+        const s = Math.max(0.3, Math.min(4, targetScale.current.x - dy * 0.002));
+        targetScale.current.set(s, s, s);
       },
       onDoubleClick: ({ event }) => {
         event.stopPropagation();
@@ -137,8 +135,8 @@ const ProductObject = ({
       }
     },
     { 
-      drag: { filterTaps: true, threshold: 10 },
-      enabled: isSelected
+      drag: { filterTaps: true, threshold: 0 },
+      enabled: true // Always enabled to allow clicking to select
     }
   );
 
@@ -158,10 +156,9 @@ const ProductObject = ({
   return (
     <group 
       ref={groupRef}
-      position={config.position}
-      rotation={config.rotation}
-      scale={config.scale}
       {...(bind() as any)}
+      onPointerOver={() => (document.body.style.cursor = 'grab')}
+      onPointerOut={() => (document.body.style.cursor = 'auto')}
       onPointerDown={(e) => {
         e.stopPropagation();
         onSelect();
@@ -171,12 +168,12 @@ const ProductObject = ({
         <primitive object={clonedScene} />
       ) : (
         <mesh>
-          <boxGeometry args={[1, 1, 1]} />
+          <boxGeometry args={[1.5, 1.5, 1.5]} />
           <meshStandardMaterial color={["#ff4d4d", "#4d79ff", "#4dff88"][item.menuItemId % 3]} />
         </mesh>
       )}
       
-      <Html position={[0.6, 1.2, 0]} center>
+      <Html position={[0.6, 1.2, 0]} center style={{ pointerEvents: 'none' }}>
         <div className="flex flex-col gap-1 pointer-events-none select-none">
           <span className="bg-black/80 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap border border-white/10">
             ₹{price}
@@ -190,9 +187,9 @@ const ProductObject = ({
       </Html>
 
       {isSelected && (
-        <mesh position={[0, -0.55, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.8, 1, 32]} />
-          <meshBasicMaterial color="#f97316" transparent opacity={0.5} />
+        <mesh position={[0, -0.75, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1, 1.2, 32]} />
+          <meshBasicMaterial color="#f97316" transparent opacity={0.6} />
         </mesh>
       )}
     </group>
@@ -256,8 +253,12 @@ export default function ARRestaurantMenuPage() {
             <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
             <pointLight position={[-10, -10, -10]} intensity={1} />
             <Environment preset="city" />
+            
+            <gridHelper args={[20, 20, 0xffffff, 0x444444]} position={[0, -1, 0]}>
+              <meshBasicMaterial attach="material" transparent opacity={0.2} />
+            </gridHelper>
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<mesh position={[0, 0, 0]}><boxGeometry /><meshStandardMaterial color="gray" /></mesh>}>
               {arItems.map((item, index) => (
                 <ProductObject 
                   key={item.menuItemId}
