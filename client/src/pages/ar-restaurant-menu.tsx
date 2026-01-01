@@ -103,23 +103,16 @@ const ProductObject = ({
           return [x, y];
         }
 
-        const touches = (event as any).touches?.length || 0;
-        // Simplify movement on mobile/touch: Always allow movement if it's a drag
-        const isMobile = 'ontouchstart' in window;
+        // IMPROVED: More sensitive and direct movement calculation
+        const aspect = size.width / viewport.width;
+        const dx = (x - (memo?.[0] || x)) / aspect;
+        const dy = (y - (memo?.[1] || y)) / aspect;
+
+        // Allow movement with any drag when selected
+        targetPos.current.x += dx;
+        targetPos.current.y -= dy;
         
-        if (event.shiftKey || touches >= 1) {
-          // Allow single finger drag on mobile to move the object
-          // Two finger drag or Shift+Drag = Move on X/Y
-          const aspect = size.width / viewport.width;
-          targetPos.current.x += (x - (memo?.[0] || x)) / aspect;
-          targetPos.current.y -= (y - (memo?.[1] || y)) / aspect;
-          return [x, y];
-        } else {
-          // Single finger/mouse drag = Rotate
-          targetRot.current.y += (x - (memo?.[0] || x)) * 0.01;
-          targetRot.current.x += (y - (memo?.[1] || y)) * 0.01;
-          return [x, y];
-        }
+        return [x, y];
       },
       onPinch: ({ offset: [d], event }) => {
         event.stopPropagation();
