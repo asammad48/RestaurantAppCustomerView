@@ -260,7 +260,7 @@ export default function ARRestaurantMenuPage() {
 
             <OrbitControls
               makeDefault
-              target={selectedPos}
+              target={[0, 0, 0]}
               enableRotate={activeObjectId === null}
               enableZoom={activeObjectId === null}
               enablePan={false}
