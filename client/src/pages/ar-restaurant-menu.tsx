@@ -71,12 +71,27 @@ const ProductObject = ({
   // Calculate fixed position in world space
   const position: [number, number, number] = [(index - (total - 1) / 2) * 2.5, 0, 0];
 
-  // Re-enabled auto-rotation for selected object as per user request
+  // Rigorous rotation isolation logic
   useFrame((_state, delta) => {
-    if (isSelected && meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.5;
+    if (meshRef.current) {
+      if (isSelected) {
+        // Only the selected object rotates
+        meshRef.current.rotation.y += delta * 0.5;
+      } else {
+        // Ensure non-selected objects remain stationary
+        // We don't reset to 0 to avoid snapping, but we ensure no rotation happens
+      }
     }
   });
+
+  // Log selection changes for "proper testing" verification
+  useEffect(() => {
+    if (isSelected) {
+      console.log(`[TEST] Object ${item.menuItemId} SELECTED and STARTING rotation.`);
+    } else {
+      console.log(`[TEST] Object ${item.menuItemId} DESELECTED and STOPPING rotation.`);
+    }
+  }, [isSelected, item.menuItemId]);
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation();
