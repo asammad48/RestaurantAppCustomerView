@@ -94,15 +94,31 @@ const ProductObject = ({
   // Bind gestures
   const bind = useGesture(
     {
-      onDrag: ({ delta: [dx, dy] }) => {
-        const sensitivity = 0.05; 
-        targetPos.current.x += dx * sensitivity;
-        targetPos.current.y -= dy * sensitivity;
+      onDrag: ({ delta: [dx, dy], event }) => {
+        // Stop browser touch actions
+        if (event.cancelable) event.preventDefault();
+        event.stopPropagation();
+        
+        if (!isSelected) {
+          onSelect();
+        }
+
+        // Mapping screen delta to world space movement
+        const aspect = size.width / viewport.width;
+        targetPos.current.x += dx / aspect;
+        targetPos.current.y -= dy / aspect;
+      },
+      onPinch: ({ delta: [d], event }) => {
+        if (event.cancelable) event.preventDefault();
+        event.stopPropagation();
+        const s = Math.max(0.5, Math.min(3, targetScale.current.x + d / 200));
+        targetScale.current.set(s, s, s);
       }
     },
     { 
       drag: { filterTaps: true, threshold: 0 },
-      enabled: true
+      enabled: true,
+      eventOptions: { passive: false }
     }
   );
 
@@ -122,22 +138,21 @@ const ProductObject = ({
   return (
     <group 
       ref={groupRef}
-      {...(bind() as any)}
-      onPointerOver={() => (document.body.style.cursor = 'grab')}
-      onPointerOut={() => (document.body.style.cursor = 'auto')}
       onPointerDown={(e) => {
         e.stopPropagation();
         onSelect();
       }}
     >
-      {clonedScene ? (
-        <primitive object={clonedScene} />
-      ) : (
-        <mesh>
-          <boxGeometry args={[1.5, 1.5, 1.5]} />
-          <meshStandardMaterial color={["#ff4d4d", "#4d79ff", "#4dff88"][item.menuItemId % 3]} />
-        </mesh>
-      )}
+      <group {...(bind() as any)}>
+        {clonedScene ? (
+          <primitive object={clonedScene} />
+        ) : (
+          <mesh>
+            <boxGeometry args={[1.5, 1.5, 1.5]} />
+            <meshStandardMaterial color={["#ff4d4d", "#4d79ff", "#4dff88"][item.menuItemId % 3]} />
+          </mesh>
+        )}
+      </group>
       
       <Html position={[0.6, 1.2, 0]} center style={{ pointerEvents: 'none' }}>
         <div className="flex flex-col gap-1 pointer-events-none select-none">
@@ -232,7 +247,7 @@ export default function ARRestaurantMenuPage() {
                   index={index}
                   total={arItems.length}
                   isSelected={activeObjectId === item.menuItemId}
-                  onSelect={() => setActiveObjectId(activeObjectId === item.menuItemId ? null : item.menuItemId)}
+                  onSelect={() => setActiveObjectId(item.menuItemId)}
                 />
               ))}
             </Suspense>
