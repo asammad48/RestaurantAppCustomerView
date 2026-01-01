@@ -250,18 +250,14 @@ export default function ARRestaurantMenuPage() {
             <OrbitControls
               makeDefault
               target={selectedPos}
+              enableRotate={activeObjectId === null}
+              enableZoom={activeObjectId === null}
               enablePan={false}
               minDistance={3}
               maxDistance={15}
               dampingFactor={0.05}
               autoRotate={false}
               autoRotateSpeed={0.5}
-              onChange={() => {
-                if (activeObjectId !== null) {
-                  // This ensures the controls are locked to the target
-                  // console.log("Orbiting active object:", activeObjectId);
-                }
-              }}
             />
           </Canvas>
 
