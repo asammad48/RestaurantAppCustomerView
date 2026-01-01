@@ -98,25 +98,24 @@ const ProductObject = ({
         if (pinching) return;
         event.stopPropagation();
         
+        // Select if not selected
         if (!isSelected) {
           onSelect();
-          return;
         }
 
         // IMPROVED: Direct screen-to-world mapping for absolute movement
-        const sensitivity = 0.02; 
+        const sensitivity = 0.05; 
         targetPos.current.x += dx * sensitivity;
         targetPos.current.y -= dy * sensitivity;
       },
       onPinch: ({ offset: [d], event }) => {
         event.stopPropagation();
-        if (!isSelected) return;
+        // Allow pinching even if not explicitly "selected" if we are interacting
         const s = Math.max(0.5, Math.min(3, 1 + d / 200));
         targetScale.current.set(s, s, s);
       },
       onWheel: ({ event, delta: [, dy] }) => {
         event.stopPropagation();
-        if (!isSelected) return;
         const s = Math.max(0.3, Math.min(4, targetScale.current.x - dy * 0.002));
         targetScale.current.set(s, s, s);
       },
@@ -127,7 +126,8 @@ const ProductObject = ({
     },
     { 
       drag: { filterTaps: true, threshold: 0 },
-      enabled: true // Always enabled to allow clicking to select
+      enabled: true,
+      preventDefault: true // CRITICAL for mobile to prevent page scrolling while dragging
     }
   );
 
