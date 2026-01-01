@@ -71,8 +71,12 @@ const ProductObject = ({
   // Calculate fixed position in world space
   const position: [number, number, number] = [(index - (total - 1) / 2) * 2.5, 0, 0];
 
-  // No frame-based auto-rotation for independence
-  useFrame(() => {});
+  // Re-enabled auto-rotation for selected object as per user request
+  useFrame((_state, delta) => {
+    if (isSelected && meshRef.current) {
+      meshRef.current.rotation.y += delta * 0.5;
+    }
+  });
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation();
