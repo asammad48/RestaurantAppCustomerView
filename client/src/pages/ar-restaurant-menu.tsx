@@ -94,32 +94,32 @@ const ProductObject = ({
   // Bind gestures
   const bind = useGesture(
     {
-      onDrag: ({ delta: [dx, dy], pinching, event }) => {
-        if (pinching) return;
+      onDrag: ({ delta: [dx, dy], event }) => {
+        event.preventDefault();
         event.stopPropagation();
         
-        // Select if not selected
         if (!isSelected) {
           onSelect();
         }
 
-        // IMPROVED: Direct screen-to-world mapping for absolute movement
         const sensitivity = 0.05; 
         targetPos.current.x += dx * sensitivity;
         targetPos.current.y -= dy * sensitivity;
       },
       onPinch: ({ offset: [d], event }) => {
+        event.preventDefault();
         event.stopPropagation();
-        // Allow pinching even if not explicitly "selected" if we are interacting
         const s = Math.max(0.5, Math.min(3, 1 + d / 200));
         targetScale.current.set(s, s, s);
       },
       onWheel: ({ event, delta: [, dy] }) => {
+        event.preventDefault();
         event.stopPropagation();
         const s = Math.max(0.3, Math.min(4, targetScale.current.x - dy * 0.002));
         targetScale.current.set(s, s, s);
       },
       onDoubleClick: ({ event }) => {
+        event.preventDefault();
         event.stopPropagation();
         reset();
       }
@@ -127,7 +127,7 @@ const ProductObject = ({
     { 
       drag: { filterTaps: true, threshold: 0 },
       enabled: true,
-      preventDefault: true // CRITICAL for mobile to prevent page scrolling while dragging
+      eventOptions: { passive: false }
     }
   );
 
