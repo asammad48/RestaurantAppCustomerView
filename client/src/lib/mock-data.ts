@@ -20,6 +20,7 @@ export interface ApiMenuItem {
   description: string;
   categoryName: string;
   picture: string;
+  threeDObject?: string;
   maxAllowedAmount?: number;
   allergenItemContains?: string;
   variations: {

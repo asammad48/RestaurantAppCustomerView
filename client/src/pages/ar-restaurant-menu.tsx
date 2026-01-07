@@ -122,7 +122,17 @@ const ProductObject = ({
   } catch (err) {}
 
   const clonedScene = useMemo(() => {
-    if (gltf?.scene) return gltf.scene.clone();
+    if (gltf?.scene) {
+      const cloned = gltf.scene.clone();
+      // Auto-scale to fit within 2 units
+      const box = new THREE.Box3().setFromObject(cloned);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 2.0 / maxDim;
+      cloned.scale.set(scale, scale, scale);
+      return cloned;
+    }
     return null;
   }, [gltf?.scene]);
 
@@ -139,7 +149,7 @@ const ProductObject = ({
     >
       <group {...(bind() as any)}>
         {clonedScene ? (
-          <primitive object={clonedScene} />
+          <primitive object={clonedScene} scale={[1, 1, 1]} />
         ) : (
           <mesh>
             <boxGeometry args={[1.5, 1.5, 1.5]} />
