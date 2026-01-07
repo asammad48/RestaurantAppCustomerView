@@ -63,7 +63,7 @@ const ProductObject = ({
   onSelect: () => void;
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
-  const modelPath = item.threeDObject || `/models/food_${(item.menuItemId % 3) + 1}.glb`;
+  const modelPath = item.threeDObject;
   const { size, viewport } = useThree();
   
   // Ref-based state for smooth lerping in useFrame
@@ -116,25 +116,56 @@ const ProductObject = ({
     }
   );
 
-  let gltf: any;
+  let gltf: any = null;
   try {
-    gltf = useGLTF(modelPath);
-  } catch (err) {}
+    // Only attempt to use useGLTF if modelPath looks like a valid URL or path
+    if (modelPath && (modelPath.startsWith('http') || modelPath.startsWith('/') || modelPath.endsWith('.glb'))) {
+      gltf = useGLTF(modelPath);
+    }
+  } catch (err) {
+    console.error(`[AR DEBUG] Error loading GLTF for ${item.name}:`, err);
+  }
 
   const clonedScene = useMemo(() => {
     if (gltf?.scene) {
+      console.log(`[AR DEBUG] Scene loaded successfully for ${item.name}`, gltf.scene);
       const cloned = gltf.scene.clone();
+      
+      // Force materials to be visible
+      cloned.traverse((node: any) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+          if (node.material) {
+            node.material.depthWrite = true;
+            node.material.transparent = false;
+            node.material.opacity = 1;
+            node.material.side = THREE.DoubleSide; // Ensure both sides are rendered
+            node.material.needsUpdate = true;
+          }
+        }
+      });
+
       // Auto-scale to fit within 2 units
       const box = new THREE.Box3().setFromObject(cloned);
       const size = new THREE.Vector3();
       box.getSize(size);
       const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 2.0 / maxDim;
+      const scale = 2.0 / (maxDim || 1);
       cloned.scale.set(scale, scale, scale);
+      
+      // Center the model
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      cloned.position.set(0, 0, 0); // Reset position first
+      cloned.position.x = -center.x * scale;
+      cloned.position.y = -center.y * scale;
+      cloned.position.z = -center.z * scale;
+      
       return cloned;
     }
     return null;
-  }, [gltf?.scene]);
+  }, [gltf?.scene, item.name]);
 
   const price = item.variations?.[0]?.discountedPrice || item.variations?.[0]?.price || 0;
   const discount = item.discount?.value || 0;
