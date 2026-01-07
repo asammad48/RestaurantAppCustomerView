@@ -657,20 +657,23 @@ class MockStorage {
 
   // API Menu Data
   async getMenuData(): Promise<ApiMenuResponse> {
-    // Convert menu items to API format
     const apiMenuItems: ApiMenuItem[] = this.menuItems
       .filter(item => !item.isDeal)
       .map((item, index) => {
         let threeDObject = undefined;
-        // Map specific pizza types to the provided GLB URLs
-        if (item.name.toLowerCase().includes("pizza") || item.name.toLowerCase().includes("margherita")) {
+        // DIRECT MAPPING TO GLB URLS
+        const name = item.name.toLowerCase();
+        if (name.includes("pizza") || name.includes("margherita")) {
           threeDObject = "https://pub-2b36357591e14188849405d450892225.r2.dev/pizza_margherita.glb";
-        } else if (item.name.toLowerCase().includes("pepperoni")) {
+        } else if (name.includes("pepperoni")) {
           threeDObject = "https://pub-2b36357591e14188849405d450892225.r2.dev/pepperoni_pizza.glb";
-        } else {
-          // Default to a pizza model for other food items in this demo
+        } else if (name.includes("burger")) {
           threeDObject = "https://pub-2b36357591e14188849405d450892225.r2.dev/pizza_margherita.glb";
+        } else if (name.includes("karahi") || name.includes("biryani")) {
+          threeDObject = "https://pub-2b36357591e14188849405d450892225.r2.dev/pepperoni_pizza.glb";
         }
+        
+        console.log(`[AR_MOCK] Mapping ${item.name} -> ${threeDObject || 'NONE'}`);
         
         return {
           menuItemId: parseInt(item.id.substring(0, 8), 16) % 1000,

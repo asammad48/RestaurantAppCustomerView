@@ -65,7 +65,7 @@ const ProductObject = ({
   const groupRef = useRef<THREE.Group>(null!);
   const modelPath = item.threeDObject;
   const { size, viewport } = useThree();
-  
+
   // Ref-based state for smooth lerping in useFrame
   const targetPos = useRef(new THREE.Vector3((index - (total - 1) / 2) * 2.5, 0, 0));
   const targetRot = useRef(new THREE.Euler(0, 0, 0));
@@ -83,13 +83,6 @@ const ProductObject = ({
       groupRef.current.scale.lerp(targetScale.current, 0.2);
     }
   });
-
-  // Reset function
-  const reset = () => {
-    targetPos.current.set((index - (total - 1) / 2) * 2.5, 0, 0);
-    targetRot.current.set(0, 0, 0);
-    targetScale.current.set(1, 1, 1);
-  };
 
   // Bind gestures
   const bind = useGesture(
@@ -116,22 +109,31 @@ const ProductObject = ({
     }
   );
 
+  useEffect(() => {
+    console.log(`[AR_LOG] ProductObject Init: Item="${item.name}", itemId=${item.menuItemId}, modelPath="${modelPath || 'MISSING'}"`);
+  }, [item.name, item.menuItemId, modelPath]);
+
   let gltf: any = null;
   try {
-    // Only attempt to use useGLTF if modelPath looks like a valid URL or path
     if (modelPath && (modelPath.startsWith('http') || modelPath.startsWith('/') || modelPath.endsWith('.glb'))) {
       gltf = useGLTF(modelPath);
+    } else {
+      console.warn(`[AR_LOG] Invalid modelPath for "${item.name}": ${modelPath}`);
     }
   } catch (err) {
-    console.error(`[AR DEBUG] Error loading GLTF for ${item.name}:`, err);
+    console.error(`[AR_LOG] useGLTF Crash for "${item.name}":`, err);
   }
 
   const clonedScene = useMemo(() => {
     if (gltf?.scene) {
-      console.log(`[AR DEBUG] Scene loaded successfully for ${item.name}`, gltf.scene);
+      console.log(`[AR_LOG] GLTF Scene Loaded for "${item.name}"`, { 
+        animations: gltf.animations?.length,
+        children: gltf.scene.children.length,
+        userData: gltf.scene.userData
+      });
       const cloned = gltf.scene.clone();
       
-      // Force materials to be visible
+      // Force visibility and fix materials
       cloned.traverse((node: any) => {
         if (node.isMesh) {
           node.castShadow = true;
@@ -140,27 +142,28 @@ const ProductObject = ({
             node.material.depthWrite = true;
             node.material.transparent = false;
             node.material.opacity = 1;
-            node.material.side = THREE.DoubleSide; // Ensure both sides are rendered
+            node.material.side = THREE.DoubleSide;
             node.material.needsUpdate = true;
           }
         }
       });
 
-      // Auto-scale to fit within 2 units
+      // Scale normalization
       const box = new THREE.Box3().setFromObject(cloned);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z);
+      const sizeVec = new THREE.Vector3();
+      box.getSize(sizeVec);
+      const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
+      
+      // LOG THE SIZE
+      console.log(`[AR_LOG] Model size for "${item.name}":`, sizeVec);
+
       const scale = 2.0 / (maxDim || 1);
       cloned.scale.set(scale, scale, scale);
       
-      // Center the model
+      // Centering
       const center = new THREE.Vector3();
       box.getCenter(center);
-      cloned.position.set(0, 0, 0); // Reset position first
-      cloned.position.x = -center.x * scale;
-      cloned.position.y = -center.y * scale;
-      cloned.position.z = -center.z * scale;
+      cloned.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
       
       return cloned;
     }
@@ -180,11 +183,20 @@ const ProductObject = ({
     >
       <group {...(bind() as any)}>
         {clonedScene ? (
-          <primitive object={clonedScene} scale={[1, 1, 1]} />
+          <primitive object={clonedScene} />
         ) : (
           <mesh>
-            <boxGeometry args={[1.5, 1.5, 1.5]} />
-            <meshStandardMaterial color={["#ff4d4d", "#4d79ff", "#4dff88"][item.menuItemId % 3]} />
+            <sphereGeometry args={[0.7, 32, 32]} />
+            <meshStandardMaterial color="orange" emissive="orange" emissiveIntensity={0.5} />
+            <Html center>
+              <div className="bg-black/80 text-white text-[10px] px-3 py-2 rounded-lg border border-white/20 whitespace-nowrap shadow-2xl">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="font-bold">Authenticating 3D Assets...</p>
+                  <p className="text-[8px] opacity-60 truncate max-w-[120px]">{modelPath || 'Requesting Path...'}</p>
+                </div>
+              </div>
+            </Html>
           </mesh>
         )}
       </group>
