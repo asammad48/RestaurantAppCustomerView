@@ -63,7 +63,7 @@ const ProductObject = ({
   onSelect: () => void;
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
-  const modelPath = `/models/food_${(item.menuItemId % 3) + 1}.glb`;
+  const modelPath = item.threeDObject || `/models/food_${(item.menuItemId % 3) + 1}.glb`;
   const { size, viewport } = useThree();
   
   // Ref-based state for smooth lerping in useFrame
