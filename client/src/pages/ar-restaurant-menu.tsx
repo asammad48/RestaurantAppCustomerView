@@ -9,8 +9,16 @@ import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { 
   ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
-  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search, Minus, Camera, RefreshCcw
+  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search, Minus, Camera, RefreshCcw, Image as ImageIcon, Palette
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Slider } from "@/components/ui/slider";
@@ -316,6 +324,7 @@ export default function ARRestaurantMenuPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
+  const [bgConfig, setBgConfig] = useState<{ type: 'camera' | 'color' | 'image', value: string }>({ type: 'camera', value: 'environment' });
   
   const [, setLocation] = useLocation();
   const { 
@@ -391,7 +400,13 @@ export default function ARRestaurantMenuPage() {
       
       <div className="flex-1 relative overflow-hidden">
         <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black">
-          <CameraFeed facingMode={facingMode} />
+          {bgConfig.type === 'camera' ? (
+            <CameraFeed facingMode={bgConfig.value as "user" | "environment"} />
+          ) : bgConfig.type === 'color' ? (
+            <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: bgConfig.value }} />
+          ) : (
+            <img src={bgConfig.value} className="absolute inset-0 w-full h-full object-cover" alt="Background" />
+          )}
           
           <Canvas
             shadows
@@ -598,16 +613,63 @@ export default function ARRestaurantMenuPage() {
         </div>
 
         <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" size="icon" 
+                className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl hover:bg-black/80 transition-all"
+              >
+                {bgConfig.type === 'camera' ? <Camera className="h-6 w-6" /> : bgConfig.type === 'color' ? <Palette className="h-6 w-6" /> : <ImageIcon className="h-6 w-6" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-black/90 backdrop-blur-xl border-white/10 text-white w-56 p-2 rounded-2xl shadow-2xl">
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Environment</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setBgConfig({ type: 'camera', value: 'environment' })} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
+                <Camera className="h-4 w-4" /> Back Camera
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBgConfig({ type: 'camera', value: 'user' })} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
+                <Camera className="h-4 w-4 rotate-180" /> Front Camera
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Solid Colors</DropdownMenuLabel>
+              <div className="grid grid-cols-4 gap-1 p-1">
+                {['#1a1a1a', '#2e2e2e', '#3d3d3d', selectedBranch?.primaryColor || '#16a34a'].map(color => (
+                  <button 
+                    key={color}
+                    className="h-8 rounded-md border border-white/10 transition-transform active:scale-90"
+                    style={{ backgroundColor: color }}
+                    onClick={() => setBgConfig({ type: 'color', value: color })}
+                  />
+                ))}
+              </div>
+
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Table Scenes</DropdownMenuLabel>
+              <div className="grid grid-cols-1 gap-1 p-1">
+                {[
+                  { name: 'Modern Wood', path: '/attached_assets/stock_images/restaurant_table_top_56b7c559.jpg' },
+                  { name: 'Elegant Setup', path: '/attached_assets/stock_images/restaurant_table_top_a6a979fc.jpg' },
+                  { name: 'Rustic Table', path: '/attached_assets/stock_images/restaurant_table_top_9bd071c7.jpg' }
+                ].map(table => (
+                  <button 
+                    key={table.path}
+                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/10 text-xs transition-colors group"
+                    onClick={() => setBgConfig({ type: 'image', value: table.path })}
+                  >
+                    <div className="h-10 w-16 rounded border border-white/10 overflow-hidden">
+                      <img src={table.path} className="h-full w-full object-cover" alt={table.name} />
+                    </div>
+                    <span className="group-hover:text-white text-white/70">{table.name}</span>
+                  </button>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button 
             variant="ghost" size="icon" 
-            className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl"
-            onClick={() => setFacingMode(prev => prev === "user" ? "environment" : "user")}
-          >
-            <Camera className="h-6 w-6" />
-          </Button>
-          <Button 
-            variant="ghost" size="icon" 
-            className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl"
+            className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl hover:bg-black/80 transition-all"
             onClick={() => {
               setArItems([]);
               setActiveObjectId(null);
