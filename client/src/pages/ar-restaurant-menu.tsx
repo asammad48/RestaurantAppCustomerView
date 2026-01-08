@@ -534,26 +534,6 @@ export default function ARRestaurantMenuPage() {
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 h-12 flex items-center shadow-xl">
-            <h1 className="text-sm font-bold truncate max-w-[150px]">
-              {selectedRestaurant?.name || "AR Menu"}
-            </h1>
-          </div>
-        </div>
-
-        <div className="absolute top-4 right-4 z-50">
-          <Button 
-            variant="ghost" size="icon" 
-            className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 relative shadow-xl"
-            onClick={() => setCartOpen(true)}
-          >
-            <ShoppingCart className="h-6 w-6" />
-            {getCartCount() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-black/40 shadow-lg">
-                {getCartCount()}
-              </span>
-            )}
-          </Button>
         </div>
 
         <div className="absolute bottom-6 left-0 right-0 px-4 z-50 flex flex-col gap-4 pointer-events-none">
