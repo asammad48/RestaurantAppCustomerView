@@ -1,0 +1,39 @@
+TASK: Fix issues in my multi-object 3D React scene. I am using React + react-three-fiber.
+
+CURRENT ISSUES:
+1. Rotating one object also rotates the second object.
+2. Objects are moving unexpectedly across the screen.
+3. Objects do not expand/scale properly when interacting.
+4. Mobile and desktop gestures are inconsistent.
+
+REQUIREMENTS:
+1. Each 3D object must have its **own independent rotation and scale state**.
+2. Only the **selected object** should rotate or scale.
+3. Objects must stay **fixed in world space**; no unintended movement.
+4. Pinch gesture (mobile) or mouse wheel (desktop) should **expand/scale only the selected object**.
+5. Camera should optionally orbit the **selected object**, without affecting others.
+6. UI elements (Plus button, Close button, Price/Discount tags) must remain functional and touch-friendly.
+7. Mobile:
+   - Single-finger drag → rotate selected object or orbit camera around selected object.
+   - Pinch → scale selected object.
+   - Tap → select object to open detail card.
+8. Desktop:
+   - Mouse drag → rotate camera or object (depending on implementation).
+   - Ctrl + mouse wheel → scale selected object.
+   - Click → select object to open detail card.
+
+SUGGESTED APPROACHES:
+- Assign **independent refs** and `useFrame` rotation for each object.
+- Apply **scale state** per object, updated by gestures.
+- Optionally use camera orbit around the selected object rather than rotating the whole scene.
+- Fix object positions in world space; avoid applying global transforms.
+- Ensure smooth damping for rotation and zoom.
+- Keep UI overlayed properly and crisp on all screens.
+
+REQUEST:
+- Provide example React code demonstrating **three 3D objects**:
+  - Independent rotation and scaling
+  - Camera focusing/orbiting selected object
+  - Mobile-friendly gestures and desktop interactions
+  - Integrated Plus/Close buttons and Price/Discount tags
+- Include suggestions on how to structure state and controls to prevent unintended rotation or movement.

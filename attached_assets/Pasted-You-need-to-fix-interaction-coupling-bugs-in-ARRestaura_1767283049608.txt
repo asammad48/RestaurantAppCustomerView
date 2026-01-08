@@ -1,0 +1,182 @@
+You need to **fix interaction coupling bugs** in `ARRestaurantMenuPage.tsx`.
+Currently, **multiple 3D objects are still indirectly dependent on shared controls and camera state**, causing the following issues:
+
+---
+
+## 🚨 CURRENT ISSUES (DO NOT IGNORE)
+
+1. **When rotating or interacting with one object, other objects also respond**
+2. **Objects feel like they move in screen space instead of world space**
+3. **Scaling sometimes does nothing or feels inconsistent**
+4. **OrbitControls are still globally affecting the scene instead of being conditionally locked**
+5. **Camera + object interaction is not properly isolated**
+6. **Mobile gestures are not clearly separated from desktop behavior**
+
+---
+
+## 🎯 ROOT CAUSE (IMPORTANT)
+
+* `OrbitControls` is **global** and is still active even when an object is selected
+* Object interaction is mixed with camera interaction
+* Scaling is handled at Canvas level (wheel) instead of object-level intent
+* No strict “interaction ownership” exists (camera vs object)
+
+This causes **cross-object dependency**, which is unacceptable in AR-style UX.
+
+---
+
+## ✅ REQUIRED FIXES (MANDATORY)
+
+### 1️⃣ HARD LOCK CAMERA WHEN OBJECT IS SELECTED
+
+You **must modify OrbitControls** so that:
+
+```ts
+enableRotate={activeObjectId === null}
+enableZoom={activeObjectId === null}
+enablePan={false}
+```
+
+✔ Camera MUST NOT rotate, zoom, or move when an object is selected
+✔ Only the selected object should react
+
+---
+
+### 2️⃣ OBJECTS MUST NEVER AUTO-ROTATE OR SHARE ROTATION
+
+* REMOVE any `useFrame` rotation logic tied to `isSelected`
+* No object should rotate unless explicitly implemented later
+* Objects must remain **fully independent**
+
+✔ Each object owns only:
+
+* its position
+* its scale
+* its selection state
+
+---
+
+### 3️⃣ SCALING MUST BE OBJECT-OWNED (NOT CAMERA-OWNED)
+
+Scaling must:
+
+* Apply **only to `activeObjectId`**
+* Never affect siblings
+* Be clamped between safe limits
+
+Correct logic already exists — **ensure nothing else modifies scale**
+
+---
+
+### 4️⃣ WORLD SPACE MUST BE FIXED
+
+Each object:
+
+* Must have a **fixed world position**
+* Must NOT change position when camera rotates
+* Must NOT re-center on interaction
+
+This line is correct and must remain untouched:
+
+```ts
+const position = [(index - (total - 1) / 2) * 2.5, 0, 0];
+```
+
+---
+
+### 5️⃣ MOBILE VS DESKTOP INTERACTION RULES
+
+#### 📱 MOBILE
+
+* Tap = select object
+* Pinch = scale selected object
+* No camera movement when object selected
+
+#### 🖥 DESKTOP
+
+* Click = select object
+* Scroll + Ctrl = scale selected object
+* Drag rotates camera ONLY if no object selected
+
+---
+
+## 🧪 TESTING STRATEGY (MANDATORY – FOLLOW STEP BY STEP)
+
+### 🔹 TEST 1: MULTI-OBJECT ISOLATION
+
+1. Add **2–3 objects**
+2. Select object A
+3. Interact
+4. Confirm:
+
+   * Object B does NOT move
+   * Object C does NOT rotate
+   * Camera does NOT rotate
+
+❌ FAIL if any object reacts unintentionally
+
+---
+
+### 🔹 TEST 2: CAMERA LOCK
+
+1. Select an object
+2. Drag screen / mouse
+3. Camera must stay locked
+
+❌ FAIL if camera rotates
+
+---
+
+### 🔹 TEST 3: SCALE OWNERSHIP
+
+1. Select object A
+2. Scale up
+3. Confirm:
+
+   * Only A scales
+   * B and C remain unchanged
+
+❌ FAIL if others scale
+
+---
+
+### 🔹 TEST 4: DESELECT RESET
+
+1. Deselect object
+2. Drag screen
+3. Camera rotation should resume
+
+❌ FAIL if camera stays locked
+
+---
+
+### 🔹 TEST 5: MOBILE EMULATION
+
+Use Chrome DevTools → Mobile Mode
+
+* Tap selects
+* Pinch scales
+* No ghost movement
+
+---
+
+## ⛔ IMPORTANT RULE
+
+**DO NOT SUBMIT / COMMIT / MARK COMPLETE**
+❌ if **ANY** of the above tests fail
+❌ if **ANY** object still affects another
+❌ if camera moves while object is selected
+
+This is an **AR-style interaction**, not a normal 3D viewer.
+
+---
+
+## ✅ SUCCESS CRITERIA
+
+✔ Objects are fully independent
+✔ Camera respects selection state
+✔ Scaling works every time
+✔ Desktop & mobile behavior is predictable
+✔ No shared rotations, no drifting, no coupling
+
+---

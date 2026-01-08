@@ -1,0 +1,93 @@
+You are a senior React + Three.js engineer.
+
+TASK:
+Implement FULL 3D GESTURE INTERACTION on a SINGLE 3D ITEM using React Three Fiber.
+The 3D item MUST be completely INDEPENDENT from other objects and the camera.
+
+==================================================
+TECH STACK (MANDATORY)
+==================================================
+- React
+- three
+- @react-three/fiber
+- @react-three/drei
+- @use-gesture/react
+
+==================================================
+CORE REQUIREMENTS (STRICT)
+==================================================
+
+1) OBJECT-LEVEL INTERACTION ONLY
+- Gestures must apply ONLY to the selected 3D object
+- Camera must NOT rotate, pan, or zoom
+- Other 3D objects must remain unaffected
+
+2) GESTURE MAPPING (MUST IMPLEMENT)
+- Single finger drag / mouse drag → Rotate object
+- Two-finger pinch → Scale object (expand / shrink)
+- Two-finger drag → Move object on X/Y axis
+- Mouse wheel → Scale object
+- Double tap / double click → Reset object position, rotation, scale
+
+3) DEPTH & REAL 3D FEEL
+- Use PerspectiveCamera
+- Proper lighting
+- Shadows enabled
+- True Z-depth perception
+
+==================================================
+IMPLEMENTATION RULES
+==================================================
+- Disable OrbitControls completely
+- Attach gestures directly to the mesh (NOT Canvas)
+- Use @use-gesture/react for gestures
+- Use stopPropagation() on pointer events
+- Use position, rotation, scale for transformations
+- Must support mobile (touch) AND desktop (mouse)
+- No global gesture listeners
+- No external state management
+
+==================================================
+SCENE REQUIREMENTS
+==================================================
+- One interactive 3D object (gesture enabled)
+- One non-interactive 3D object (to prove independence)
+- Fixed camera
+- Clean lighting setup
+
+==================================================
+FILE STRUCTURE
+==================================================
+- Single React file
+- Fully working, runnable code
+- No placeholders
+- Clear inline comments explaining gestures
+
+==================================================
+DO NOT
+==================================================
+- Do NOT use OrbitControls
+- Do NOT move or rotate the camera
+- Do NOT attach gestures to Canvas
+- Do NOT affect other objects
+- Do NOT rename variables unless required
+- Do NOT use deprecated APIs
+
+==================================================
+BONUS (OPTIONAL BUT PREFERRED)
+==================================================
+- Smooth damping / lerp
+- Min / max scale limits
+- Mobile performance optimizations
+
+==================================================
+EXPECTED RESULT
+==================================================
+Interaction should feel like:
+Apple AR / Sketchfab style object interaction
+
+Object moves, rotates, scales independently
+inside a fixed 3D scene.
+
+OUTPUT:
+Return ONLY the complete React file code.

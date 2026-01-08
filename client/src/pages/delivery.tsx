@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
+import { geolocationService } from "@/services/geolocation-service";
 import { Branch } from "@/types/branch";
 import { useCartStore } from "@/lib/store";
 import { applyGreenTheme } from "@/lib/colors";
@@ -235,54 +236,32 @@ export default function DeliveryPage() {
     }
   };
 
-  // Get current location using browser geolocation
-  const getCurrentLocation = () => {
+  // Get current location using reliable geolocation service
+  const getCurrentLocation = async () => {
     setIsLoadingLocation(true);
     
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          
-          try {
-            // Try to get address using Google Geocoding (if you have the key)
-            setUserLocation(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-            setUserCoords({ lat, lng });
-            
-            // Search for branches based on selected service
-            await searchBranchesForService(lat, lng);
-            
-            toast({
-              title: "Location Found",
-              description: "Found your location and searching for nearby restaurants.",
-            });
-          } catch (error) {
-            console.error('Error processing location:', error);
-            setUserCoords({ lat, lng });
-            setUserLocation(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-          }
-          
-          setIsLoadingLocation(false);
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          setIsLoadingLocation(false);
-          toast({
-            variant: "destructive",
-            title: "Location Error",
-            description: "Unable to get your location. Please enter address manually or use map picker.",
-          });
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-      );
-    } else {
-      setIsLoadingLocation(false);
+    try {
+      const locationData = await geolocationService.getCurrentLocation();
+      
+      setUserLocation(locationData.address);
+      setUserCoords({ lat: locationData.latitude, lng: locationData.longitude });
+      
+      // Search for branches based on selected service
+      await searchBranchesForService(locationData.latitude, locationData.longitude);
+      
+      toast({
+        title: "Location Found",
+        description: `Found your location: ${locationData.address}`,
+      });
+    } catch (error: any) {
+      console.error('Error getting location:', error);
       toast({
         variant: "destructive",
-        title: "Not Supported",
-        description: "Geolocation is not supported by this browser.",
+        title: "Location Error",
+        description: error.message || "Unable to get your location. Please enter address manually or use map picker.",
       });
+    } finally {
+      setIsLoadingLocation(false);
     }
   };
 

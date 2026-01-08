@@ -1,0 +1,53 @@
+You are working on an existing React project created by Replit.
+
+TASK: Clean up the project by removing all 3D objects, libraries, and logic while keeping the app functional and preserving the project structure.
+
+==================================================
+1) REMOVE 3D LIBRARIES AND IMPORTS
+==================================================
+- Remove all imports related to 3D, such as:
+  - Three.js (`three`)
+  - @react-three/fiber
+  - @react-three/drei
+  - Any other 3D rendering library
+- Remove any CSS or assets specifically used for 3D objects if they are no longer needed
+
+==================================================
+2) REMOVE 3D OBJECTS AND COMPONENTS
+==================================================
+- Delete or comment out all components that render 3D models, including:
+  - `<Canvas>` elements
+  - `<mesh>` or `<primitive>` components
+  - Lights, cameras, helpers, and orbit controls
+- Remove any suspense or fallback logic used for 3D loading
+- Remove any JSX directly rendering 3D models
+
+==================================================
+3) REMOVE 3D STATE AND HANDLERS
+==================================================
+- Remove state variables used specifically for 3D interaction, e.g., rotation, zoom, selected 3D object
+- Remove event handlers used for 3D gestures (pointerDown, pointerMove, pinchZoom)
+- Remove animation loops or effects tied to 3D (e.g., `useFrame` from @react-three/fiber)
+- Ensure there are no references to deleted 3D objects in other components
+
+==================================================
+4) REMOVE 3D UTILITY FUNCTIONS
+==================================================
+- Remove helper functions that calculate 3D transforms, rotations, scaling, or camera positions
+- Remove any 3D-specific math or vector operations
+
+==================================================
+5) CLEANUP AND TEST
+==================================================
+- Check for broken imports or warnings after removing 3D code
+- Remove any unused variables, components, or assets
+- Verify that the app runs without errors
+- Ensure the app structure and routing remain unchanged
+
+==================================================
+EXPECTED RESULT
+==================================================
+- No Three.js, @react-three/fiber, @react-three/drei, or 3D code remains
+- No broken imports, warnings, or errors
+- The app is functional with all non-3D UI intact
+- Project structure and other features (like buttons or cards) are preserved for the next steps
