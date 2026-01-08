@@ -580,24 +580,55 @@ export default function ARRestaurantMenuPage() {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 gap-2 pointer-events-auto">
+                <div className="grid grid-cols-1 gap-3 pointer-events-auto">
                   {filteredMenuItems.length > 0 ? (
-                    filteredMenuItems.map((item) => (
-                      <button
-                        key={item.menuItemId}
-                        className="w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all text-white/70 bg-white/[0.02] hover:bg-white/10 hover:text-white flex justify-between items-center group active:scale-[0.98] border border-transparent hover:border-white/5"
-                        onClick={() => handleAddItemToAR(item)}
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="truncate flex-1">{item.name}</span>
-                          <span className="text-[10px] text-white/40 font-medium">{item.categoryName}</span>
-                        </div>
-                        <Plus className="h-5 w-5 text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    ))
+                    filteredMenuItems.map((item) => {
+                      const price = item.variations?.[0]?.discountedPrice || item.variations?.[0]?.price || 0;
+                      return (
+                        <button
+                          key={item.menuItemId}
+                          className="w-full text-left px-5 py-5 rounded-2xl transition-all text-white/80 bg-white/[0.03] hover:bg-white/[0.08] hover:text-white flex flex-col gap-2 group active:scale-[0.98] border border-white/5 hover:border-white/10"
+                          onClick={() => handleAddItemToAR(item)}
+                        >
+                          <div className="flex justify-between items-start w-full">
+                            <div className="flex flex-col gap-1 flex-1 pr-4">
+                              <span className="text-sm font-bold leading-tight line-clamp-1 group-hover:text-orange-500 transition-colors">
+                                {item.name}
+                              </span>
+                              <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider">
+                                {item.categoryName}
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-sm font-black text-orange-500">₹{price}</span>
+                              <div className="bg-orange-500/20 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100">
+                                <Plus className="h-4 w-4 text-orange-500" />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {item.description && (
+                            <p className="text-[11px] text-white/50 leading-relaxed line-clamp-2 font-medium italic">
+                              {item.description}
+                            </p>
+                          )}
+
+                          {item.allergens && item.allergens.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-1">
+                              {item.allergens.map((allergen, idx) => (
+                                <span key={idx} className="text-[9px] px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 font-bold uppercase tracking-tighter">
+                                  {allergen}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })
                   ) : (
-                    <div className="py-8 text-center text-white/30 text-sm">
-                      No dishes found
+                    <div className="py-12 flex flex-col items-center justify-center text-white/20 gap-3 bg-white/[0.02] rounded-3xl border border-dashed border-white/10">
+                      <Search className="h-8 w-8 opacity-20" />
+                      <p className="text-sm font-medium tracking-wide">No matching dishes found</p>
                     </div>
                   )}
                 </div>
