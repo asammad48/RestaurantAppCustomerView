@@ -377,6 +377,8 @@ export default function ARRestaurantMenuPage() {
 
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white select-none">
+      <Navbar />
+      
       <div className="flex-1 relative overflow-hidden">
         <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black">
           <CameraFeed />
