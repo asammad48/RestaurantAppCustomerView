@@ -28,6 +28,7 @@ interface ARItemState extends ApiMenuItem {
   rotation: [number, number, number];
   scale: number;
   depthOffset: number;
+  showNutritional?: boolean;
 }
 
 const SCALE_PRESETS = {
@@ -191,7 +192,11 @@ const ProductObject = ({
       ref={groupRef}
       onPointerDown={(e) => {
         e.stopPropagation();
-        onSelect();
+        if (isSelected) {
+          onUpdate({ showNutritional: !item.showNutritional });
+        } else {
+          onSelect();
+        }
       }}
     >
       <group {...(bind() as any)}>
@@ -217,29 +222,43 @@ const ProductObject = ({
 
       <Html position={[0, 1.5, 0]} center style={{ pointerEvents: 'none' }}>
         <AnimatePresence>
-          {isSelected && (
+          {isSelected && showNutritionalInfo && (
             <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="flex flex-col items-center gap-1 pointer-events-none"
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
+              className="flex flex-col items-center gap-2 pointer-events-auto"
             >
-              <div className="bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg border border-white/20 whitespace-nowrap">
-                {item.name}
-              </div>
-              {showNutritionalInfo && (
-                <div className="bg-black/90 backdrop-blur-md text-white text-[8px] p-2 rounded-lg border border-white/10 shadow-2xl min-w-[100px]">
-                  <p className="border-b border-white/10 pb-1 mb-1 font-bold uppercase tracking-tighter text-orange-400">Nutritional Info</p>
-                  <div className="flex justify-between gap-4">
-                    <span>Calories</span>
-                    <span>320 kcal</span>
+              <div className="bg-black/90 backdrop-blur-xl text-white text-[10px] p-3 rounded-2xl border border-white/10 shadow-2xl min-w-[140px] relative">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdate({ showNutritional: false });
+                  }}
+                  className="absolute -top-1 -right-1 bg-white/10 hover:bg-white/20 p-1 rounded-full text-white/40 hover:text-white transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                
+                <p className="border-b border-white/10 pb-2 mb-2 font-bold uppercase tracking-widest text-[8px] text-orange-400">
+                  {item.name}
+                </p>
+                
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-white/40 text-[8px] font-bold">CALORIES</span>
+                    <span className="font-bold">320 kcal</span>
                   </div>
-                  <div className="flex justify-between gap-4">
-                    <span>Spice</span>
-                    <span className="text-red-400">Medium</span>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-white/40 text-[8px] font-bold">SPICE LEVEL</span>
+                    <span className="text-red-400 font-bold">Medium</span>
+                  </div>
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-white/40 text-[8px] font-bold">PREP TIME</span>
+                    <span className="font-bold">15-20m</span>
                   </div>
                 </div>
-              )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -255,7 +274,6 @@ export default function ARRestaurantMenuPage() {
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [snapToTable, setSnapToTable] = useState(false);
   const [lightingMode, setLightingMode] = useState<'day' | 'night'>('day');
-  const [showNutritional, setShowNutritional] = useState(false);
   
   const [, setLocation] = useLocation();
   const { selectedRestaurant, selectedBranch, getCartCount, setCartOpen } = useCartStore();
@@ -338,7 +356,7 @@ export default function ARRestaurantMenuPage() {
                   onSelect={() => setActiveObjectId(item.instanceId)}
                   onUpdate={updateSelectedItem}
                   snapToTable={snapToTable}
-                  showNutritionalInfo={showNutritional}
+                  showNutritionalInfo={!!item.showNutritional}
                 />
               ))}
             </Suspense>
