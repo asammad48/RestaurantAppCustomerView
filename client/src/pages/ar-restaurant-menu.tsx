@@ -9,11 +9,13 @@ import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { 
   ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
-  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag
+  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/navbar";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
@@ -299,6 +301,8 @@ export default function ARRestaurantMenuPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [activeItemDetails, setActiveItemDetails] = useState<ARItemState | null>(null);
   const [showBottomUI, setShowBottomUI] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
   const [, setLocation] = useLocation();
   const { 
@@ -318,6 +322,21 @@ export default function ARRestaurantMenuPage() {
   });
 
   const apiMenuData = menuData as ApiMenuResponse;
+
+  const uniqueCategories = useMemo(() => {
+    if (!apiMenuData?.menuItems) return ["all"];
+    const cats = apiMenuData.menuItems.map(item => item.categoryName);
+    return ["all", ...Array.from(new Set(cats))];
+  }, [apiMenuData?.menuItems]);
+
+  const filteredMenuItems = useMemo(() => {
+    if (!apiMenuData?.menuItems) return [];
+    return apiMenuData.menuItems.filter(item => {
+      const matchesCategory = selectedCategory === "all" || item.categoryName === selectedCategory;
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [apiMenuData?.menuItems, selectedCategory, searchTerm]);
 
   const handleAddItemToAR = (menuItem: ApiMenuItem) => {
     const newItem: ARItemState = {
@@ -551,18 +570,53 @@ export default function ARRestaurantMenuPage() {
                   {categoryExpanded ? <ChevronDown className="h-5 w-5 text-white/40" /> : <ChevronUp className="h-5 w-5 text-white/40" />}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl mt-3 p-3 max-h-[40vh] overflow-y-auto shadow-2xl overflow-x-hidden custom-scrollbar">
-                <div className="grid grid-cols-1 gap-2">
-                  {apiMenuData?.menuItems?.map((item) => (
+              <CollapsibleContent className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl mt-3 p-4 max-h-[50vh] overflow-y-auto shadow-2xl overflow-x-hidden custom-scrollbar flex flex-col gap-4">
+                <div className="relative group pointer-events-auto">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-orange-500 transition-colors" />
+                  <Input 
+                    placeholder="Search dishes..." 
+                    className="bg-white/5 border-white/10 pl-10 h-10 rounded-xl text-white placeholder:text-white/20 focus-visible:ring-orange-500/50"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar pointer-events-auto">
+                  {uniqueCategories.map((cat) => (
                     <button
-                      key={item.menuItemId}
-                      className="w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all text-white/70 hover:bg-white/10 hover:text-white flex justify-between items-center group active:scale-[0.98] border border-transparent hover:border-white/5"
-                      onClick={() => handleAddItemToAR(item)}
+                      key={cat}
+                      className={`cursor-pointer whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        selectedCategory === cat 
+                          ? "bg-orange-500 border-orange-400 text-white" 
+                          : "bg-white/5 border-white/5 text-white/50 hover:bg-white/10"
+                      }`}
+                      onClick={() => setSelectedCategory(cat)}
                     >
-                      <span className="truncate flex-1">{item.name}</span>
-                      <Plus className="h-5 w-5 text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
                     </button>
                   ))}
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 pointer-events-auto">
+                  {filteredMenuItems.length > 0 ? (
+                    filteredMenuItems.map((item) => (
+                      <button
+                        key={item.menuItemId}
+                        className="w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all text-white/70 bg-white/[0.02] hover:bg-white/10 hover:text-white flex justify-between items-center group active:scale-[0.98] border border-transparent hover:border-white/5"
+                        onClick={() => handleAddItemToAR(item)}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="truncate flex-1">{item.name}</span>
+                          <span className="text-[10px] text-white/40 font-medium">{item.categoryName}</span>
+                        </div>
+                        <Plus className="h-5 w-5 text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center text-white/30 text-sm">
+                      No dishes found
+                    </div>
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>
