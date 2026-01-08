@@ -192,8 +192,8 @@ const ProductObject = ({
               <div className="bg-black/80 text-white text-[10px] px-3 py-2 rounded-lg border border-white/20 whitespace-nowrap shadow-2xl">
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="font-bold">Authenticating 3D Assets...</p>
-                  <p className="text-[8px] opacity-60 truncate max-w-[120px]">{modelPath || 'Requesting Path...'}</p>
+                  <p className="font-bold">Loading 3D Menu Item...</p>
+                  <p className="text-[8px] opacity-60 truncate max-w-[120px]">Fetching from assets...</p>
                 </div>
               </div>
             </Html>
