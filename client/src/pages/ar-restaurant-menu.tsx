@@ -318,7 +318,7 @@ export default function ARRestaurantMenuPage() {
   } = useCartStore();
 
   const branchId = selectedBranch?.branchId;
-  const { data: menuData } = useQuery({
+  const { data: menuData, isLoading } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
@@ -377,8 +377,6 @@ export default function ARRestaurantMenuPage() {
 
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white select-none">
-      <Navbar />
-      
       <div className="flex-1 relative overflow-hidden">
         <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black">
           <CameraFeed />
@@ -439,7 +437,7 @@ export default function ARRestaurantMenuPage() {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto"
+                className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto overflow-hidden"
               >
                 <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4">
                   <div className="flex items-center justify-between">
@@ -560,17 +558,17 @@ export default function ARRestaurantMenuPage() {
           <div className="pointer-events-auto max-w-md mx-auto w-full">
             <Collapsible open={categoryExpanded} onOpenChange={setCategoryExpanded}>
               <CollapsibleTrigger asChild>
-                <Button className="w-full bg-black/80 backdrop-blur-xl text-white border border-white/10 rounded-2xl h-16 flex items-center justify-between px-6 shadow-2xl hover:bg-black/90 transition-all">
+                <Button className="w-full bg-black/40 backdrop-blur-md text-white border border-white/10 rounded-2xl h-14 flex items-center justify-between px-6 shadow-xl hover:bg-black/60 transition-all">
                   <div className="flex items-center gap-4">
-                    <div className="bg-orange-500 p-2 rounded-xl shadow-lg">
-                      <Menu className="h-6 w-6" />
+                    <div className="bg-orange-500 p-1.5 rounded-lg shadow-lg">
+                      <Menu className="h-5 w-5" />
                     </div>
                     <div className="text-left">
-                      <p className="text-[10px] text-white/60 uppercase tracking-wider font-bold">Virtual Menu</p>
-                      <p className="text-sm font-bold">Add dishes to see in 3D</p>
+                      <p className="text-[10px] text-white/60 uppercase tracking-wider font-bold">Menu</p>
+                      <p className="text-xs font-bold">Add 3D Dishes</p>
                     </div>
                   </div>
-                  {categoryExpanded ? <ChevronDown className="h-5 w-5 text-white/40" /> : <ChevronUp className="h-5 w-5 text-white/40" />}
+                  {categoryExpanded ? <ChevronDown className="h-4 w-4 text-white/40" /> : <ChevronUp className="h-4 w-4 text-white/40" />}
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl mt-3 p-4 max-h-[50vh] overflow-y-auto shadow-2xl overflow-x-hidden custom-scrollbar flex flex-col gap-4">
