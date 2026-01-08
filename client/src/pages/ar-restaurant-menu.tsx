@@ -8,7 +8,6 @@ import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { apiClient } from "@/lib/api-client";
 import { 
   ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
   RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search, Minus, Camera, RefreshCcw, Image as ImageIcon, Palette
@@ -160,7 +159,7 @@ const ProductObject = ({
         }
         
         // Prevent default touch behavior on mobile to allow smoother dragging
-        if (event && typeof (event as any).preventDefault === 'function') {
+        if (event && 'cancelable' in event && event.cancelable) {
           (event as any).preventDefault();
         }
 
@@ -319,92 +318,6 @@ export default function ARRestaurantMenuPage() {
   const isMobile = useIsMobile();
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const [arItems, setArItems] = useState<ARItemState[]>([]);
-  
-  const [, setLocation] = useLocation();
-  const { 
-    selectedRestaurant, 
-    selectedBranch, 
-    setSelectedBranch,
-    setSelectedRestaurant,
-    setServiceType,
-    getCartCount, 
-    setCartOpen,
-    setLastAddedItem,
-    setAddToCartModalOpen
-  } = useCartStore();
-
-  // Get URL parameters
-  const getUrlParams = useCallback(() => {
-    return new URLSearchParams(window.location.search);
-  }, []);
-
-  const urlBranchId = useMemo(() => {
-    const params = getUrlParams();
-    const id = params.get('branchId');
-    return id ? parseInt(id, 10) : null;
-  }, [getUrlParams]);
-
-  const urlRestaurantId = useMemo(() => {
-    const params = getUrlParams();
-    return params.get('restaurantId');
-  }, [getUrlParams]);
-
-  const urlMethod = useMemo(() => {
-    const params = getUrlParams();
-    return params.get('method');
-  }, [getUrlParams]);
-
-  // Sync with store if URL params exist
-  useEffect(() => {
-    if (urlMethod) {
-      setServiceType(urlMethod as any);
-    }
-  }, [urlMethod, setServiceType]);
-
-  // Fetch branch data if we have an ID but no store data
-  const { data: branchData } = useQuery({
-    queryKey: ['/api/customer-search/get-branch-by-id', urlBranchId],
-    queryFn: async () => {
-      if (!urlBranchId) return null;
-      const response = await apiClient.getBranchById({ branchId: urlBranchId });
-      return response.data;
-    },
-    enabled: !!urlBranchId && !selectedBranch,
-  });
-
-  // Hydrate store from branch data
-  useEffect(() => {
-    if (branchData && !selectedBranch) {
-      setSelectedBranch({
-        branchId: branchData.branchId,
-        branchName: branchData.branchName,
-        branchLogo: branchData.branchLogo,
-        branchAddress: branchData.branchAddress,
-        branchOpenTime: branchData.branchOpenTime,
-        branchCloseTime: branchData.branchCloseTime,
-        isBranchClosed: branchData.isBranchClosed,
-        branchCurrency: (branchData as any).branchCurrency,
-        primaryColor: branchData.primaryColor
-      } as any);
-
-      if (!selectedRestaurant && urlRestaurantId) {
-        setSelectedRestaurant({
-          id: urlRestaurantId,
-          name: branchData.branchName,
-          image: branchData.branchLogo || '',
-          rating: 4.5,
-          deliveryTime: '30-45 min',
-          deliveryFee: '50',
-          minimumOrder: '500',
-          address: branchData.branchAddress,
-          distance: '2.5 km',
-          isOpen: !branchData.isBranchClosed
-        } as any);
-      }
-    }
-  }, [branchData, selectedBranch, selectedRestaurant, urlRestaurantId, setSelectedBranch, setSelectedRestaurant]);
-
-  const branchId = selectedBranch?.branchId || urlBranchId;
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [snapToTable, setSnapToTable] = useState(false);
   const [lightingMode, setLightingMode] = useState<'day' | 'night'>('day');
@@ -415,7 +328,18 @@ export default function ARRestaurantMenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [bgConfig, setBgConfig] = useState<{ type: 'camera' | 'color' | 'image', value: string }>({ type: 'camera', value: 'environment' });
+  
+  const [, setLocation] = useLocation();
+  const { 
+    selectedRestaurant, 
+    selectedBranch, 
+    getCartCount, 
+    setCartOpen,
+    setLastAddedItem,
+    setAddToCartModalOpen
+  } = useCartStore();
 
+  const branchId = selectedBranch?.branchId;
   const { data: menuData, isLoading } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
@@ -443,21 +367,20 @@ export default function ARRestaurantMenuPage() {
     const newItem: ARItemState = {
       ...menuItem,
       instanceId: Math.random().toString(36).substr(2, 9),
-      position: [0, 0, 0], // Perfectly centered
+      position: [0, 0, 0], // Start at center
       rotation: [0, 0, 0],
       scale: 1,
       depthOffset: 0,
     };
     
-    // Offset subsequent items slightly to the right
+    // Offset subsequent items slightly so they don't perfectly overlap initially
     if (arItems.length > 0) {
-      newItem.position[0] = arItems.length * 0.8;
+      newItem.position[0] = arItems.length * 0.5;
     }
 
     setArItems(prev => [...prev, newItem]);
     setActiveObjectId(newItem.instanceId);
     setCategoryExpanded(false);
-    console.log("Placed new item at center:", newItem.position);
   };
 
   const updateSelectedItem = useCallback((updates: Partial<ARItemState>) => {
