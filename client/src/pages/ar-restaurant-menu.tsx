@@ -77,7 +77,10 @@ const ProductObject = ({
   onSelect,
   onUpdate,
   snapToTable,
-  showNutritionalInfo
+  showNutritionalInfo,
+  onRemove,
+  onShowDetails,
+  onAddToCart
 }: { 
   item: ARItemState; 
   isSelected: boolean; 
@@ -85,11 +88,15 @@ const ProductObject = ({
   onUpdate: (updates: Partial<ARItemState>) => void;
   snapToTable: boolean;
   showNutritionalInfo: boolean;
+  onRemove: () => void;
+  onShowDetails: () => void;
+  onAddToCart: () => void;
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
   const modelPath = item.threeDObject;
   const { camera, size, raycaster } = useThree();
   const planeRef = useRef(new THREE.Plane());
+  const [showItemControls, setShowItemControls] = useState(true);
 
   // Internal lerp refs
   const targetPos = useRef(new THREE.Vector3(...item.position));
@@ -193,11 +200,7 @@ const ProductObject = ({
       ref={groupRef}
       onPointerDown={(e) => {
         e.stopPropagation();
-        if (isSelected) {
-          onUpdate({ showNutritional: !item.showNutritional });
-        } else {
-          onSelect();
-        }
+        onSelect();
       }}
     >
       <group {...(bind() as any)}>
@@ -221,45 +224,58 @@ const ProductObject = ({
         </group>
       )}
 
-      <Html position={[0, 1.5, 0]} center style={{ pointerEvents: 'none' }}>
+      {/* Item-top Buttons */}
+      <Html position={[0, 1.5, 0]} center style={{ pointerEvents: 'auto' }}>
         <AnimatePresence>
-          {isSelected && showNutritionalInfo && (
+          {isSelected && (
             <motion.div 
               initial={{ opacity: 0, y: 10, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.9 }}
-              className="flex flex-col items-center gap-2 pointer-events-auto"
+              className="flex flex-col items-center gap-2"
             >
-              <div className="bg-black/90 backdrop-blur-xl text-white text-[10px] p-3 rounded-2xl border border-white/10 shadow-2xl min-w-[140px] relative">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUpdate({ showNutritional: false });
-                  }}
-                  className="absolute -top-1 -right-1 bg-white/10 hover:bg-white/20 p-1 rounded-full text-white/40 hover:text-white transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-                
-                <p className="border-b border-white/10 pb-2 mb-2 font-bold uppercase tracking-widest text-[8px] text-orange-400">
-                  {item.name}
-                </p>
-                
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center gap-4">
-                    <span className="text-white/40 text-[8px] font-bold">CALORIES</span>
-                    <span className="font-bold">320 kcal</span>
-                  </div>
-                  <div className="flex justify-between items-center gap-4">
-                    <span className="text-white/40 text-[8px] font-bold">SPICE LEVEL</span>
-                    <span className="text-red-400 font-bold">Medium</span>
-                  </div>
-                  <div className="flex justify-between items-center gap-4">
-                    <span className="text-white/40 text-[8px] font-bold">PREP TIME</span>
-                    <span className="font-bold">15-20m</span>
-                  </div>
+              {showItemControls && (
+                <div className="flex items-center gap-2 bg-black/80 backdrop-blur-xl p-1.5 rounded-full border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
+                  <Button 
+                    size="icon" variant="ghost" 
+                    className="h-8 w-8 rounded-full text-red-500 hover:bg-red-500/20"
+                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="icon" variant="ghost" 
+                    className="h-8 w-8 rounded-full text-white hover:bg-white/20"
+                    onClick={(e) => { e.stopPropagation(); onShowDetails(); }}
+                  >
+                    <Info className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="icon" variant="ghost" 
+                    className="h-8 w-8 rounded-full text-white hover:bg-white/20"
+                    onClick={(e) => { e.stopPropagation(); setShowItemControls(false); }}
+                  >
+                    <EyeOff className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="icon" variant="ghost" 
+                    className="h-8 w-8 rounded-full text-orange-500 hover:bg-orange-500/20"
+                    onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
+              )}
+              
+              {!showItemControls && (
+                <Button 
+                  size="icon" variant="ghost" 
+                  className="h-8 w-8 rounded-full bg-black/80 backdrop-blur-xl border border-white/10 text-white animate-in fade-in zoom-in duration-200"
+                  onClick={(e) => { e.stopPropagation(); setShowItemControls(true); }}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -277,6 +293,7 @@ export default function ARRestaurantMenuPage() {
   const [lightingMode, setLightingMode] = useState<'day' | 'night'>('day');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [activeItemDetails, setActiveItemDetails] = useState<ARItemState | null>(null);
+  const [showBottomUI, setShowBottomUI] = useState(true);
   
   const [, setLocation] = useLocation();
   const { 
@@ -367,6 +384,18 @@ export default function ARRestaurantMenuPage() {
                   onUpdate={updateSelectedItem}
                   snapToTable={snapToTable}
                   showNutritionalInfo={!!item.showNutritional}
+                  onRemove={() => {
+                    setArItems(prev => prev.filter(i => i.instanceId !== item.instanceId));
+                    setActiveObjectId(null);
+                  }}
+                  onShowDetails={() => {
+                    setActiveItemDetails(item);
+                    setShowDetailsModal(true);
+                  }}
+                  onAddToCart={() => {
+                    setLastAddedItem(item);
+                    setAddToCartModalOpen(true);
+                  }}
                 />
               ))}
             </Suspense>
@@ -374,61 +403,101 @@ export default function ARRestaurantMenuPage() {
             <ContactShadows position={[0, -0.6, 0]} opacity={0.6} scale={20} blur={2} far={4} />
           </Canvas>
 
-          {/* Context Menu Overlay */}
+          {/* Controls UI Overlay */}
           <AnimatePresence>
-            {activeObjectId && selectedItem && (
+            {activeObjectId && selectedItem && showBottomUI && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto"
               >
-                <div className="flex flex-col gap-3">
-                  <Button 
-                    variant="destructive"
-                    className="w-full bg-red-500/80 hover:bg-red-600 text-white border border-red-400/20 rounded-xl h-14 gap-2 shadow-lg"
-                    onClick={() => {
-                      setArItems(prev => prev.filter(i => i.instanceId !== activeObjectId));
-                      setActiveObjectId(null);
-                    }}
-                  >
-                    <X className="w-5 h-5" />
-                    Remove from Table
-                  </Button>
+                <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-white/40">Arrangement</span>
+                    <Button 
+                      size="icon" variant="ghost" className="h-6 w-6 text-white/40 hover:text-white"
+                      onClick={() => setShowBottomUI(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <Layers className="h-4 w-4 text-white/40" />
+                    <div className="flex-1 flex items-center gap-3">
+                      <span className="text-[10px] uppercase font-bold text-white/40 min-w-[40px]">Depth</span>
+                      <Slider 
+                        value={[selectedItem.depthOffset]}
+                        min={-5} max={5} step={0.1}
+                        onValueChange={([v]) => updateSelectedItem({ depthOffset: v })}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
                   
-                  <Button 
-                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl h-14 gap-2 backdrop-blur-md shadow-lg"
-                    onClick={() => {
-                      setActiveItemDetails(selectedItem);
-                      setShowDetailsModal(true);
-                    }}
-                  >
-                    <Info className="w-5 h-5" />
-                    Show Details
-                  </Button>
+                  <div className="grid grid-cols-4 gap-2">
+                    <Button 
+                      variant="outline" size="sm" 
+                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      onClick={() => updateSelectedItem({ rotation: [0, 0, 0], scale: 1, depthOffset: 0 })}
+                    >
+                      RESET
+                    </Button>
+                    <Button 
+                      variant="outline" size="sm" 
+                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${snapToTable ? 'bg-orange-500 text-white' : ''}`}
+                      onClick={() => setSnapToTable(!snapToTable)}
+                    >
+                      TABLE
+                    </Button>
+                    <Button 
+                      variant="outline" size="sm" 
+                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      onClick={handleAutoArrange}
+                    >
+                      ARRANGE
+                    </Button>
+                    <Button 
+                      variant="outline" size="sm" 
+                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      onClick={() => setLightingMode(lightingMode === 'day' ? 'night' : 'day')}
+                    >
+                      {lightingMode === 'day' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+                    </Button>
+                  </div>
 
-                  <Button 
-                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl h-14 gap-2 backdrop-blur-md shadow-lg"
-                    onClick={() => setActiveObjectId(null)}
-                  >
-                    <EyeOff className="w-5 h-5" />
-                    Hide this menu
-                  </Button>
-
-                  <Button 
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl h-14 gap-2 shadow-lg"
-                    onClick={() => {
-                      setLastAddedItem(selectedItem);
-                      setAddToCartModalOpen(true);
-                    }}
-                  >
-                    <ShoppingBag className="w-5 h-5" />
-                    Add to Cart
-                  </Button>
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <span className="text-[10px] uppercase font-bold text-white/40">Scale Presets</span>
+                    <div className="flex gap-2">
+                      {Object.entries(SCALE_PRESETS).map(([label, val]) => (
+                        <button
+                          key={label}
+                          onClick={() => updateSelectedItem({ scale: val })}
+                          className={`w-8 h-8 rounded-lg text-[10px] font-bold border transition-all ${
+                            Math.abs(selectedItem.scale - val) < 0.1 
+                              ? 'bg-orange-500 border-orange-400 text-white' 
+                              : 'bg-white/5 border-white/10 text-white/60'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {!showBottomUI && activeObjectId && (
+            <Button 
+              className="absolute bottom-32 right-4 z-50 h-10 w-10 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-white shadow-xl"
+              onClick={() => setShowBottomUI(true)}
+            >
+              <Layers className="h-4 w-4" />
+            </Button>
+          )}
 
           {!activeObjectId && arItems.length > 0 && (
             <div className="absolute bottom-40 text-center px-6 pointer-events-none animate-pulse">
