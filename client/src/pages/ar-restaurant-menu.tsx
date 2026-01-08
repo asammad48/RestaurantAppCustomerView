@@ -159,7 +159,7 @@ const ProductObject = ({
         }
         
         // Prevent default touch behavior on mobile to allow smoother dragging
-        if (event && 'cancelable' in event && event.cancelable) {
+        if (event && typeof (event as any).preventDefault === 'function') {
           (event as any).preventDefault();
         }
 
@@ -188,7 +188,7 @@ const ProductObject = ({
       },
       onPinch: ({ active, offset: [d], event }) => {
         if (!isSelected) return;
-        if (event && 'cancelable' in event && event.cancelable && 'preventDefault' in event) {
+        if (event && typeof (event as any).preventDefault === 'function') {
           (event as any).preventDefault();
         }
         
