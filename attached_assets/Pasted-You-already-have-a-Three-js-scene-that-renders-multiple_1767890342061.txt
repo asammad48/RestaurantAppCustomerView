@@ -1,0 +1,101 @@
+You already have a Three.js scene that renders **multiple 3D food items** and a **cross (✕) button** to remove an item. Right now items **overlap**, **mobile drag movement is tiny**, and there’s no proper **scale / depth / layering** control.
+
+Implement the following changes cleanly and professionally:
+
+## 1) Fix overlap with proper “layering / depth / selection”
+
+* Add a **selected object system**:
+
+  * Tap/click an item to select it (highlight outline or glow).
+  * Only the selected item responds to drag/scale/rotate controls.
+* Add **Bring Forward / Send Back** controls (like z-index), but since this is 3D:
+
+  * Implement as **depth offset** relative to camera (move along camera forward vector) OR a dedicated **layer stack** that adjusts the object’s Z position consistently.
+  * Ensure the ordering is stable and predictable (no flicker).
+* Add “**Auto-arrange**” button:
+
+  * When pressed, spread objects in a grid or radial layout to prevent overlap.
+  * Keep them within screen bounds.
+
+## 2) Mobile dragging must move freely (not tiny movement)
+
+* Current mobile drag feels scaled down—fix it.
+* Implement drag by projecting pointer position onto a **movement plane**:
+
+  * Use a plane parallel to camera (or a ground plane) and raycast pointer to it.
+  * Object should follow finger 1:1 across the screen.
+* Add **snap-to-surface** (optional toggle):
+
+  * If enabled, object stays “on table plane”.
+  * If disabled, allow free movement in space.
+
+## 3) Resize / shrink / enlarge (pinch + UI)
+
+* Add **pinch-to-scale** on mobile for the selected object.
+* Add UI buttons: **– / +** for scale with smooth increments.
+* Add limits: minScale and maxScale to avoid insane sizes.
+
+## 4) Depth control (make depth visible and adjustable)
+
+* Add a depth slider: “Near ↔ Far”
+
+  * Moves object along camera-forward direction (or Z in world if using fixed plane).
+* Add a subtle **shadow / ground contact** or depth cue so user can “feel” distance:
+
+  * Shadow plane or contact shadow under object.
+  * Optional: slight blur/atmosphere or scale cue.
+* Ensure depth changes don’t break dragging.
+
+## 5) Rotation (food needs correct orientation)
+
+* Add rotate gestures:
+
+  * Two-finger twist rotate OR dedicated rotate left/right buttons.
+* Add “Reset orientation” button.
+
+## 6) Context menu UI (aligned with the existing ✕ remove button)
+
+* Create a compact **context menu bar** that appears when an item is selected.
+* The bar must be aligned with the existing ✕ button area and include:
+
+  * ✕ Remove (existing)
+  * Bring Forward
+  * Send Back
+  * Depth slider (or a depth +/-)
+  * Scale – / +
+  * Rotate L / R
+  * Reset
+  * Auto-arrange
+* On mobile, this bar should be thumb-friendly and not block the object.
+
+## 7) AR-style food menu extras (must be included)
+
+Add “AR features” specific to food items:
+
+* **Place on table** mode: items snap onto a plane (simulated AR plane).
+* **Real-world scale presets** (S / M / L plate sizes).
+* **Nutritional / ingredients popup** anchored near the model.
+* **Customization options** (extra cheese, toppings, spice level) reflected visually when possible (swap textures/colors/material variants).
+* **Lighting modes** (warm restaurant light / daylight).
+* Optional: **camera passthrough hook** (if future WebAR integration) — structure code so it can later plug into WebXR.
+
+## 8) Technical requirements
+
+* Use clean architecture:
+
+  * ObjectManager (add/remove/select)
+  * InteractionController (drag/pinch/rotate)
+  * UIController (context menu actions)
+* Ensure performance on mobile:
+
+  * requestAnimationFrame loop
+  * throttle pointer events if needed
+  * dispose geometries/materials on remove
+* Do not break existing loading logic for GLB models.
+* After implementation, provide:
+
+  * Updated code files
+  * Short explanation of how selection + drag plane + depth works
+  * Any new dependencies listed clearly
+
+Goal: multiple 3D food items should behave like “stickers” in AR space: select, drag anywhere smoothly, scale, rotate, adjust depth, reorder, and remove — all from the aligned context menu next to the ✕ button.
