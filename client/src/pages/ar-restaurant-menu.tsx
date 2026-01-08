@@ -9,7 +9,7 @@ import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { 
   ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
-  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers
+  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -18,6 +18,7 @@ import Navbar from "@/components/navbar";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
+import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { useGesture } from '@use-gesture/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -274,9 +275,18 @@ export default function ARRestaurantMenuPage() {
   const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [snapToTable, setSnapToTable] = useState(false);
   const [lightingMode, setLightingMode] = useState<'day' | 'night'>('day');
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [activeItemDetails, setActiveItemDetails] = useState<ARItemState | null>(null);
   
   const [, setLocation] = useLocation();
-  const { selectedRestaurant, selectedBranch, getCartCount, setCartOpen } = useCartStore();
+  const { 
+    selectedRestaurant, 
+    selectedBranch, 
+    getCartCount, 
+    setCartOpen,
+    setLastAddedItem,
+    setAddToCartModalOpen
+  } = useCartStore();
 
   const branchId = selectedBranch?.branchId;
   const { data: menuData } = useQuery({
@@ -373,116 +383,48 @@ export default function ARRestaurantMenuPage() {
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto"
               >
-                <div className="flex items-center justify-center gap-2">
-                  <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 flex items-center gap-1 shadow-2xl">
-                    <Button 
-                      size="icon" variant="ghost" className="h-10 w-10 text-red-500 hover:bg-red-500/20"
-                      onClick={() => {
-                        setArItems(prev => prev.filter(i => i.instanceId !== activeObjectId));
-                        setActiveObjectId(null);
-                      }}
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
-                    <div className="w-px h-6 bg-white/10 mx-1" />
-                    <Button 
-                      size="icon" variant="ghost" className="h-10 w-10"
-                      onClick={() => updateSelectedItem({ scale: Math.min(5, selectedItem.scale + 0.1) })}
-                    >
-                      <Plus className="h-5 w-5" />
-                    </Button>
-                    <Button 
-                      size="icon" variant="ghost" className="h-10 w-10"
-                      onClick={() => updateSelectedItem({ scale: Math.max(0.2, selectedItem.scale - 0.1) })}
-                    >
-                      <X className="h-5 w-5 rotate-45" />
-                    </Button>
-                    <div className="w-px h-6 bg-white/10 mx-1" />
-                    <Button 
-                      size="icon" variant="ghost" className="h-10 w-10"
-                      onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] - 0.5, selectedItem.rotation[2]] })}
-                    >
-                      <RotateCcw className="h-5 w-5" />
-                    </Button>
-                    <Button 
-                      size="icon" variant="ghost" className="h-10 w-10"
-                      onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] + 0.5, selectedItem.rotation[2]] })}
-                    >
-                      <RotateCw className="h-5 w-5" />
-                    </Button>
-                    <div className="w-px h-6 bg-white/10 mx-1" />
-                    <Button 
-                      size="icon" variant="ghost" className={`h-10 w-10 ${selectedItem.showNutritional ? 'text-orange-500' : 'text-white'}`}
-                      onClick={() => updateSelectedItem({ showNutritional: !selectedItem.showNutritional })}
-                    >
-                      <Info className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4">
-                  <div className="flex items-center gap-4">
-                    <Layers className="h-4 w-4 text-white/40" />
-                    <div className="flex-1 flex items-center gap-3">
-                      <span className="text-[10px] uppercase font-bold text-white/40 min-w-[40px]">Depth</span>
-                      <Slider 
-                        value={[selectedItem.depthOffset]}
-                        min={-5} max={5} step={0.1}
-                        onValueChange={([v]) => updateSelectedItem({ depthOffset: v })}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    variant="destructive"
+                    className="w-full bg-red-500/80 hover:bg-red-600 text-white border border-red-400/20 rounded-xl h-14 gap-2 shadow-lg"
+                    onClick={() => {
+                      setArItems(prev => prev.filter(i => i.instanceId !== activeObjectId));
+                      setActiveObjectId(null);
+                    }}
+                  >
+                    <X className="w-5 h-5" />
+                    Remove from Table
+                  </Button>
                   
-                  <div className="grid grid-cols-4 gap-2">
-                    <Button 
-                      variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[10px] h-8"
-                      onClick={() => updateSelectedItem({ rotation: [0, 0, 0], scale: 1, depthOffset: 0 })}
-                    >
-                      RESET
-                    </Button>
-                    <Button 
-                      variant="outline" size="sm" 
-                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${snapToTable ? 'bg-orange-500 text-white' : ''}`}
-                      onClick={() => setSnapToTable(!snapToTable)}
-                    >
-                      TABLE
-                    </Button>
-                    <Button 
-                      variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[10px] h-8"
-                      onClick={handleAutoArrange}
-                    >
-                      ARRANGE
-                    </Button>
-                    <Button 
-                      variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[10px] h-8"
-                      onClick={() => setLightingMode(lightingMode === 'day' ? 'night' : 'day')}
-                    >
-                      {lightingMode === 'day' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
-                    </Button>
-                  </div>
+                  <Button 
+                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl h-14 gap-2 backdrop-blur-md shadow-lg"
+                    onClick={() => {
+                      setActiveItemDetails(selectedItem);
+                      setShowDetailsModal(true);
+                    }}
+                  >
+                    <Info className="w-5 h-5" />
+                    Show Details
+                  </Button>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                    <span className="text-[10px] uppercase font-bold text-white/40">Scale Presets</span>
-                    <div className="flex gap-2">
-                      {Object.entries(SCALE_PRESETS).map(([label, val]) => (
-                        <button
-                          key={label}
-                          onClick={() => updateSelectedItem({ scale: val })}
-                          className={`w-8 h-8 rounded-lg text-[10px] font-bold border transition-all ${
-                            Math.abs(selectedItem.scale - val) < 0.1 
-                              ? 'bg-orange-500 border-orange-400 text-white' 
-                              : 'bg-white/5 border-white/10 text-white/60'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <Button 
+                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl h-14 gap-2 backdrop-blur-md shadow-lg"
+                    onClick={() => setActiveObjectId(null)}
+                  >
+                    <EyeOff className="w-5 h-5" />
+                    Hide this menu
+                  </Button>
+
+                  <Button 
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl h-14 gap-2 shadow-lg"
+                    onClick={() => {
+                      setLastAddedItem(selectedItem);
+                      setAddToCartModalOpen(true);
+                    }}
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    Add to Cart
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -564,16 +506,23 @@ export default function ARRestaurantMenuPage() {
       <CartModal />
       <AddToCartModal />
       <PaymentModal />
+      {activeItemDetails && (
+        <MenuItemDetailModal 
+          item={activeItemDetails}
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
+        />
+      )}
       
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+          background: rgba(255, 255, 255, 0.05);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.2);
           border-radius: 10px;
         }
       `}</style>
