@@ -412,8 +412,8 @@ export default function ARRestaurantMenuPage() {
                     </Button>
                     <div className="w-px h-6 bg-white/10 mx-1" />
                     <Button 
-                      size="icon" variant="ghost" className={`h-10 w-10 ${showNutritional ? 'text-orange-500' : 'text-white'}`}
-                      onClick={() => setShowNutritional(!showNutritional)}
+                      size="icon" variant="ghost" className={`h-10 w-10 ${selectedItem.showNutritional ? 'text-orange-500' : 'text-white'}`}
+                      onClick={() => updateSelectedItem({ showNutritional: !selectedItem.showNutritional })}
                     >
                       <Info className="h-5 w-5" />
                     </Button>
