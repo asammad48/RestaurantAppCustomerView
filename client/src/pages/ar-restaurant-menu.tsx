@@ -451,9 +451,9 @@ export default function ARRestaurantMenuPage() {
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto overflow-hidden"
               >
-                <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4">
+                <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 sm:p-4 shadow-2xl space-y-3 sm:space-y-4 max-w-full">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold text-white/40">Arrangement</span>
+                    <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Arrangement</span>
                     <Button 
                       size="icon" variant="ghost" className="h-6 w-6 text-white/40 hover:text-white"
                       onClick={() => setShowBottomUI(false)}
@@ -462,10 +462,10 @@ export default function ARRestaurantMenuPage() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <Layers className="h-4 w-4 text-white/40" />
-                    <div className="flex-1 flex items-center gap-3">
-                      <span className="text-[10px] uppercase font-bold text-white/40 min-w-[40px]">Depth</span>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <Layers className="h-4 w-4 text-white/40 flex-shrink-0" />
+                    <div className="flex-1 flex items-center gap-2 sm:gap-3">
+                      <span className="text-[10px] uppercase font-bold text-white/40 min-w-[35px] sm:min-w-[40px]">Depth</span>
                       <Slider 
                         value={[selectedItem.depthOffset]}
                         min={-5} max={5} step={0.1}
@@ -475,17 +475,17 @@ export default function ARRestaurantMenuPage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                     <Button 
                       variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      className="bg-white/5 border-white/10 text-[9px] sm:text-[10px] h-7 sm:h-8 px-1"
                       onClick={() => updateSelectedItem({ rotation: [0, 0, 0], scale: 1, depthOffset: 0 })}
                     >
                       RESET
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${snapToTable ? 'text-white' : ''}`}
+                      className={`bg-white/5 border-white/10 text-[9px] sm:text-[10px] h-7 sm:h-8 px-1 ${snapToTable ? 'text-white' : ''}`}
                       style={snapToTable ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
                       onClick={() => setSnapToTable(!snapToTable)}
                     >
@@ -493,27 +493,28 @@ export default function ARRestaurantMenuPage() {
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      className="bg-white/5 border-white/10 text-[9px] sm:text-[10px] h-7 sm:h-8 px-1"
                       onClick={handleAutoArrange}
                     >
                       ARRANGE
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      className="bg-white/5 border-white/10 text-[9px] sm:text-[10px] h-7 sm:h-8 px-1"
                       onClick={() => setLightingMode(lightingMode === 'day' ? 'night' : 'day')}
                     >
                       {lightingMode === 'day' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                    <span className="text-[10px] uppercase font-bold text-white/40">Scale Presets</span>
-                    <div className="flex gap-2">
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-2">
+                    <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider flex-shrink-0">Scale</span>
+                    <div className="flex gap-1.5 sm:gap-2">
                       {Object.entries(SCALE_PRESETS).map(([label, val]) => (
                     <Button 
+                      key={label}
                       variant="outline" size="sm" 
-                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${Math.abs(selectedItem.scale - val) < 0.1 ? 'text-white' : 'text-white/60'}`}
+                      className={`bg-white/5 border-white/10 text-[10px] h-7 sm:h-8 w-7 sm:w-8 p-0 ${Math.abs(selectedItem.scale - val) < 0.1 ? 'text-white' : 'text-white/60'}`}
                       style={Math.abs(selectedItem.scale - val) < 0.1 ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a', borderColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
                       onClick={() => updateSelectedItem({ scale: val })}
                     >
