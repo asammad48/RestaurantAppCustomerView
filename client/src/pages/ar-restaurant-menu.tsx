@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useMemo, useEffect, Suspense, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Html, PerspectiveCamera, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -7,14 +7,34 @@ import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
-import { ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown } from "lucide-react";
+import { 
+  ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
+  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Slider } from "@/components/ui/slider";
 import Navbar from "@/components/navbar";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
 import { useGesture } from '@use-gesture/react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- Types & Constants ---
+interface ARItemState extends ApiMenuItem {
+  instanceId: string;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: number;
+  depthOffset: number;
+}
+
+const SCALE_PRESETS = {
+  S: 0.8,
+  M: 1.2,
+  L: 1.8
+};
 
 // --- Camera Feed Component ---
 function CameraFeed() {
@@ -48,92 +68,96 @@ function CameraFeed() {
   );
 }
 
-// --- Gesture Enabled Product Component ---
+// --- Product Component ---
 const ProductObject = ({ 
   item, 
-  index,
-  total,
   isSelected, 
   onSelect,
+  onUpdate,
+  snapToTable,
+  showNutritionalInfo
 }: { 
-  item: ApiMenuItem; 
-  index: number;
-  total: number;
+  item: ARItemState; 
   isSelected: boolean; 
   onSelect: () => void;
+  onUpdate: (updates: Partial<ARItemState>) => void;
+  snapToTable: boolean;
+  showNutritionalInfo: boolean;
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
   const modelPath = item.threeDObject;
-  const { size, viewport } = useThree();
+  const { camera, size, raycaster } = useThree();
+  const planeRef = useRef(new THREE.Plane());
 
-  // Ref-based state for smooth lerping in useFrame
-  const targetPos = useRef(new THREE.Vector3((index - (total - 1) / 2) * 2.5, 0, 0));
-  const targetRot = useRef(new THREE.Euler(0, 0, 0));
-  const targetScale = useRef(new THREE.Vector3(1, 1, 1));
+  // Internal lerp refs
+  const targetPos = useRef(new THREE.Vector3(...item.position));
+  const targetRot = useRef(new THREE.Euler(...item.rotation));
+  const targetScale = useRef(new THREE.Vector3(item.scale, item.scale, item.scale));
 
-  // Handle frame-based smoothing (lerp)
   useFrame(() => {
     if (groupRef.current) {
-      groupRef.current.position.lerp(targetPos.current, 0.2);
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      const pos = new THREE.Vector3(...item.position);
       
-      // Smooth rotation
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRot.current.x, 0.2);
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRot.current.y, 0.2);
-      
-      groupRef.current.scale.lerp(targetScale.current, 0.2);
+      if (snapToTable) {
+        pos.y = -0.6;
+      }
+
+      const depthOffsetVec = forward.multiplyScalar(-item.depthOffset);
+      pos.add(depthOffsetVec);
+
+      targetPos.current.copy(pos);
+      targetRot.current.set(...item.rotation);
+      targetScale.current.set(item.scale, item.scale, item.scale);
+
+      groupRef.current.position.lerp(targetPos.current, 0.15);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRot.current.x, 0.15);
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRot.current.y, 0.15);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, targetRot.current.z, 0.15);
+      groupRef.current.scale.lerp(targetScale.current, 0.15);
     }
   });
 
-  // Bind gestures
   const bind = useGesture(
     {
-      onDrag: ({ delta: [dx, dy] }) => {
+      onDrag: ({ active, xy: [x, y] }) => {
         if (!isSelected) {
           onSelect();
+          return;
         }
 
-        // IMPROVED: Direct sensitivity for free movement
-        const sensitivity = 0.05; 
-        targetPos.current.x += dx * sensitivity;
-        targetPos.current.y -= dy * sensitivity;
+        if (active) {
+          const ndc = new THREE.Vector2(
+            (x / size.width) * 2 - 1,
+            -(y / size.height) * 2 + 1
+          );
+
+          const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion);
+          planeRef.current.setFromNormalAndCoplanarPoint(normal, groupRef.current!.position);
+
+          raycaster.setFromCamera(ndc, camera);
+          const intersectPoint = new THREE.Vector3();
+          if (raycaster.ray.intersectPlane(planeRef.current, intersectPoint)) {
+            onUpdate({ position: [intersectPoint.x, intersectPoint.y, intersectPoint.z] });
+          }
+        }
       },
-      onPinch: ({ delta: [d] }) => {
-        const s = Math.max(0.5, Math.min(3, targetScale.current.x + d / 200));
-        targetScale.current.set(s, s, s);
+      onPinch: ({ offset: [d] }) => {
+        if (!isSelected) return;
+        const newScale = Math.max(0.2, Math.min(5, 1 + d / 100));
+        onUpdate({ scale: newScale });
       }
     },
-    { 
-      drag: { filterTaps: true, threshold: 0 },
-      enabled: true,
-      eventOptions: { passive: false }
+    {
+      drag: { filterTaps: true, threshold: 5 },
+      enabled: isSelected
     }
   );
 
-  useEffect(() => {
-    console.log(`[AR_LOG] ProductObject Init: Item="${item.name}", itemId=${item.menuItemId}, modelPath="${modelPath || 'MISSING'}"`);
-  }, [item.name, item.menuItemId, modelPath]);
-
-  let gltf: any = null;
-  try {
-    if (modelPath && (modelPath.startsWith('http') || modelPath.startsWith('/') || modelPath.endsWith('.glb'))) {
-      gltf = useGLTF(modelPath);
-    } else {
-      console.warn(`[AR_LOG] Invalid modelPath for "${item.name}": ${modelPath}`);
-    }
-  } catch (err) {
-    console.error(`[AR_LOG] useGLTF Crash for "${item.name}":`, err);
-  }
-
+  const { scene } = useGLTF(modelPath || '/models/food_1.glb');
   const clonedScene = useMemo(() => {
-    if (gltf?.scene) {
-      console.log(`[AR_LOG] GLTF Scene Loaded for "${item.name}"`, { 
-        animations: gltf.animations?.length,
-        children: gltf.scene.children.length,
-        userData: gltf.scene.userData
-      });
-      const cloned = gltf.scene.clone();
-      
-      // Force visibility and fix materials
+    if (scene) {
+      const cloned = scene.clone();
       cloned.traverse((node: any) => {
         if (node.isMesh) {
           node.castShadow = true;
@@ -141,26 +165,18 @@ const ProductObject = ({
           if (node.material) {
             node.material.depthWrite = true;
             node.material.transparent = false;
-            node.material.opacity = 1;
             node.material.side = THREE.DoubleSide;
-            node.material.needsUpdate = true;
           }
         }
       });
-
-      // Scale normalization
+      
       const box = new THREE.Box3().setFromObject(cloned);
       const sizeVec = new THREE.Vector3();
       box.getSize(sizeVec);
       const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
-      
-      // LOG THE SIZE
-      console.log(`[AR_LOG] Model size for "${item.name}":`, sizeVec);
-
       const scale = 2.0 / (maxDim || 1);
       cloned.scale.set(scale, scale, scale);
       
-      // Centering
       const center = new THREE.Vector3();
       box.getCenter(center);
       cloned.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
@@ -168,10 +184,7 @@ const ProductObject = ({
       return cloned;
     }
     return null;
-  }, [gltf?.scene, item.name]);
-
-  const price = item.variations?.[0]?.discountedPrice || item.variations?.[0]?.price || 0;
-  const discount = item.discount?.value || 0;
+  }, [scene]);
 
   return (
     <group 
@@ -186,61 +199,68 @@ const ProductObject = ({
           <primitive object={clonedScene} />
         ) : (
           <mesh>
-            <sphereGeometry args={[0.7, 32, 32]} />
-            <meshStandardMaterial color="orange" emissive="orange" emissiveIntensity={0.5} />
-            <Html center>
-              <div className="bg-black/80 text-white text-[10px] px-3 py-2 rounded-lg border border-white/20 whitespace-nowrap shadow-2xl">
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="font-bold">Loading 3D Menu Item...</p>
-                  <p className="text-[8px] opacity-60 truncate max-w-[120px]">Fetching from assets...</p>
-                </div>
-              </div>
-            </Html>
+            <sphereGeometry args={[0.5, 32, 32]} />
+            <meshStandardMaterial color="orange" emissive="orange" emissiveIntensity={0.2} />
           </mesh>
         )}
       </group>
-      
-      <Html position={[0.6, 1.2, 0]} center style={{ pointerEvents: 'none' }}>
-        <div className="flex flex-col gap-1 pointer-events-none select-none">
-          <span className="bg-black/80 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap border border-white/10">
-            ₹{price}
-          </span>
-          {discount > 0 && (
-            <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
-              {discount}% OFF
-            </span>
-          )}
-        </div>
-      </Html>
 
       {isSelected && (
-        <mesh position={[0, -0.75, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[1, 1.2, 32]} />
-          <meshBasicMaterial color="#f97316" transparent opacity={0.6} />
-        </mesh>
+        <group>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
+            <ringGeometry args={[1.2, 1.3, 32]} />
+            <meshBasicMaterial color="#f97316" transparent opacity={0.8} />
+          </mesh>
+          <pointLight color="#f97316" intensity={2} distance={3} position={[0, 1, 0]} />
+        </group>
       )}
+
+      <Html position={[0, 1.5, 0]} center style={{ pointerEvents: 'none' }}>
+        <AnimatePresence>
+          {isSelected && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="flex flex-col items-center gap-1 pointer-events-none"
+            >
+              <div className="bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg border border-white/20 whitespace-nowrap">
+                {item.name}
+              </div>
+              {showNutritionalInfo && (
+                <div className="bg-black/90 backdrop-blur-md text-white text-[8px] p-2 rounded-lg border border-white/10 shadow-2xl min-w-[100px]">
+                  <p className="border-b border-white/10 pb-1 mb-1 font-bold uppercase tracking-tighter text-orange-400">Nutritional Info</p>
+                  <div className="flex justify-between gap-4">
+                    <span>Calories</span>
+                    <span>320 kcal</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span>Spice</span>
+                    <span className="text-red-400">Medium</span>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Html>
     </group>
   );
 };
 
 // --- Main Page Component ---
 export default function ARRestaurantMenuPage() {
-  const [activeObjectId, setActiveObjectId] = useState<number | null>(null);
-  const [arItems, setArItems] = useState<ApiMenuItem[]>([]);
+  const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
+  const [arItems, setArItems] = useState<ARItemState[]>([]);
   const [categoryExpanded, setCategoryExpanded] = useState(false);
+  const [snapToTable, setSnapToTable] = useState(false);
+  const [lightingMode, setLightingMode] = useState<'day' | 'night'>('day');
+  const [showNutritional, setShowNutritional] = useState(false);
+  
   const [, setLocation] = useLocation();
+  const { selectedRestaurant, selectedBranch, getCartCount, setCartOpen } = useCartStore();
 
-  const {
-    selectedRestaurant,
-    selectedBranch,
-    getCartCount,
-    setCartOpen,
-  } = useCartStore();
-
-  const cartTotalItems = getCartCount();
   const branchId = selectedBranch?.branchId;
-
   const { data: menuData } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
@@ -249,21 +269,42 @@ export default function ARRestaurantMenuPage() {
 
   const apiMenuData = menuData as ApiMenuResponse;
 
-  const handleAddItemToAR = (item: ApiMenuItem) => {
-    setArItems(prev => {
-      if (prev.find(i => i.menuItemId === item.menuItemId)) return prev;
-      return [...prev, item];
-    });
+  const handleAddItemToAR = (menuItem: ApiMenuItem) => {
+    const newItem: ARItemState = {
+      ...menuItem,
+      instanceId: Math.random().toString(36).substr(2, 9),
+      position: [(arItems.length * 1.5) - 3, 0, 0],
+      rotation: [0, 0, 0],
+      scale: 1,
+      depthOffset: 0,
+    };
+    setArItems(prev => [...prev, newItem]);
+    setActiveObjectId(newItem.instanceId);
     setCategoryExpanded(false);
   };
 
-  const handleRemoveItemFromAR = (id: number) => {
-    setArItems(prev => prev.filter(i => i.menuItemId !== id));
-    if (activeObjectId === id) setActiveObjectId(null);
+  const updateSelectedItem = useCallback((updates: Partial<ARItemState>) => {
+    setArItems(prev => prev.map(item => 
+      item.instanceId === activeObjectId ? { ...item, ...updates } : item
+    ));
+  }, [activeObjectId]);
+
+  const handleAutoArrange = () => {
+    setArItems(prev => prev.map((item, i) => ({
+      ...item,
+      position: [(i - (prev.length - 1) / 2) * 2.5, 0, 0],
+      rotation: [0, 0, 0],
+      depthOffset: 0
+    })));
   };
 
+  const selectedItem = useMemo(() => 
+    arItems.find(i => i.instanceId === activeObjectId), 
+    [arItems, activeObjectId]
+  );
+
   return (
-    <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white">
+    <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white select-none">
       <Navbar />
       
       <div className="flex-1 relative overflow-hidden">
@@ -277,42 +318,157 @@ export default function ARRestaurantMenuPage() {
             style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
             gl={{ alpha: true, antialias: true }}
           >
-            <ambientLight intensity={0.7} />
-            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
-            <pointLight position={[-10, -10, -10]} intensity={1} />
-            <Environment preset="city" />
+            <ambientLight intensity={lightingMode === 'day' ? 0.7 : 0.2} />
+            <spotLight 
+              position={[10, 10, 10]} 
+              angle={0.15} 
+              penumbra={1} 
+              intensity={lightingMode === 'day' ? 2 : 5} 
+              color={lightingMode === 'day' ? "#ffffff" : "#ffaa44"}
+              castShadow 
+            />
+            <Environment preset={lightingMode === 'day' ? "city" : "apartment"} />
             
-            <gridHelper args={[20, 20, 0xffffff, 0x444444]} position={[0, -1, 0]}>
-              <meshBasicMaterial attach="material" transparent opacity={0.2} />
-            </gridHelper>
-
-            <Suspense fallback={<mesh position={[0, 0, 0]}><boxGeometry /><meshStandardMaterial color="gray" /></mesh>}>
-              {arItems.map((item, index) => (
+            <Suspense fallback={null}>
+              {arItems.map((item) => (
                 <ProductObject 
-                  key={item.menuItemId}
+                  key={item.instanceId}
                   item={item}
-                  index={index}
-                  total={arItems.length}
-                  isSelected={activeObjectId === item.menuItemId}
-                  onSelect={() => setActiveObjectId(item.menuItemId)}
+                  isSelected={activeObjectId === item.instanceId}
+                  onSelect={() => setActiveObjectId(item.instanceId)}
+                  onUpdate={updateSelectedItem}
+                  snapToTable={snapToTable}
+                  showNutritionalInfo={showNutritional}
                 />
               ))}
             </Suspense>
 
-            <ContactShadows position={[0, -0.6, 0]} opacity={0.4} scale={15} blur={2.5} far={2} />
+            <ContactShadows position={[0, -0.6, 0]} opacity={0.6} scale={20} blur={2} far={4} />
           </Canvas>
 
-          {/* Scale UI Controls */}
-          {activeObjectId !== null && (
-            <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-auto z-50">
-              <button 
-                className="w-14 h-14 rounded-full bg-red-500/80 backdrop-blur-lg border border-red-400/20 flex items-center justify-center text-white hover:bg-red-500 active:scale-90 transition-all shadow-2xl"
-                onClick={() => handleRemoveItemFromAR(activeObjectId)}
+          {/* Context Menu Overlay */}
+          <AnimatePresence>
+            {activeObjectId && selectedItem && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto"
               >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-          )}
+                <div className="flex items-center justify-center gap-2">
+                  <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 flex items-center gap-1 shadow-2xl">
+                    <Button 
+                      size="icon" variant="ghost" className="h-10 w-10 text-red-500 hover:bg-red-500/20"
+                      onClick={() => {
+                        setArItems(prev => prev.filter(i => i.instanceId !== activeObjectId));
+                        setActiveObjectId(null);
+                      }}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                    <div className="w-px h-6 bg-white/10 mx-1" />
+                    <Button 
+                      size="icon" variant="ghost" className="h-10 w-10"
+                      onClick={() => updateSelectedItem({ scale: Math.min(5, selectedItem.scale + 0.1) })}
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                    <Button 
+                      size="icon" variant="ghost" className="h-10 w-10"
+                      onClick={() => updateSelectedItem({ scale: Math.max(0.2, selectedItem.scale - 0.1) })}
+                    >
+                      <X className="h-5 w-5 rotate-45" />
+                    </Button>
+                    <div className="w-px h-6 bg-white/10 mx-1" />
+                    <Button 
+                      size="icon" variant="ghost" className="h-10 w-10"
+                      onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] - 0.5, selectedItem.rotation[2]] })}
+                    >
+                      <RotateCcw className="h-5 w-5" />
+                    </Button>
+                    <Button 
+                      size="icon" variant="ghost" className="h-10 w-10"
+                      onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] + 0.5, selectedItem.rotation[2]] })}
+                    >
+                      <RotateCw className="h-5 w-5" />
+                    </Button>
+                    <div className="w-px h-6 bg-white/10 mx-1" />
+                    <Button 
+                      size="icon" variant="ghost" className={`h-10 w-10 ${showNutritional ? 'text-orange-500' : 'text-white'}`}
+                      onClick={() => setShowNutritional(!showNutritional)}
+                    >
+                      <Info className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Layers className="h-4 w-4 text-white/40" />
+                    <div className="flex-1 flex items-center gap-3">
+                      <span className="text-[10px] uppercase font-bold text-white/40 min-w-[40px]">Depth</span>
+                      <Slider 
+                        value={[selectedItem.depthOffset]}
+                        min={-5} max={5} step={0.1}
+                        onValueChange={([v]) => updateSelectedItem({ depthOffset: v })}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 gap-2">
+                    <Button 
+                      variant="outline" size="sm" 
+                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      onClick={() => updateSelectedItem({ rotation: [0, 0, 0], scale: 1, depthOffset: 0 })}
+                    >
+                      RESET
+                    </Button>
+                    <Button 
+                      variant="outline" size="sm" 
+                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${snapToTable ? 'bg-orange-500 text-white' : ''}`}
+                      onClick={() => setSnapToTable(!snapToTable)}
+                    >
+                      TABLE
+                    </Button>
+                    <Button 
+                      variant="outline" size="sm" 
+                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      onClick={handleAutoArrange}
+                    >
+                      ARRANGE
+                    </Button>
+                    <Button 
+                      variant="outline" size="sm" 
+                      className="bg-white/5 border-white/10 text-[10px] h-8"
+                      onClick={() => setLightingMode(lightingMode === 'day' ? 'night' : 'day')}
+                    >
+                      {lightingMode === 'day' ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <span className="text-[10px] uppercase font-bold text-white/40">Scale Presets</span>
+                    <div className="flex gap-2">
+                      {Object.entries(SCALE_PRESETS).map(([label, val]) => (
+                        <button
+                          key={label}
+                          onClick={() => updateSelectedItem({ scale: val })}
+                          className={`w-8 h-8 rounded-lg text-[10px] font-bold border transition-all ${
+                            Math.abs(selectedItem.scale - val) < 0.1 
+                              ? 'bg-orange-500 border-orange-400 text-white' 
+                              : 'bg-white/5 border-white/10 text-white/60'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {!activeObjectId && arItems.length > 0 && (
             <div className="absolute bottom-40 text-center px-6 pointer-events-none animate-pulse">
@@ -321,18 +477,16 @@ export default function ARRestaurantMenuPage() {
           )}
         </div>
 
-        {/* Top Controls */}
         <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
           <Button 
-            variant="ghost" 
-            size="icon" 
-            className="bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12"
+            variant="ghost" size="icon" 
+            className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl"
             onClick={() => setLocation("/")}
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 h-12 flex items-center">
-            <h1 className="text-sm font-semibold truncate max-w-[150px]">
+          <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 h-12 flex items-center shadow-xl">
+            <h1 className="text-sm font-bold truncate max-w-[150px]">
               {selectedRestaurant?.name || "AR Menu"}
             </h1>
           </div>
@@ -340,28 +494,26 @@ export default function ARRestaurantMenuPage() {
 
         <div className="absolute top-4 right-4 z-50">
           <Button 
-            variant="ghost" 
-            size="icon" 
-            className="bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 relative"
+            variant="ghost" size="icon" 
+            className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 relative shadow-xl"
             onClick={() => setCartOpen(true)}
           >
             <ShoppingCart className="h-6 w-6" />
-            {cartTotalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-black/40">
-                {cartTotalItems}
+            {getCartCount() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-black/40 shadow-lg">
+                {getCartCount()}
               </span>
             )}
           </Button>
         </div>
 
-        {/* Menu Picker */}
         <div className="absolute bottom-6 left-0 right-0 px-4 z-50 flex flex-col gap-4 pointer-events-none">
           <div className="pointer-events-auto max-w-md mx-auto w-full">
             <Collapsible open={categoryExpanded} onOpenChange={setCategoryExpanded}>
               <CollapsibleTrigger asChild>
-                <Button className="w-full bg-black/60 backdrop-blur-md text-white border border-white/10 rounded-2xl h-16 flex items-center justify-between px-6 shadow-2xl">
+                <Button className="w-full bg-black/80 backdrop-blur-xl text-white border border-white/10 rounded-2xl h-16 flex items-center justify-between px-6 shadow-2xl hover:bg-black/90 transition-all">
                   <div className="flex items-center gap-4">
-                    <div className="bg-orange-500 p-2 rounded-xl">
+                    <div className="bg-orange-500 p-2 rounded-xl shadow-lg">
                       <Menu className="h-6 w-6" />
                     </div>
                     <div className="text-left">
@@ -372,12 +524,12 @@ export default function ARRestaurantMenuPage() {
                   {categoryExpanded ? <ChevronDown className="h-5 w-5 text-white/40" /> : <ChevronUp className="h-5 w-5 text-white/40" />}
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl mt-3 p-3 max-h-[40vh] overflow-y-auto shadow-2xl overflow-x-hidden">
+              <CollapsibleContent className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl mt-3 p-3 max-h-[40vh] overflow-y-auto shadow-2xl overflow-x-hidden custom-scrollbar">
                 <div className="grid grid-cols-1 gap-2">
                   {apiMenuData?.menuItems?.map((item) => (
                     <button
                       key={item.menuItemId}
-                      className="w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all text-white/70 hover:bg-white/10 hover:text-white flex justify-between items-center group active:scale-[0.98]"
+                      className="w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all text-white/70 hover:bg-white/10 hover:text-white flex justify-between items-center group active:scale-[0.98] border border-transparent hover:border-white/5"
                       onClick={() => handleAddItemToAR(item)}
                     >
                       <span className="truncate flex-1">{item.name}</span>
@@ -394,6 +546,19 @@ export default function ARRestaurantMenuPage() {
       <CartModal />
       <AddToCartModal />
       <PaymentModal />
+      
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+        }
+      `}</style>
     </div>
   );
 }
