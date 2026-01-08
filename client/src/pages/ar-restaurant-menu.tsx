@@ -140,7 +140,6 @@ const ProductObject = ({
           return;
         }
         
-        // Prevent default behavior to avoid scrolling/zoom while interacting
         if (event && 'cancelable' in event && event.cancelable && 'preventDefault' in event) {
           (event as any).preventDefault();
         }
@@ -151,12 +150,19 @@ const ProductObject = ({
             -(y / size.height) * 2 + 1
           );
 
+          // Use a plane that is ALWAYS at the base position, NOT including the depth offset
+          // This ensures that dragging calculates the correct 2D -> 3D position 
+          // and then the depth offset is applied on top of that base position.
           const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion);
-          planeRef.current.setFromNormalAndCoplanarPoint(normal, groupRef.current!.position);
+          const basePos = new THREE.Vector3(...item.position);
+          if (snapToTable) basePos.y = -0.6;
+          
+          planeRef.current.setFromNormalAndCoplanarPoint(normal, basePos);
 
           raycaster.setFromCamera(ndc, camera);
           const intersectPoint = new THREE.Vector3();
           if (raycaster.ray.intersectPlane(planeRef.current, intersectPoint)) {
+            // Update the base position only
             onUpdate({ position: [intersectPoint.x, intersectPoint.y, intersectPoint.z] });
           }
         }
