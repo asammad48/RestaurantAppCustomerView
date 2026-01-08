@@ -9,7 +9,7 @@ import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { 
   ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
-  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search, Minus
+  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search, Minus, Camera, RefreshCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -41,14 +41,14 @@ const SCALE_PRESETS = {
 };
 
 // --- Camera Feed Component ---
-function CameraFeed() {
+function CameraFeed({ facingMode }: { facingMode: "user" | "environment" }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          video: { facingMode },
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -58,7 +58,14 @@ function CameraFeed() {
       }
     }
     startCamera();
-  }, []);
+    
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
+  }, [facingMode]);
 
   return (
     <video
@@ -315,6 +322,7 @@ export default function ARRestaurantMenuPage() {
   const [showBottomUI, setShowBottomUI] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   
   const [, setLocation] = useLocation();
   const { 
@@ -390,7 +398,7 @@ export default function ARRestaurantMenuPage() {
       
       <div className="flex-1 relative overflow-hidden">
         <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black">
-          <CameraFeed />
+          <CameraFeed facingMode={facingMode} />
           
           <Canvas
             shadows
@@ -462,22 +470,6 @@ export default function ARRestaurantMenuPage() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Layers className="h-3.5 w-3.5 text-white/40 flex-shrink-0" />
-                    <div className="flex-1 flex flex-col gap-0.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[8px] uppercase font-bold text-white/40 tracking-wider">Depth</span>
-                        <span className="text-[8px] font-mono text-white/60">{selectedItem.depthOffset.toFixed(1)}</span>
-                      </div>
-                      <Slider 
-                        value={[selectedItem.depthOffset]}
-                        min={-5} max={5} step={0.1}
-                        onValueChange={([v]) => updateSelectedItem({ depthOffset: v })}
-                        className="w-full h-4"
-                      />
-                    </div>
-                  </div>
-
                   <div className="grid grid-cols-1 gap-3">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between">
@@ -486,24 +478,18 @@ export default function ARRestaurantMenuPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Button 
-                          variant="outline" size="icon" 
-                          className="h-6 w-6 bg-white/5 border-white/10 text-white p-0"
+                          variant="outline" size="sm" 
+                          className="flex-1 bg-white/5 border-white/10 text-white h-7 text-[9px]"
                           onClick={() => updateSelectedItem({ scale: Math.max(0.1, selectedItem.scale - 0.1) })}
                         >
-                          <Minus className="h-2.5 w-2.5" />
+                          <Minus className="h-2.5 w-2.5 mr-1" /> SHRINK
                         </Button>
-                        <Slider 
-                          value={[selectedItem.scale]}
-                          min={0.1} max={3} step={0.05}
-                          onValueChange={([v]) => updateSelectedItem({ scale: v })}
-                          className="flex-1 h-4"
-                        />
                         <Button 
-                          variant="outline" size="icon" 
-                          className="h-6 w-6 bg-white/5 border-white/10 text-white p-0"
+                          variant="outline" size="sm" 
+                          className="flex-1 bg-white/5 border-white/10 text-white h-7 text-[9px]"
                           onClick={() => updateSelectedItem({ scale: Math.min(3, selectedItem.scale + 0.1) })}
                         >
-                          <Plus className="h-2.5 w-2.5" />
+                          <Plus className="h-2.5 w-2.5 mr-1" /> ENLARGE
                         </Button>
                       </div>
                     </div>
@@ -618,13 +604,23 @@ export default function ARRestaurantMenuPage() {
           )}
         </div>
 
-        <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
           <Button 
             variant="ghost" size="icon" 
             className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl"
-            onClick={() => setLocation("/")}
+            onClick={() => setFacingMode(prev => prev === "user" ? "environment" : "user")}
           >
-            <ArrowLeft className="h-6 w-6" />
+            <Camera className="h-6 w-6" />
+          </Button>
+          <Button 
+            variant="ghost" size="icon" 
+            className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl"
+            onClick={() => {
+              setArItems([]);
+              setActiveObjectId(null);
+            }}
+          >
+            <RefreshCcw className="h-6 w-6" />
           </Button>
         </div>
 
