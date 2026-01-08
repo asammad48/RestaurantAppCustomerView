@@ -25,7 +25,7 @@ import { useEffect } from "react";
 function Router() {
   return (
     <Switch>
-      <Route path="/ar-menu" component={ARRestaurantMenuPage} />
+      <Route path="/ar" component={ARRestaurantMenuPage} />
       <Route path="/" component={Delivery} />
       <Route path="/order-history" component={OrderHistoryPage} />
       <Route path="/reservation" component={ReservationPage} />

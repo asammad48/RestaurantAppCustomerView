@@ -443,20 +443,21 @@ export default function ARRestaurantMenuPage() {
     const newItem: ARItemState = {
       ...menuItem,
       instanceId: Math.random().toString(36).substr(2, 9),
-      position: [0, 0, 0], // Start at center
+      position: [0, 0, 0], // Perfectly centered
       rotation: [0, 0, 0],
       scale: 1,
       depthOffset: 0,
     };
     
-    // Offset subsequent items slightly so they don't perfectly overlap initially
+    // Offset subsequent items slightly to the right
     if (arItems.length > 0) {
-      newItem.position[0] = arItems.length * 0.5;
+      newItem.position[0] = arItems.length * 0.8;
     }
 
     setArItems(prev => [...prev, newItem]);
     setActiveObjectId(newItem.instanceId);
     setCategoryExpanded(false);
+    console.log("Placed new item at center:", newItem.position);
   };
 
   const updateSelectedItem = useCallback((updates: Partial<ARItemState>) => {
