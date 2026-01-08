@@ -451,121 +451,119 @@ export default function ARRestaurantMenuPage() {
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto overflow-hidden"
               >
-                <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 sm:p-4 shadow-2xl space-y-3 sm:space-y-4 max-w-full">
+                <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl space-y-3 max-w-sm mx-auto w-full">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Arrangement</span>
+                    <span className="text-[9px] uppercase font-bold text-white/40 tracking-wider">Arrangement</span>
                     <Button 
-                      size="icon" variant="ghost" className="h-6 w-6 text-white/40 hover:text-white"
+                      size="icon" variant="ghost" className="h-5 w-5 text-white/40 hover:text-white"
                       onClick={() => setShowBottomUI(false)}
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </Button>
                   </div>
 
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <Layers className="h-4 w-4 text-white/40 flex-shrink-0" />
-                    <div className="flex-1 flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Layers className="h-3.5 w-3.5 text-white/40 flex-shrink-0" />
+                    <div className="flex-1 flex flex-col gap-0.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Depth</span>
-                        <span className="text-[10px] font-mono text-white/60">{selectedItem.depthOffset.toFixed(1)}</span>
+                        <span className="text-[8px] uppercase font-bold text-white/40 tracking-wider">Depth</span>
+                        <span className="text-[8px] font-mono text-white/60">{selectedItem.depthOffset.toFixed(1)}</span>
                       </div>
                       <Slider 
                         value={[selectedItem.depthOffset]}
                         min={-5} max={5} step={0.1}
                         onValueChange={([v]) => updateSelectedItem({ depthOffset: v })}
-                        className="w-full"
+                        className="w-full h-4"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    <div className="flex flex-col gap-1.5">
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Scale</span>
-                        <span className="text-[10px] font-mono text-white/60">{selectedItem.scale.toFixed(2)}x</span>
+                        <span className="text-[8px] uppercase font-bold text-white/40 tracking-wider">Scale</span>
+                        <span className="text-[8px] font-mono text-white/60">{selectedItem.scale.toFixed(2)}x</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button 
                           variant="outline" size="icon" 
-                          className="h-8 w-8 bg-white/5 border-white/10 text-white"
+                          className="h-6 w-6 bg-white/5 border-white/10 text-white p-0"
                           onClick={() => updateSelectedItem({ scale: Math.max(0.1, selectedItem.scale - 0.1) })}
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-2.5 w-2.5" />
                         </Button>
                         <Slider 
                           value={[selectedItem.scale]}
                           min={0.1} max={3} step={0.05}
                           onValueChange={([v]) => updateSelectedItem({ scale: v })}
-                          className="flex-1"
+                          className="flex-1 h-4"
                         />
                         <Button 
                           variant="outline" size="icon" 
-                          className="h-8 w-8 bg-white/5 border-white/10 text-white"
+                          className="h-6 w-6 bg-white/5 border-white/10 text-white p-0"
                           onClick={() => updateSelectedItem({ scale: Math.min(3, selectedItem.scale + 0.1) })}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-2.5 w-2.5" />
                         </Button>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Rotation</span>
+                        <span className="text-[8px] uppercase font-bold text-white/40 tracking-wider">Rotation</span>
                         <div className="flex gap-1">
-                          <span className="text-[10px] font-mono text-white/40">Y:{(selectedItem.rotation[1] * 180 / Math.PI).toFixed(0)}°</span>
-                          <span className="text-[10px] font-mono text-white/40">X:{(selectedItem.rotation[0] * 180 / Math.PI).toFixed(0)}°</span>
+                          <span className="text-[8px] font-mono text-white/40">Y:{(selectedItem.rotation[1] * 180 / Math.PI).toFixed(0)}°</span>
+                          <span className="text-[8px] font-mono text-white/40">X:{(selectedItem.rotation[0] * 180 / Math.PI).toFixed(0)}°</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex flex-col gap-1 flex-1">
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="outline" size="icon" 
-                              className="h-7 flex-1 bg-white/5 border-white/10 text-white"
-                              onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] - 0.2, selectedItem.rotation[2]] })}
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                            </Button>
-                            <Button 
-                              variant="outline" size="icon" 
-                              className="h-7 flex-1 bg-white/5 border-white/10 text-white"
-                              onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] + 0.2, selectedItem.rotation[2]] })}
-                            >
-                              <RotateCw className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="outline" size="icon" 
-                              className="h-7 flex-1 bg-white/5 border-white/10 text-white"
-                              onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0] + 0.2, selectedItem.rotation[1], selectedItem.rotation[2]] })}
-                            >
-                              <ChevronUp className="h-3 w-3" />
-                            </Button>
-                            <Button 
-                              variant="outline" size="icon" 
-                              className="h-7 flex-1 bg-white/5 border-white/10 text-white"
-                              onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0] - 0.2, selectedItem.rotation[1], selectedItem.rotation[2]] })}
-                            >
-                              <ChevronDown className="h-3 w-3" />
-                            </Button>
-                          </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="outline" size="icon" 
+                            className="h-6 flex-1 bg-white/5 border-white/10 text-white p-0"
+                            onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] - 0.2, selectedItem.rotation[2]] })}
+                          >
+                            <RotateCcw className="h-2.5 w-2.5" />
+                          </Button>
+                          <Button 
+                            variant="outline" size="icon" 
+                            className="h-6 flex-1 bg-white/5 border-white/10 text-white p-0"
+                            onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] + 0.2, selectedItem.rotation[2]] })}
+                          >
+                            <RotateCw className="h-2.5 w-2.5" />
+                          </Button>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="outline" size="icon" 
+                            className="h-6 flex-1 bg-white/5 border-white/10 text-white p-0"
+                            onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0] + 0.2, selectedItem.rotation[1], selectedItem.rotation[2]] })}
+                          >
+                            <ChevronUp className="h-2.5 w-2.5" />
+                          </Button>
+                          <Button 
+                            variant="outline" size="icon" 
+                            className="h-6 flex-1 bg-white/5 border-white/10 text-white p-0"
+                            onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0] - 0.2, selectedItem.rotation[1], selectedItem.rotation[2]] })}
+                          >
+                            <ChevronDown className="h-2.5 w-2.5" />
+                          </Button>
                         </div>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
                     <Button 
                       variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[9px] sm:text-[10px] h-7 sm:h-8 px-1"
+                      className="bg-white/5 border-white/10 text-[8px] h-6 px-1"
                       onClick={() => updateSelectedItem({ rotation: [0, 0, 0], scale: 1, depthOffset: 0 })}
                     >
                       RESET
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className={`bg-white/5 border-white/10 text-[9px] sm:text-[10px] h-7 sm:h-8 px-1 ${snapToTable ? 'text-white' : ''}`}
+                      className={`bg-white/5 border-white/10 text-[8px] h-6 px-1 ${snapToTable ? 'text-white' : ''}`}
                       style={snapToTable ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
                       onClick={() => setSnapToTable(!snapToTable)}
                     >
@@ -573,22 +571,22 @@ export default function ARRestaurantMenuPage() {
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[9px] sm:text-[10px] h-7 sm:h-8 px-1"
+                      className="bg-white/5 border-white/10 text-[8px] h-6 px-1"
                       onClick={handleAutoArrange}
                     >
                       ARRANGE
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Presets</span>
-                      <div className="flex gap-1.5 sm:gap-2">
+                  <div className="flex items-center justify-between pt-1.5 border-t border-white/5 gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[8px] uppercase font-bold text-white/40 tracking-wider">Presets</span>
+                      <div className="flex gap-1">
                         {Object.entries(SCALE_PRESETS).map(([label, val]) => (
                           <Button 
                             key={label}
                             variant="outline" size="sm" 
-                            className={`bg-white/5 border-white/10 text-[10px] h-7 sm:h-8 w-7 sm:w-8 p-0 ${Math.abs(selectedItem.scale - val) < 0.1 ? 'text-white' : 'text-white/60'}`}
+                            className={`bg-white/5 border-white/10 text-[8px] h-5 w-5 p-0 ${Math.abs(selectedItem.scale - val) < 0.1 ? 'text-white' : 'text-white/60'}`}
                             style={Math.abs(selectedItem.scale - val) < 0.1 ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a', borderColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
                             onClick={() => updateSelectedItem({ scale: val })}
                           >
@@ -597,14 +595,13 @@ export default function ARRestaurantMenuPage() {
                         ))}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Mode</span>
+                    <div className="flex items-center gap-1.5">
                       <Button 
                         variant="outline" size="sm" 
-                        className="bg-white/5 border-white/10 text-[9px] sm:text-[10px] h-7 sm:h-8 px-2"
+                        className="bg-white/5 border-white/10 text-[8px] h-5 px-1.5"
                         onClick={() => setLightingMode(lightingMode === 'day' ? 'night' : 'day')}
                       >
-                        {lightingMode === 'day' ? <Sun className="h-3 w-3 mr-1" /> : <Moon className="h-3 w-3 mr-1" />}
+                        {lightingMode === 'day' ? <Sun className="h-2.5 w-2.5 mr-1" /> : <Moon className="h-2.5 w-2.5 mr-1" />}
                         {lightingMode.toUpperCase()}
                       </Button>
                     </div>
