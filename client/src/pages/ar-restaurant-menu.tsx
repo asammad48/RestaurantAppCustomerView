@@ -243,9 +243,9 @@ const ProductObject = ({
         <group>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
             <ringGeometry args={[1.2, 1.3, 32]} />
-            <meshBasicMaterial color="#f97316" transparent opacity={0.8} />
+            <meshBasicMaterial color={new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || "#16a34a")} transparent opacity={0.8} />
           </mesh>
-          <pointLight color="#f97316" intensity={2} distance={3} position={[0, 1, 0]} />
+          <pointLight color={new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || "#16a34a")} intensity={2} distance={3} position={[0, 1, 0]} />
         </group>
       )}
 
@@ -286,7 +286,7 @@ const ProductObject = ({
                 </Button>
                 <Button 
                   size="icon" variant="ghost" 
-                  className="h-8 w-8 rounded-full text-orange-500 hover:bg-orange-500/20"
+                  className="h-8 w-8 rounded-full text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20"
                   onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
                 >
                   <ShoppingBag className="h-4 w-4" />
@@ -481,7 +481,7 @@ export default function ARRestaurantMenuPage() {
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${snapToTable ? 'bg-orange-500 text-white' : ''}`}
+                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${snapToTable ? 'bg-[var(--color-primary)] text-white' : ''}`}
                       onClick={() => setSnapToTable(!snapToTable)}
                     >
                       TABLE
@@ -511,7 +511,7 @@ export default function ARRestaurantMenuPage() {
                           onClick={() => updateSelectedItem({ scale: val })}
                           className={`w-8 h-8 rounded-lg text-[10px] font-bold border transition-all ${
                             Math.abs(selectedItem.scale - val) < 0.1 
-                              ? 'bg-orange-500 border-orange-400 text-white' 
+                              ? 'bg-[var(--color-primary)] border-[var(--color-primary-light)] text-white' 
                               : 'bg-white/5 border-white/10 text-white/60'
                           }`}
                         >
