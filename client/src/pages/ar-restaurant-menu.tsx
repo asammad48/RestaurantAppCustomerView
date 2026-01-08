@@ -132,11 +132,14 @@ const ProductObject = ({
 
   const bind = useGesture(
     {
-      onDrag: ({ active, xy: [x, y] }) => {
+      onDrag: ({ active, xy: [x, y], event }) => {
         if (!isSelected) {
           onSelect();
           return;
         }
+        
+        // Prevent default behavior to avoid scrolling/zoom while interacting
+        if (event.cancelable) event.preventDefault();
 
         if (active) {
           const ndc = new THREE.Vector2(
@@ -154,14 +157,21 @@ const ProductObject = ({
           }
         }
       },
-      onPinch: ({ offset: [d] }) => {
+      onPinch: ({ active, offset: [d], event }) => {
         if (!isSelected) return;
-        const newScale = Math.max(0.2, Math.min(5, 1 + d / 100));
-        onUpdate({ scale: newScale });
+        if (event.cancelable) event.preventDefault();
+        
+        if (active) {
+          // Clamp scale to 0.5 (min) and 2.5 (max)
+          // Pinch gesture offset for scale usually starts from 1.0 or the initial scale
+          const newScale = Math.max(0.5, Math.min(2.5, d));
+          onUpdate({ scale: newScale });
+        }
       }
     },
     {
       drag: { filterTaps: true, threshold: 5 },
+      pinch: { scaleBounds: { min: 0.5, max: 2.5 }, from: () => [item.scale, 0] },
       enabled: isSelected
     }
   );
