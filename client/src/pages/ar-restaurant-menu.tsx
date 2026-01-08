@@ -84,7 +84,8 @@ const ProductObject = ({
   onShowDetails,
   onAddToCart,
   showBottomUI,
-  setShowBottomUI
+  setShowBottomUI,
+  primaryColor
 }: { 
   item: ARItemState; 
   isSelected: boolean; 
@@ -97,6 +98,7 @@ const ProductObject = ({
   onAddToCart: () => void;
   showBottomUI: boolean;
   setShowBottomUI: (val: boolean) => void;
+  primaryColor?: string;
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
   const modelPath = item.threeDObject;
@@ -243,9 +245,9 @@ const ProductObject = ({
         <group>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
             <ringGeometry args={[1.2, 1.3, 32]} />
-            <meshBasicMaterial color={selectedBranch?.primaryColor || "#16a34a"} transparent opacity={0.8} />
+            <meshBasicMaterial color={primaryColor || "#16a34a"} transparent opacity={0.8} />
           </mesh>
-          <pointLight color={selectedBranch?.primaryColor || "#16a34a"} intensity={2} distance={3} position={[0, 1, 0]} />
+          <pointLight color={primaryColor || "#16a34a"} intensity={2} distance={3} position={[0, 1, 0]} />
         </group>
       )}
 
@@ -287,7 +289,7 @@ const ProductObject = ({
                 <Button 
                   size="icon" variant="ghost" 
                   className="h-8 w-8 rounded-full hover:bg-white/20"
-                  style={{ color: selectedBranch?.primaryColor || '#16a34a' }}
+                  style={{ color: primaryColor || '#16a34a' }}
                   onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
                 >
                   <ShoppingBag className="h-4 w-4" />
@@ -420,6 +422,7 @@ export default function ARRestaurantMenuPage() {
                   showNutritionalInfo={!!item.showNutritional}
                   showBottomUI={showBottomUI}
                   setShowBottomUI={setShowBottomUI}
+                  primaryColor={selectedBranch?.primaryColor}
                   onRemove={() => {
                     setArItems(prev => prev.filter(i => i.instanceId !== item.instanceId));
                     setActiveObjectId(null);
