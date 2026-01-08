@@ -243,9 +243,9 @@ const ProductObject = ({
         <group>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
             <ringGeometry args={[1.2, 1.3, 32]} />
-            <meshBasicMaterial color={new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || "#16a34a")} transparent opacity={0.8} />
+            <meshBasicMaterial color={selectedBranch?.primaryColor || "#16a34a"} transparent opacity={0.8} />
           </mesh>
-          <pointLight color={new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || "#16a34a")} intensity={2} distance={3} position={[0, 1, 0]} />
+          <pointLight color={selectedBranch?.primaryColor || "#16a34a"} intensity={2} distance={3} position={[0, 1, 0]} />
         </group>
       )}
 
@@ -286,7 +286,8 @@ const ProductObject = ({
                 </Button>
                 <Button 
                   size="icon" variant="ghost" 
-                  className="h-8 w-8 rounded-full text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20"
+                  className="h-8 w-8 rounded-full hover:bg-white/20"
+                  style={{ color: selectedBranch?.primaryColor || '#16a34a' }}
                   onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
                 >
                   <ShoppingBag className="h-4 w-4" />
@@ -548,7 +549,7 @@ export default function ARRestaurantMenuPage() {
               <CollapsibleTrigger asChild>
                 <Button className="w-full bg-black/40 backdrop-blur-md text-white border border-white/10 rounded-2xl h-14 flex items-center justify-between px-6 shadow-xl hover:bg-black/60 transition-all">
                   <div className="flex items-center gap-4">
-                    <div className="bg-orange-500 p-1.5 rounded-lg shadow-lg">
+                    <div className="p-1.5 rounded-lg shadow-lg" style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}>
                       <Menu className="h-5 w-5" />
                     </div>
                     <div className="text-left">
@@ -561,10 +562,10 @@ export default function ARRestaurantMenuPage() {
               </CollapsibleTrigger>
               <CollapsibleContent className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl mt-3 p-4 max-h-[50vh] overflow-y-auto shadow-2xl overflow-x-hidden custom-scrollbar flex flex-col gap-4">
                 <div className="relative group pointer-events-auto">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-orange-500 transition-colors" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-white transition-colors" />
                   <Input 
                     placeholder="Search dishes..." 
-                    className="bg-white/5 border-white/10 pl-10 h-10 rounded-xl text-white placeholder:text-white/20 focus-visible:ring-orange-500/50"
+                    className="bg-white/5 border-white/10 pl-10 h-10 rounded-xl text-white placeholder:text-white/20 focus-visible:ring-white/20"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
