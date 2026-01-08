@@ -482,7 +482,8 @@ export default function ARRestaurantMenuPage() {
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${snapToTable ? 'bg-[var(--color-primary)] text-white' : ''}`}
+                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${snapToTable ? 'text-white' : ''}`}
+                      style={snapToTable ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
                       onClick={() => setSnapToTable(!snapToTable)}
                     >
                       TABLE
@@ -507,17 +508,14 @@ export default function ARRestaurantMenuPage() {
                     <span className="text-[10px] uppercase font-bold text-white/40">Scale Presets</span>
                     <div className="flex gap-2">
                       {Object.entries(SCALE_PRESETS).map(([label, val]) => (
-                        <button
-                          key={label}
-                          onClick={() => updateSelectedItem({ scale: val })}
-                          className={`w-8 h-8 rounded-lg text-[10px] font-bold border transition-all ${
-                            Math.abs(selectedItem.scale - val) < 0.1 
-                              ? 'bg-[var(--color-primary)] border-[var(--color-primary-light)] text-white' 
-                              : 'bg-white/5 border-white/10 text-white/60'
-                          }`}
-                        >
-                          {label}
-                        </button>
+                    <Button 
+                      variant="outline" size="sm" 
+                      className={`bg-white/5 border-white/10 text-[10px] h-8 ${Math.abs(selectedItem.scale - val) < 0.1 ? 'text-white' : 'text-white/60'}`}
+                      style={Math.abs(selectedItem.scale - val) < 0.1 ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a', borderColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
+                      onClick={() => updateSelectedItem({ scale: val })}
+                    >
+                      {label}
+                    </Button>
                       ))}
                     </div>
                   </div>
@@ -577,9 +575,10 @@ export default function ARRestaurantMenuPage() {
                       key={cat}
                       className={`cursor-pointer whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
                         selectedCategory === cat 
-                          ? "bg-orange-500 border-orange-400 text-white" 
+                          ? "text-white shadow-lg" 
                           : "bg-white/5 border-white/5 text-white/50 hover:bg-white/10"
                       }`}
+                      style={selectedCategory === cat ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a', borderColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
                       onClick={() => setSelectedCategory(cat)}
                     >
                       {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -599,7 +598,7 @@ export default function ARRestaurantMenuPage() {
                           <span className="truncate flex-1">{item.name}</span>
                           <span className="text-[10px] text-white/40 font-medium">{item.categoryName}</span>
                         </div>
-                        <Plus className="h-5 w-5 text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Plus className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: selectedBranch?.primaryColor || '#16a34a' }} />
                       </button>
                     ))
                   ) : (
