@@ -108,8 +108,8 @@ export default function Navbar() {
                 size="sm"
                 data-testid="button-order-history"
               >
-                <History size={16} className="sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline text-sm">Orders</span>
+                <History size={16} className="sm:w-5 sm:h-5 text-gray-700" />
+                <span className="text-sm text-gray-700">Orders</span>
               </Button>
             </Link>
 
@@ -136,27 +136,27 @@ export default function Navbar() {
                       <User size={16} className="text-white" />
                     )}
                   </div>
-                  <span className="hidden sm:inline text-sm font-medium">
+                  <span className="text-sm font-medium text-gray-700">
                     {user?.name || user?.fullName}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <Link href="/order-history">
-                  <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer">
+                  <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer text-gray-700">
                     <History size={16} />
                     <span>Order History</span>
                   </DropdownMenuItem>
                 </Link>
                 <Link href="/reservations">
-                  <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer" data-testid="link-reservations">
+                  <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer text-gray-700" data-testid="link-reservations">
                     <Calendar size={16} />
                     <span>Reservations</span>
                   </DropdownMenuItem>
                 </Link>
                 <DropdownMenuItem 
                   onClick={() => setIsUpdateProfileModalOpen(true)}
-                  className="flex items-center space-x-2 cursor-pointer"
+                  className="flex items-center space-x-2 cursor-pointer text-gray-700"
                   data-testid="button-update-profile"
                 >
                   <Settings size={16} />
@@ -164,7 +164,7 @@ export default function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={logout}
-                  className="flex items-center space-x-2 cursor-pointer"
+                  className="flex items-center space-x-2 cursor-pointer text-gray-700"
                 >
                   <LogOut size={16} />
                   <span>Logout</span>
@@ -177,8 +177,8 @@ export default function Navbar() {
               variant="outline" 
               className="flex items-center space-x-2 px-2 sm:px-3 md:px-4"
             >
-              <User size={16} />
-              <span className="hidden sm:inline">Login</span>
+              <User size={16} className="text-gray-700" />
+              <span className="text-sm text-gray-700">Login</span>
             </Button>
             )}
           </div>

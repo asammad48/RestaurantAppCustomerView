@@ -259,10 +259,10 @@ export default function RestaurantMenuPage() {
 
   // Set branch currency when branch data is loaded
   useEffect(() => {
-    if (branchData?.branchCurrency) {
-      setBranchCurrency(branchData.branchCurrency);
+    if ((branchData as any)?.branchCurrency) {
+      setBranchCurrency((branchData as any).branchCurrency);
     }
-  }, [branchData?.branchCurrency, setBranchCurrency]);
+  }, [(branchData as any)?.branchCurrency, setBranchCurrency]);
 
   // Hydrate store with branch data when directly accessing restaurant-menu page
   useEffect(() => {
@@ -276,9 +276,9 @@ export default function RestaurantMenuPage() {
         branchOpenTime: branchData.branchOpenTime,
         branchCloseTime: branchData.branchCloseTime,
         isBranchClosed: branchData.isBranchClosed,
-        branchCurrency: branchData.branchCurrency,
+        branchCurrency: (branchData as any).branchCurrency,
         primaryColor: branchData.primaryColor
-      });
+      } as any);
       
       // Also set a basic restaurant object if not already set
       if (!selectedRestaurant) {
@@ -294,7 +294,7 @@ export default function RestaurantMenuPage() {
           address: branchData.branchAddress,
           distance: '2.5 km', // Default distance
           isOpen: !branchData.isBranchClosed
-        });
+        } as any);
       }
     }
   }, [branchData, selectedBranch, selectedRestaurant, setSelectedBranch, setSelectedRestaurant]);

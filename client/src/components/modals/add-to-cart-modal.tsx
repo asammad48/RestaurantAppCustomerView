@@ -204,9 +204,9 @@ export default function AddToCartModal() {
 
         {/* Allergen Information for Deal */}
         {deal.allergenItemContains && (
-          <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-            <h4 className="text-sm font-medium text-orange-800 mb-1">⚠️ Deal Allergen Information:</h4>
-            <p className="text-sm text-orange-700">
+          <div className="p-3 rounded-lg border" style={{ backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}10`, borderColor: `${selectedBranch?.primaryColor || '#16a34a'}30` }}>
+            <h4 className="text-sm font-medium mb-1" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>⚠️ Deal Allergen Information:</h4>
+            <p className="text-sm" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>
               Contains: {deal.allergenItemContains}
             </p>
           </div>
@@ -231,8 +231,8 @@ export default function AddToCartModal() {
                         
                         {/* Allergen Information for Individual Menu Item */}
                         {item.allergenItemContains && (
-                          <div className="ml-4 mb-2 p-2 rounded bg-orange-50 border border-orange-200">
-                            <p className="text-xs text-orange-700">
+                          <div className="ml-4 mb-2 p-2 rounded border" style={{ backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}10`, borderColor: `${selectedBranch?.primaryColor || '#16a34a'}30` }}>
+                            <p className="text-xs" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>
                               <span className="font-medium">⚠️ Contains:</span> {item.allergenItemContains}
                             </p>
                           </div>
@@ -273,7 +273,7 @@ export default function AddToCartModal() {
           )}
           
           {/* Deal End Date with shading */}
-          <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-primary)' }}>
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: selectedBranch?.primaryColor || '#16a34a' }}>
             <div className="p-2 rounded bg-gray-100">
               <p className="text-xs configurable-text-primary font-medium">
                 Valid until: {formatToLocalTime(deal.dealEndDate, 'MMM dd, yyyy')}
@@ -304,7 +304,7 @@ export default function AddToCartModal() {
               </div>
             </div>
             {deal.discount && deal.discount.value > 0 && (
-              <div className="mt-2 p-2 rounded" style={{backgroundColor: 'var(--configurable-primary-alpha-20)'}}>
+              <div className="mt-2 p-2 rounded" style={{backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}33`}}>
                 <p className="text-xs font-medium configurable-primary-text">
                   You save {deal.discount.value}% on this deal!
                 </p>
@@ -330,9 +330,9 @@ export default function AddToCartModal() {
 
         {/* Allergen Information */}
         {menuItem.allergenItemContains && (
-          <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-            <h4 className="text-sm font-medium text-orange-800 mb-1">⚠️ Allergen Information:</h4>
-            <p className="text-sm text-orange-700">
+          <div className="p-3 rounded-lg border" style={{ backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}10`, borderColor: `${selectedBranch?.primaryColor || '#16a34a'}30` }}>
+            <h4 className="text-sm font-medium mb-1" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>⚠️ Allergen Information:</h4>
+            <p className="text-sm" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>
               Contains: {menuItem.allergenItemContains}
             </p>
           </div>
@@ -352,7 +352,7 @@ export default function AddToCartModal() {
                       ? 'border-2 configurable-border configurable-primary-text' 
                       : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
                   }`}
-                  style={selectedVariation === variation.id ? { backgroundColor: 'var(--configurable-primary-alpha-20)' } : {}}
+                  style={selectedVariation === variation.id ? { backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}33` } : {}}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{variation.name}</span>
@@ -435,7 +435,7 @@ export default function AddToCartModal() {
                             ? 'border configurable-border' 
                             : 'bg-gray-50 hover:bg-gray-100'
                         }`}
-                        style={isSelected ? { backgroundColor: 'var(--configurable-primary-alpha-20)' } : {}}
+                        style={isSelected ? { backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}33` } : {}}
                         data-testid={`customization-option-${customization.id}-${option.id}`}
                       >
                         <div className="flex justify-between items-center">
@@ -508,21 +508,24 @@ export default function AddToCartModal() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-8 h-8 rounded configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover"
+                className="w-8 h-8 rounded text-white flex items-center justify-center hover:opacity-80"
+                style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
               >
                 <Minus size={14} />
               </button>
               <span className="w-8 text-center text-sm font-medium">{quantity}</span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-8 h-8 rounded configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover"
+                className="w-8 h-8 rounded text-white flex items-center justify-center hover:opacity-80"
+                style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
               >
                 <Plus size={14} />
               </button>
             </div>
             <Button
               onClick={handleAddToCart}
-              className="configurable-primary hover:configurable-primary-hover text-white px-8 py-3 rounded-lg font-medium"
+              className="text-white px-8 py-3 rounded-lg font-medium hover:opacity-90"
+              style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
             >
               {formatBranchCurrency(getTotalPrice(), branchCurrency)} Add to cart
             </Button>

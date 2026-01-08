@@ -111,12 +111,12 @@ export default function MenuItemDetailModal({
               className="w-full h-full object-cover" 
             />
             {isRecommended && (
-              <Badge className="absolute top-2 right-2 configurable-recommended text-white text-xs">
+              <Badge className="absolute top-2 right-2 text-white text-xs" style={{ backgroundColor: useCartStore.getState().selectedBranch?.primaryColor || '#16a34a' }}>
                 Recommended
               </Badge>
             )}
             {discountPercentage > 0 && (
-              <Badge className="absolute top-2 left-2 configurable-deal text-white text-xs">
+              <Badge className="absolute top-2 left-2 text-white text-xs" style={{ backgroundColor: useCartStore.getState().selectedBranch?.primaryColor || '#16a34a' }}>
                 {discountPercentage}% OFF
               </Badge>
             )}

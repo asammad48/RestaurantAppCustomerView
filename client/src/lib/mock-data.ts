@@ -20,6 +20,7 @@ export interface ApiMenuItem {
   description: string;
   categoryName: string;
   picture: string;
+  threeDObject?: string;
   maxAllowedAmount?: number;
   allergenItemContains?: string;
   variations: {
@@ -656,39 +657,50 @@ class MockStorage {
 
   // API Menu Data
   async getMenuData(): Promise<ApiMenuResponse> {
-    // Convert menu items to API format
     const apiMenuItems: ApiMenuItem[] = this.menuItems
       .filter(item => !item.isDeal)
-      .map((item, index) => ({
-        menuItemId: parseInt(item.id.substring(0, 8), 16) % 1000,
-        name: item.name,
-        description: item.description,
-        categoryName: item.category,
-        picture: item.image,
-        maxAllowedAmount: index === 0 ? 500 : undefined, // Demo: Add max allowed amount to first item
-        variations: [
-          {
+      .map((item, index) => {
+        let threeDObject = undefined;
+        // DIRECT MAPPING TO GLB URLS
+        const name = item.name.toLowerCase();
+        if (name.includes("pizza") || name.includes("margherita")) {
+          threeDObject = "https://pub-2b36357591e14188849405d450892225.r2.dev/pizza_margherita.glb";
+        } else if (name.includes("pepperoni")) {
+          threeDObject = "https://pub-2b36357591e14188849405d450892225.r2.dev/pepperoni_pizza.glb";
+        } else if (name.includes("burger")) {
+          threeDObject = "https://pub-2b36357591e14188849405d450892225.r2.dev/pizza_margherita.glb";
+        } else if (name.includes("karahi") || name.includes("biryani")) {
+          threeDObject = "https://pub-2b36357591e14188849405d450892225.r2.dev/pepperoni_pizza.glb";
+        }
+        
+        console.log(`[AR_MOCK] Mapping ${item.name} -> ${threeDObject || 'NONE'}`);
+        
+        return {
+          menuItemId: parseInt(item.id.substring(0, 8), 16) % 1000,
+          name: item.name,
+          description: item.description,
+          categoryName: item.category,
+          picture: item.image,
+          threeDObject,
+          maxAllowedAmount: index === 0 ? 500 : undefined,
+          variations: [
+            {
+              id: 1,
+              name: "Regular",
+              price: parseFloat(item.price),
+              discountedPrice: index === 1 ? parseFloat(item.price) * 0.8 : undefined
+            }
+          ],
+          modifiers: [],
+          customizations: [],
+          discount: item.discount > 0 ? {
             id: 1,
-            name: "Regular",
-            price: parseFloat(item.price),
-            discountedPrice: index === 1 ? parseFloat(item.price) * 0.8 : undefined // Demo: 20% discount on second item
-          },
-          {
-            id: 2,
-            name: "Large",
-            price: parseFloat(item.price) * 1.5,
-            discountedPrice: index === 1 ? parseFloat(item.price) * 1.2 : undefined // Demo: discounted large size
-          }
-        ],
-        modifiers: [],
-        customizations: [],
-        discount: item.discount > 0 ? {
-          id: 1,
-          name: "Special Discount",
-          value: item.discount,
-          endDate: "2025-12-31T23:59:59Z"
-        } : null
-      }));
+            name: "Special Discount",
+            value: item.discount,
+            endDate: "2025-12-31T23:59:59Z"
+          } : null
+        };
+      });
 
     const recommendedItems = apiMenuItems.filter((_, index) => index < 3);
 
