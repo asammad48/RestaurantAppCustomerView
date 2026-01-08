@@ -80,7 +80,9 @@ const ProductObject = ({
   showNutritionalInfo,
   onRemove,
   onShowDetails,
-  onAddToCart
+  onAddToCart,
+  showBottomUI,
+  setShowBottomUI
 }: { 
   item: ARItemState; 
   isSelected: boolean; 
@@ -91,12 +93,13 @@ const ProductObject = ({
   onRemove: () => void;
   onShowDetails: () => void;
   onAddToCart: () => void;
+  showBottomUI: boolean;
+  setShowBottomUI: (val: boolean) => void;
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
   const modelPath = item.threeDObject;
   const { camera, size, raycaster } = useThree();
   const planeRef = useRef(new THREE.Plane());
-  const [showItemControls, setShowItemControls] = useState(true);
 
   // Internal lerp refs
   const targetPos = useRef(new THREE.Vector3(...item.position));
@@ -234,48 +237,36 @@ const ProductObject = ({
               exit={{ opacity: 0, y: 10, scale: 0.9 }}
               className="flex flex-col items-center gap-2"
             >
-              {showItemControls && (
-                <div className="flex items-center gap-2 bg-black/80 backdrop-blur-xl p-1.5 rounded-full border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
-                  <Button 
-                    size="icon" variant="ghost" 
-                    className="h-8 w-8 rounded-full text-red-500 hover:bg-red-500/20"
-                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" variant="ghost" 
-                    className="h-8 w-8 rounded-full text-white hover:bg-white/20"
-                    onClick={(e) => { e.stopPropagation(); onShowDetails(); }}
-                  >
-                    <Info className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" variant="ghost" 
-                    className="h-8 w-8 rounded-full text-white hover:bg-white/20"
-                    onClick={(e) => { e.stopPropagation(); setShowItemControls(false); }}
-                  >
-                    <EyeOff className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" variant="ghost" 
-                    className="h-8 w-8 rounded-full text-orange-500 hover:bg-orange-500/20"
-                    onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
-                  >
-                    <ShoppingBag className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-              
-              {!showItemControls && (
+              <div className="flex items-center gap-2 bg-black/80 backdrop-blur-xl p-1.5 rounded-full border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
                 <Button 
                   size="icon" variant="ghost" 
-                  className="h-8 w-8 rounded-full bg-black/80 backdrop-blur-xl border border-white/10 text-white animate-in fade-in zoom-in duration-200"
-                  onClick={(e) => { e.stopPropagation(); setShowItemControls(true); }}
+                  className="h-8 w-8 rounded-full text-red-500 hover:bg-red-500/20"
+                  onClick={(e) => { e.stopPropagation(); onRemove(); }}
                 >
-                  <Eye className="h-4 w-4" />
+                  <X className="h-4 w-4" />
                 </Button>
-              )}
+                <Button 
+                  size="icon" variant="ghost" 
+                  className="h-8 w-8 rounded-full text-white hover:bg-white/20"
+                  onClick={(e) => { e.stopPropagation(); onShowDetails(); }}
+                >
+                  <Info className="h-4 w-4" />
+                </Button>
+                <Button 
+                  size="icon" variant="ghost" 
+                  className="h-8 w-8 rounded-full text-white hover:bg-white/20"
+                  onClick={(e) => { e.stopPropagation(); setShowBottomUI(!showBottomUI); }}
+                >
+                  {showBottomUI ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+                <Button 
+                  size="icon" variant="ghost" 
+                  className="h-8 w-8 rounded-full text-orange-500 hover:bg-orange-500/20"
+                  onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -384,6 +375,8 @@ export default function ARRestaurantMenuPage() {
                   onUpdate={updateSelectedItem}
                   snapToTable={snapToTable}
                   showNutritionalInfo={!!item.showNutritional}
+                  showBottomUI={showBottomUI}
+                  setShowBottomUI={setShowBottomUI}
                   onRemove={() => {
                     setArItems(prev => prev.filter(i => i.instanceId !== item.instanceId));
                     setActiveObjectId(null);
@@ -489,15 +482,6 @@ export default function ARRestaurantMenuPage() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {!showBottomUI && activeObjectId && (
-            <Button 
-              className="absolute bottom-32 right-4 z-50 h-10 w-10 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-white shadow-xl"
-              onClick={() => setShowBottomUI(true)}
-            >
-              <Layers className="h-4 w-4" />
-            </Button>
-          )}
 
           {!activeObjectId && arItems.length > 0 && (
             <div className="absolute bottom-40 text-center px-6 pointer-events-none animate-pulse">
