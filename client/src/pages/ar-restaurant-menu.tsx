@@ -271,7 +271,10 @@ const ProductObject = ({
                 <Button 
                   size="icon" variant="ghost" 
                   className="h-8 w-8 rounded-full text-white hover:bg-white/20"
-                  onClick={(e) => { e.stopPropagation(); setShowBottomUI(!showBottomUI); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setShowBottomUI(!showBottomUI); 
+                  }}
                 >
                   {showBottomUI ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -300,7 +303,7 @@ export default function ARRestaurantMenuPage() {
   const [lightingMode, setLightingMode] = useState<'day' | 'night'>('day');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [activeItemDetails, setActiveItemDetails] = useState<ARItemState | null>(null);
-  const [showBottomUI, setShowBottomUI] = useState(true);
+  const [showBottomUI, setShowBottomUI] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
