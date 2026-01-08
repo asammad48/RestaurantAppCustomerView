@@ -139,7 +139,9 @@ const ProductObject = ({
         }
         
         // Prevent default behavior to avoid scrolling/zoom while interacting
-        if (event.cancelable) event.preventDefault();
+        if (event && 'cancelable' in event && event.cancelable && 'preventDefault' in event) {
+          (event as any).preventDefault();
+        }
 
         if (active) {
           const ndc = new THREE.Vector2(
@@ -159,7 +161,9 @@ const ProductObject = ({
       },
       onPinch: ({ active, offset: [d], event }) => {
         if (!isSelected) return;
-        if (event.cancelable) event.preventDefault();
+        if (event && 'cancelable' in event && event.cancelable && 'preventDefault' in event) {
+          (event as any).preventDefault();
+        }
         
         if (active) {
           // Clamp scale to 0.5 (min) and 2.5 (max)
