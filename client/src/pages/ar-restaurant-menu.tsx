@@ -279,13 +279,6 @@ const ProductObject = ({
                 <Button 
                   size="icon" variant="ghost" 
                   className="h-8 w-8 rounded-full text-white hover:bg-white/20"
-                  onClick={(e) => { e.stopPropagation(); onShowDetails(); }}
-                >
-                  <Info className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="icon" variant="ghost" 
-                  className="h-8 w-8 rounded-full text-white hover:bg-white/20"
                   onClick={(e) => { 
                     e.stopPropagation(); 
                     setShowBottomUI(!showBottomUI); 
