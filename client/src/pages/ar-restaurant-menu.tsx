@@ -7,6 +7,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
   RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search, Minus, Camera, RefreshCcw, Image as ImageIcon, Palette
@@ -157,7 +158,8 @@ const ProductObject = ({
           return;
         }
         
-        if (event && 'cancelable' in event && event.cancelable && 'preventDefault' in event) {
+        // Prevent default touch behavior on mobile to allow smoother dragging
+        if (event && 'cancelable' in event && event.cancelable) {
           (event as any).preventDefault();
         }
 
@@ -313,6 +315,7 @@ const ProductObject = ({
 
 // --- Main Page Component ---
 export default function ARRestaurantMenuPage() {
+  const isMobile = useIsMobile();
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const [arItems, setArItems] = useState<ARItemState[]>([]);
   const [categoryExpanded, setCategoryExpanded] = useState(false);
@@ -364,11 +367,17 @@ export default function ARRestaurantMenuPage() {
     const newItem: ARItemState = {
       ...menuItem,
       instanceId: Math.random().toString(36).substr(2, 9),
-      position: [(arItems.length * 1.5) - 3, 0, 0],
+      position: [0, 0, 0], // Start at center
       rotation: [0, 0, 0],
       scale: 1,
       depthOffset: 0,
     };
+    
+    // Offset subsequent items slightly so they don't perfectly overlap initially
+    if (arItems.length > 0) {
+      newItem.position[0] = arItems.length * 0.5;
+    }
+
     setArItems(prev => [...prev, newItem]);
     setActiveObjectId(newItem.instanceId);
     setCategoryExpanded(false);
@@ -411,7 +420,7 @@ export default function ARRestaurantMenuPage() {
           <Canvas
             shadows
             dpr={[1, 2]}
-            camera={{ position: [0, 2, 8], fov: 50 }}
+            camera={{ position: isMobile ? [0, 2, 12] : [0, 2, 8], fov: isMobile ? 65 : 50 }}
             style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
             gl={{ alpha: true, antialias: true }}
           >
