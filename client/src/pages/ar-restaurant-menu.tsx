@@ -101,7 +101,8 @@ const ProductObject = ({
   onAddToCart,
   showBottomUI,
   setShowBottomUI,
-  primaryColor
+  primaryColor,
+  isMobile
 }: { 
   item: ARItemState; 
   isSelected: boolean; 
@@ -115,6 +116,7 @@ const ProductObject = ({
   showBottomUI: boolean;
   setShowBottomUI: (val: boolean) => void;
   primaryColor?: string;
+  isMobile: boolean;
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
   const modelPath = item.threeDObject;
@@ -452,6 +454,7 @@ export default function ARRestaurantMenuPage() {
                   showBottomUI={showBottomUI}
                   setShowBottomUI={setShowBottomUI}
                   primaryColor={selectedBranch?.primaryColor}
+                  isMobile={isMobile}
                   onRemove={() => {
                     setArItems(prev => prev.filter(i => i.instanceId !== item.instanceId));
                     setActiveObjectId(null);
