@@ -181,8 +181,12 @@ const ProductObject = ({
           raycaster.setFromCamera(ndc, camera);
           const intersectPoint = new THREE.Vector3();
           if (raycaster.ray.intersectPlane(planeRef.current, intersectPoint)) {
+            // Apply a sensitivity multiplier for mobile vertical movement
+            const sensitivity = isMobile ? 1.5 : 1.0;
+            const deltaY = (intersectPoint.y - basePos.y) * (sensitivity - 1.0);
+            
             // Update the base position only
-            onUpdate({ position: [intersectPoint.x, intersectPoint.y, intersectPoint.z] });
+            onUpdate({ position: [intersectPoint.x, intersectPoint.y + deltaY, intersectPoint.z] });
           }
         }
       },
