@@ -405,10 +405,12 @@ export default function ARRestaurantMenuPage() {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-black overflow-hidden relative font-sans text-white select-none">
-      <Navbar />
+      <div className="absolute top-0 left-0 right-0 z-50">
+        <Navbar />
+      </div>
       
-      <div className="flex-1 relative overflow-hidden">
-        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black">
+      <div className="flex-1 relative overflow-hidden h-full w-full">
+        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black h-full w-full">
           {bgConfig.type === 'camera' ? (
             <CameraFeed facingMode={bgConfig.value as "user" | "environment"} />
           ) : bgConfig.type === 'color' ? (
