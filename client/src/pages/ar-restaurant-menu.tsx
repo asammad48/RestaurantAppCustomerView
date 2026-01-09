@@ -404,7 +404,7 @@ export default function ARRestaurantMenuPage() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white select-none">
+    <div className="flex flex-col h-[100dvh] bg-black overflow-hidden relative font-sans text-white select-none">
       <Navbar />
       
       <div className="flex-1 relative overflow-hidden">
@@ -474,7 +474,7 @@ export default function ARRestaurantMenuPage() {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto overflow-hidden"
+                className="absolute bottom-24 md:bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto overflow-hidden"
               >
                 <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl space-y-3 max-w-sm mx-auto w-full">
                   <div className="flex items-center justify-between">
