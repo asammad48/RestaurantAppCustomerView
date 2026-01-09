@@ -46,19 +46,19 @@ export default function Navbar() {
 
   if (isArMenuPage) {
     return (
-      <nav className="bg-transparent sticky top-0 z-30 pointer-events-none">
+      <nav className="bg-black/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 pointer-events-auto">
+          <div className="flex justify-between items-center h-16">
             <Link href="/restaurant-menu">
-              <Button variant="ghost" className="bg-black/40 backdrop-blur-md text-white border border-white/10 rounded-full h-10 px-4 hover:bg-black/60">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Menu
+              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 px-4">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
             </Link>
             
             <div className="flex items-center gap-3">
               <Button 
                 onClick={() => setCartOpen(true)}
-                className="bg-black/40 backdrop-blur-md text-white border border-white/10 rounded-full h-10 w-10 p-0 flex items-center justify-center hover:bg-black/60 relative"
+                className="bg-white/10 text-white rounded-full h-10 w-10 p-0 flex items-center justify-center hover:bg-white/20 relative border border-white/10"
               >
                 <ShoppingCart size={18} />
                 {cartCount > 0 && (
