@@ -1,4 +1,4 @@
-import { ShoppingCart, Utensils, Home, User, LogOut, History, Calendar, Settings } from "lucide-react";
+import { ShoppingCart, Utensils, Home, User, LogOut, History, Calendar, Settings, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -41,6 +41,39 @@ export default function Navbar() {
 
   // Don't allow navigation from restaurant menu page
   const isRestaurantMenuPage = location === '/restaurant-menu';
+
+  const isArMenuPage = location === '/restaurant-menu/ar';
+
+  if (isArMenuPage) {
+    return (
+      <nav className="bg-black/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/restaurant-menu">
+              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 px-4">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+              </Button>
+            </Link>
+            
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={() => setCartOpen(true)}
+                className="bg-white/10 text-white rounded-full h-10 w-10 p-0 flex items-center justify-center hover:bg-white/20 relative border border-white/10"
+              >
+                <ShoppingCart size={18} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white min-w-[16px] h-[16px] flex items-center justify-center text-[10px] rounded-full font-bold">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+              <NotificationTray />
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">

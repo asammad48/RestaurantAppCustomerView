@@ -1,0 +1,121 @@
+You are editing a React + TypeScript file that uses **@react-three/fiber**, **@react-three/drei**, and **@use-gesture/react**.
+
+### Problem
+
+On mobile devices (iOS + Android), **pinch zoom (scale)** and **drag** are still unreliable even though desktop works.
+
+### Non-negotiable rules
+
+* **Do NOT change the UI/design/layout** (Tailwind classes, positioning, modals, dropdowns, etc. must remain identical).
+* Only modify **gesture handling + event wiring**.
+* Do not remove features.
+* Keep existing state structure for items: `position`, `rotation`, `scale`, `depthOffset`, `instanceId`, etc.
+
+---
+
+## Required Changes (apply exactly)
+
+### A) Fix the gesture enabling bug (most important)
+
+Right now `useGesture` is configured with:
+
+```ts
+enabled: isSelected
+```
+
+This prevents gestures from firing when the item is not yet selected, so mobile cannot “touch + drag” or “touch + pinch” smoothly.
+
+✅ Change it to:
+
+```ts
+enabled: true
+```
+
+Keep the existing logic inside handlers that does:
+
+```ts
+if (!isSelected) onSelect();
+```
+
+So the first gesture selects the item and continues the drag/pinch immediately.
+
+---
+
+### B) Clean up incorrect / misleading code (no UI change)
+
+You currently do:
+
+```ts
+const bind = useGesture(...)
+```
+
+but you never use `bind()` (because you correctly use `target: gl.domElement`).
+
+✅ Replace it with:
+
+```ts
+useGesture(...)
+```
+
+No variable.
+
+This avoids confusion and ensures no one later tries to attach bind to a `<group>` again.
+
+---
+
+### C) Keep mobile-safe listener settings
+
+Ensure these remain exactly:
+
+* `target: gl.domElement`
+* `eventOptions: { passive: false }`
+* Drag NDC mapping uses `gl.domElement.getBoundingClientRect()`
+* Pinch uses:
+
+```ts
+pinch: { from: () => [item.scale, 0], scaleBounds: { min: 0.5, max: 2.5 } }
+```
+
+---
+
+### D) Make preventDefault robust
+
+In both `onDrag` and `onPinch`, keep preventDefault but make it safe:
+
+Replace:
+
+```ts
+event.preventDefault();
+```
+
+with:
+
+```ts
+(event as any)?.preventDefault?.();
+```
+
+Only call it when `event.cancelable` is true.
+
+---
+
+### E) Do NOT change design
+
+Do not touch:
+
+* Any Tailwind classes
+* UI structure (menus, bottom panel, top buttons)
+* Modals, Dropdowns, Background config, etc.
+
+---
+
+## Acceptance checklist (must pass)
+
+* On **iPhone Safari** and **Android Chrome**, user can:
+
+  * Touch an item and immediately drag it (auto-select + move)
+  * Pinch to scale (auto-select + scale)
+* Buttons in `<Html>` remain clickable
+* Desktop behavior stays the same
+* No UI visual changes
+
+---
