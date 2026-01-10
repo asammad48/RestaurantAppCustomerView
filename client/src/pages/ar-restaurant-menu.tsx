@@ -117,59 +117,25 @@ const ProductObject = ({
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
   const modelPath = item.threeDObject;
-  const { camera, size, raycaster } = useThree();
+  const { camera, gl, raycaster } = useThree();
   const planeRef = useRef(new THREE.Plane());
-
-  // Internal lerp refs
-  const targetPos = useRef(new THREE.Vector3(...item.position));
-  const targetRot = useRef(new THREE.Euler(...item.rotation));
-  const targetScale = useRef(new THREE.Vector3(item.scale, item.scale, item.scale));
-
-  useFrame(() => {
-    if (groupRef.current) {
-      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-      const pos = new THREE.Vector3(...item.position);
-      
-      if (snapToTable) {
-        pos.y = -0.6;
-      }
-
-      const depthOffsetVec = forward.multiplyScalar(-item.depthOffset);
-      pos.add(depthOffsetVec);
-
-      targetPos.current.copy(pos);
-      targetRot.current.set(...item.rotation);
-      targetScale.current.set(item.scale, item.scale, item.scale);
-
-      groupRef.current.position.lerp(targetPos.current, 0.15);
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRot.current.x, 0.15);
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRot.current.y, 0.15);
-      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, targetRot.current.z, 0.15);
-      groupRef.current.scale.lerp(targetScale.current, 0.15);
-    }
-  });
 
   const bind = useGesture(
     {
       onDrag: ({ active, xy: [x, y], event }) => {
-        if (!isSelected) {
-          onSelect();
-          return;
-        }
+        if (!isSelected) onSelect();
         
-        if (event && 'cancelable' in event && event.cancelable && 'preventDefault' in event) {
-          (event as any).preventDefault();
+        if (event && 'cancelable' in event && event.cancelable) {
+          event.preventDefault();
         }
 
         if (active) {
+          const rect = gl.domElement.getBoundingClientRect();
           const ndc = new THREE.Vector2(
-            (x / size.width) * 2 - 1,
-            -(y / size.height) * 2 + 1
+            ((x - rect.left) / rect.width) * 2 - 1,
+            -(((y - rect.top) / rect.height) * 2 - 1)
           );
 
-          // Use a plane that is ALWAYS at the base position, NOT including the depth offset
-          // This ensures that dragging calculates the correct 2D -> 3D position 
-          // and then the depth offset is applied on top of that base position.
           const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion);
           const basePos = new THREE.Vector3(...item.position);
           if (snapToTable) basePos.y = -0.6;
@@ -179,28 +145,26 @@ const ProductObject = ({
           raycaster.setFromCamera(ndc, camera);
           const intersectPoint = new THREE.Vector3();
           if (raycaster.ray.intersectPlane(planeRef.current, intersectPoint)) {
-            // Update the base position only
             onUpdate({ position: [intersectPoint.x, intersectPoint.y, intersectPoint.z] });
           }
         }
       },
-      onPinch: ({ active, offset: [d], event }) => {
-        if (!isSelected) return;
-        if (event && 'cancelable' in event && event.cancelable && 'preventDefault' in event) {
-          (event as any).preventDefault();
+      onPinch: ({ active, offset: [s], event }) => {
+        if (!active) return;
+        if (!isSelected) onSelect();
+        if (event && 'cancelable' in event && event.cancelable) {
+          event.preventDefault();
         }
         
-        if (active) {
-          // Clamp scale to 0.5 (min) and 2.5 (max)
-          // Pinch gesture offset for scale usually starts from 1.0 or the initial scale
-          const newScale = Math.max(0.5, Math.min(2.5, d));
-          onUpdate({ scale: newScale });
-        }
+        const newScale = THREE.MathUtils.clamp(s, 0.5, 2.5);
+        onUpdate({ scale: newScale });
       }
     },
     {
+      target: gl.domElement,
+      eventOptions: { passive: false },
       drag: { filterTaps: true, threshold: 5 },
-      pinch: { scaleBounds: { min: 0.5, max: 2.5 }, from: () => [item.scale, 0] },
+      pinch: { from: () => [item.scale, 0], scaleBounds: { min: 0.5, max: 2.5 } },
       enabled: isSelected
     }
   );
@@ -237,6 +201,30 @@ const ProductObject = ({
     return null;
   }, [scene]);
 
+  useFrame(() => {
+    if (groupRef.current) {
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      const pos = new THREE.Vector3(...item.position);
+      
+      if (snapToTable) {
+        pos.y = -0.6;
+      }
+
+      const depthOffsetVec = forward.multiplyScalar(-item.depthOffset);
+      pos.add(depthOffsetVec);
+
+      const tPos = new THREE.Vector3(...item.position);
+      const tRot = new THREE.Euler(...item.rotation);
+      const tScale = new THREE.Vector3(item.scale, item.scale, item.scale);
+
+      groupRef.current.position.lerp(pos, 0.15);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, tRot.x, 0.15);
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, tRot.y, 0.15);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, tRot.z, 0.15);
+      groupRef.current.scale.lerp(tScale, 0.15);
+    }
+  });
+
   return (
     <group 
       ref={groupRef}
@@ -245,7 +233,7 @@ const ProductObject = ({
         onSelect();
       }}
     >
-      <group {...(bind() as any)}>
+      <group>
         {clonedScene ? (
           <primitive object={clonedScene} />
         ) : (
@@ -267,7 +255,7 @@ const ProductObject = ({
       )}
 
       {/* Item-top Buttons */}
-      <Html position={[0, 1.5, 0]} center style={{ pointerEvents: 'auto' }}>
+      <Html position={[0, 1.5, 0]} center style={{ pointerEvents: 'none' }}>
         <AnimatePresence>
           {isSelected && (
             <motion.div 
@@ -275,6 +263,7 @@ const ProductObject = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.9 }}
               className="flex flex-col items-center gap-2"
+              style={{ pointerEvents: 'auto' }}
             >
               <div className="flex items-center gap-2 bg-black/80 backdrop-blur-xl p-1.5 rounded-full border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
                 <Button 
@@ -408,6 +397,15 @@ export default function ARRestaurantMenuPage() {
             <img src={bgConfig.value} className="absolute inset-0 w-full h-full object-cover" alt="Background" />
           )}
           
+        <div 
+          className="absolute inset-0"
+          style={{
+            touchAction: "none",
+            overscrollBehavior: "none",
+            WebkitUserSelect: "none",
+            userSelect: "none",
+          }}
+        >
           <Canvas
             shadows
             dpr={[1, 2]}
@@ -457,6 +455,7 @@ export default function ARRestaurantMenuPage() {
 
             <ContactShadows position={[0, -0.6, 0]} opacity={0.6} scale={20} blur={2} far={4} />
           </Canvas>
+        </div>
 
           {/* Controls UI Overlay */}
           <AnimatePresence>
