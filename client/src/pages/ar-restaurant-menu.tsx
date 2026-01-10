@@ -157,12 +157,12 @@ const ProductObject = ({
           }
         }
       },
-      onPinch: ({ active, offset: [s], event, first, xy: [x, y] }) => {
+      onPinch: ({ active, offset: [s], event, first, origin: [ox, oy] }) => {
         if (first) {
           const rect = gl.domElement.getBoundingClientRect();
           const ndc = new THREE.Vector2(
-            ((x - rect.left) / rect.width) * 2 - 1,
-            -(((y - rect.top) / rect.height) * 2 - 1)
+            ((ox - rect.left) / rect.width) * 2 - 1,
+            -(((oy - rect.top) / rect.height) * 2 - 1)
           );
           raycaster.setFromCamera(ndc, camera);
           const intersects = raycaster.intersectObject(groupRef.current, true);
@@ -373,7 +373,7 @@ export default function ARRestaurantMenuPage() {
     const newItem: ARItemState = {
       ...menuItem,
       instanceId: Math.random().toString(36).substr(2, 9),
-      position: [(arItems.length * 1.5) - 3, 0, 0],
+      position: [0, 0, 0],
       rotation: [0, 0, 0],
       scale: 1,
       depthOffset: 0,
