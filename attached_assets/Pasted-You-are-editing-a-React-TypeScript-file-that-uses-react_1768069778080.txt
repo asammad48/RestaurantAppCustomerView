@@ -1,0 +1,165 @@
+You are editing a React + TypeScript file that uses **@react-three/fiber**, **@react-three/drei**, and **@use-gesture/react** for an AR-style menu where 3D items can be dragged and pinched.
+
+### Goal
+
+Fix these mobile issues **generically across all mobile devices (iOS Safari, Android Chrome, Samsung Internet, etc.)**:
+
+1. **Pinch zoom (scale) does not work**
+2. **Drag is not smooth / cannot drag well on mobile**
+   Desktop works already.
+
+### Strict rules
+
+* **Do NOT change the UI/design/layout** (Tailwind classes, button layout, visuals must remain the same).
+* **Do NOT remove existing features**.
+* Only adjust input/gesture handling and event mapping.
+* Keep current state shape (`arItems`, `activeObjectId`, `scale`, `position`, `rotation`, `depthOffset`) unchanged.
+
+---
+
+## Required Fixes (implement ALL)
+
+### 1) Disable browser touch handling on the canvas area
+
+Wrap the `<Canvas>` in a container that has:
+
+* `touch-action: none`
+* `overscroll-behavior: none`
+* `user-select: none` (and webkit variant)
+
+Example:
+
+```jsx
+<div
+  className="absolute inset-0"
+  style={{
+    touchAction: "none",
+    overscrollBehavior: "none",
+    WebkitUserSelect: "none",
+    userSelect: "none",
+  }}
+>
+  <Canvas ... />
+</div>
+```
+
+This must be applied to the element that actually contains the canvas.
+
+---
+
+### 2) Bind gestures to a real DOM element (gl.domElement), not a <group>
+
+In `ProductObject`, stop doing:
+
+```tsx
+<group {...bind()} />
+```
+
+because this is not a DOM node and mobile multi-touch often fails.
+
+Instead:
+
+* Get `gl` from `useThree()`
+* Use `useGesture(..., { target: gl.domElement })`
+
+Also set:
+
+```ts
+eventOptions: { passive: false }
+```
+
+so preventDefault works on mobile.
+
+---
+
+### 3) Convert pointer coordinates using canvas bounding rect
+
+Don’t compute NDC using `size.width/height`. On mobile it breaks due to viewport scaling and safe areas.
+
+Compute NDC using:
+
+```ts
+const rect = gl.domElement.getBoundingClientRect();
+const ndc = new THREE.Vector2(
+  ((x - rect.left) / rect.width) * 2 - 1,
+  -(((y - rect.top) / rect.height) * 2 - 1)
+);
+```
+
+Use this `ndc` for `raycaster.setFromCamera(ndc, camera)`.
+
+---
+
+### 4) Fix selection logic so mobile can select + drag in one gesture
+
+Currently code selects then `return`s on first drag if not selected. Remove the early return:
+
+Bad:
+
+```ts
+if (!isSelected) { onSelect(); return; }
+```
+
+Good:
+
+```ts
+if (!isSelected) onSelect();
+// continue drag in same gesture
+```
+
+---
+
+### 5) Prevent Html overlay from blocking touches
+
+Your `<Html>` currently uses `pointerEvents: "auto"` which can block drag/pinch.
+
+Change it to:
+
+* wrapper: `pointerEvents: "none"`
+* only the actual button container: `pointerEvents: "auto"`
+
+Example:
+
+```tsx
+<Html ... style={{ pointerEvents: "none" }}>
+  <div style={{ pointerEvents: "auto" }}>
+    ...buttons...
+  </div>
+</Html>
+```
+
+This must preserve the same visual UI.
+
+---
+
+### 6) Pinch scale must update `item.scale` reliably on mobile
+
+In `useGesture`:
+
+* Use `pinch: { from: () => [item.scale, 0], scaleBounds: { min: 0.5, max: 2.5 } }`
+* In `onPinch`, use `offset[0]` as the scale value and clamp it.
+
+Example:
+
+```ts
+onPinch: ({ active, offset: [s], event }) => {
+  if (!active) return;
+  if (!isSelected) onSelect();
+  if (event?.cancelable) event.preventDefault();
+  const newScale = THREE.MathUtils.clamp(s, 0.5, 2.5);
+  onUpdate({ scale: newScale });
+},
+```
+
+---
+
+## Deliverables
+
+1. Apply these changes inside the same file.
+2. Do not modify unrelated imports, styling, layout, or business logic.
+3. After changes, ensure:
+
+   * Pinch-to-scale works on iOS + Android
+   * Drag works smoothly and accurately where the finger moves
+   * Buttons remain clickable
+   * Desktop behavior remains unchanged
