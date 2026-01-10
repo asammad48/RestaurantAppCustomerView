@@ -120,13 +120,13 @@ const ProductObject = ({
   const { camera, gl, raycaster } = useThree();
   const planeRef = useRef(new THREE.Plane());
 
-  const bind = useGesture(
+  useGesture(
     {
       onDrag: ({ active, xy: [x, y], event }) => {
         if (!isSelected) onSelect();
         
         if (event && 'cancelable' in event && event.cancelable) {
-          event.preventDefault();
+          (event as any)?.preventDefault?.();
         }
 
         if (active) {
@@ -153,7 +153,7 @@ const ProductObject = ({
         if (!active) return;
         if (!isSelected) onSelect();
         if (event && 'cancelable' in event && event.cancelable) {
-          event.preventDefault();
+          (event as any)?.preventDefault?.();
         }
         
         const newScale = THREE.MathUtils.clamp(s, 0.5, 2.5);
@@ -165,7 +165,7 @@ const ProductObject = ({
       eventOptions: { passive: false },
       drag: { filterTaps: true, threshold: 5 },
       pinch: { from: () => [item.scale, 0], scaleBounds: { min: 0.5, max: 2.5 } },
-      enabled: isSelected
+      enabled: true
     }
   );
 
