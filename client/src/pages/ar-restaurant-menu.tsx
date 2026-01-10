@@ -7,6 +7,7 @@ import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
   RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search, Minus, Camera, RefreshCcw, Image as ImageIcon, Palette
@@ -100,7 +101,8 @@ const ProductObject = ({
   onAddToCart,
   showBottomUI,
   setShowBottomUI,
-  primaryColor
+  primaryColor,
+  isMobile
 }: { 
   item: ARItemState; 
   isSelected: boolean; 
@@ -114,6 +116,7 @@ const ProductObject = ({
   showBottomUI: boolean;
   setShowBottomUI: (val: boolean) => void;
   primaryColor?: string;
+  isMobile: boolean;
 }) => {
   const groupRef = useRef<THREE.Group>(null!);
   const modelPath = item.threeDObject;
@@ -322,6 +325,7 @@ const ProductObject = ({
 
 // --- Main Page Component ---
 export default function ARRestaurantMenuPage() {
+  const isMobile = useIsMobile();
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const [arItems, setArItems] = useState<ARItemState[]>([]);
   const [categoryExpanded, setCategoryExpanded] = useState(false);
@@ -378,6 +382,12 @@ export default function ARRestaurantMenuPage() {
       scale: 1,
       depthOffset: 0,
     };
+    
+    // Offset subsequent items slightly so they don't perfectly overlap initially
+    if (arItems.length > 0) {
+      newItem.position[0] = arItems.length * 0.5;
+    }
+
     setArItems(prev => [...prev, newItem]);
     setActiveObjectId(newItem.instanceId);
     setCategoryExpanded(false);
@@ -404,11 +414,11 @@ export default function ARRestaurantMenuPage() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-black overflow-hidden relative font-sans text-white select-none">
+    <div className="flex flex-col h-[100dvh] bg-black overflow-hidden relative font-sans text-white select-none">
       <Navbar />
       
-      <div className="flex-1 relative overflow-hidden">
-        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black">
+      <div className="flex-1 relative overflow-hidden h-full w-full">
+        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black h-full w-full">
           {bgConfig.type === 'camera' ? (
             <CameraFeed facingMode={bgConfig.value as "user" | "environment"} />
           ) : bgConfig.type === 'color' ? (
@@ -429,7 +439,7 @@ export default function ARRestaurantMenuPage() {
           <Canvas
             shadows
             dpr={[1, 2]}
-            camera={{ position: [0, 2, 8], fov: 50 }}
+            camera={{ position: isMobile ? [0, 2, 12] : [0, 2, 8], fov: isMobile ? 65 : 50 }}
             style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
             gl={{ alpha: true, antialias: true }}
           >
@@ -457,6 +467,7 @@ export default function ARRestaurantMenuPage() {
                   showBottomUI={showBottomUI}
                   setShowBottomUI={setShowBottomUI}
                   primaryColor={selectedBranch?.primaryColor}
+                  isMobile={isMobile}
                   onRemove={() => {
                     setArItems(prev => prev.filter(i => i.instanceId !== item.instanceId));
                     setActiveObjectId(null);
@@ -484,7 +495,7 @@ export default function ARRestaurantMenuPage() {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="absolute bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto overflow-hidden"
+                className="absolute bottom-24 md:bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto overflow-hidden"
               >
                 <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl space-y-3 max-w-sm mx-auto w-full">
                   <div className="flex items-center justify-between">
