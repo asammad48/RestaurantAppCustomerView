@@ -119,23 +119,31 @@ const ProductObject = ({
   const modelPath = item.threeDObject;
   const { camera, gl, raycaster } = useThree();
   const planeRef = useRef(new THREE.Plane());
+  const isInteracting = useRef(false);
 
   useGesture(
     {
-      onDrag: ({ active, xy: [x, y], event }) => {
-        if (!isSelected) onSelect();
+      onDrag: ({ active, xy: [x, y], event, first }) => {
+        const rect = gl.domElement.getBoundingClientRect();
+        const ndc = new THREE.Vector2(
+          ((x - rect.left) / rect.width) * 2 - 1,
+          -(((y - rect.top) / rect.height) * 2 - 1)
+        );
+
+        if (first) {
+          raycaster.setFromCamera(ndc, camera);
+          const intersects = raycaster.intersectObject(groupRef.current, true);
+          isInteracting.current = intersects.length > 0;
+          if (isInteracting.current) onSelect();
+        }
+
+        if (!isInteracting.current) return;
         
         if (event && 'cancelable' in event && event.cancelable) {
           (event as any)?.preventDefault?.();
         }
 
         if (active) {
-          const rect = gl.domElement.getBoundingClientRect();
-          const ndc = new THREE.Vector2(
-            ((x - rect.left) / rect.width) * 2 - 1,
-            -(((y - rect.top) / rect.height) * 2 - 1)
-          );
-
           const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion);
           const basePos = new THREE.Vector3(...item.position);
           if (snapToTable) basePos.y = -0.6;
@@ -149,9 +157,21 @@ const ProductObject = ({
           }
         }
       },
-      onPinch: ({ active, offset: [s], event }) => {
-        if (!active) return;
-        if (!isSelected) onSelect();
+      onPinch: ({ active, offset: [s], event, first, xy: [x, y] }) => {
+        if (first) {
+          const rect = gl.domElement.getBoundingClientRect();
+          const ndc = new THREE.Vector2(
+            ((x - rect.left) / rect.width) * 2 - 1,
+            -(((y - rect.top) / rect.height) * 2 - 1)
+          );
+          raycaster.setFromCamera(ndc, camera);
+          const intersects = raycaster.intersectObject(groupRef.current, true);
+          isInteracting.current = intersects.length > 0;
+          if (isInteracting.current) onSelect();
+        }
+
+        if (!isInteracting.current || !active) return;
+        
         if (event && 'cancelable' in event && event.cancelable) {
           (event as any)?.preventDefault?.();
         }
