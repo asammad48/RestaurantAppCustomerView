@@ -1,0 +1,140 @@
+> You are implementing a **production-ready, mobile-first gesture system** for a **Three.js + React Three Fiber AR food menu**.
+>
+> Existing gestures:
+>
+> * **Single-finger drag** → move object
+> * **Two-finger pinch** → scale object (with clamped min/max + lerp smoothing)
+>
+> These existing gestures **MUST remain stable and unchanged**.
+>
+> ---
+>
+> ## **Hard Requirements (Non-Negotiable)**
+>
+> ### 1. Gesture Architecture
+>
+> * Gestures **must NOT be implemented inline or ad-hoc**
+> * Use a **clear gesture state machine** or priority resolver
+> * Only **one gesture may be active at a time**
+> * Explicit gesture states required:
+>
+>   * `IDLE`
+>   * `DRAG`
+>   * `PINCH_SCALE`
+>   * `ROTATE`
+>   * `INSPECT`
+>   * `HEIGHT_ADJUST`
+>   * `DISMISS`
+>
+> If gesture conflicts are possible, they must be **explicitly resolved in code**, not “assumed”.
+>
+> ---
+>
+> ## **Gesture Implementations**
+>
+> ### 2. Two-Finger Rotate (Object-Centric)
+>
+> * Gesture: Two-finger twist (angle delta between touch points)
+> * Rotate **ONLY around Y-axis**
+> * Pinch distance change must be ignored during rotation
+> * Apply **angular damping** (no snap rotation)
+> * Rotation must feel heavy and food-like, not mechanical
+>
+> ---
+>
+> ### 3. Double-Tap Reset
+>
+> * Gesture: Double tap on the object mesh
+> * Reset **position, rotation, and scale** to predefined defaults
+> * Reset must be **animated** (lerp or spring)
+> * Reset must cancel all active gestures cleanly
+>
+> ---
+>
+> ### 4. Long-Press Inspect Mode
+>
+> * Gesture: Long press (400–600ms, configurable)
+> * On activation:
+>
+>   * Lock object position
+>   * Disable drag / scale / rotate
+>   * Enable slow automatic Y-axis rotation
+>   * Slight camera zoom OR scale-up
+>   * Optional lighting intensity boost
+> * On release:
+>
+>   * Restore previous interaction state
+>   * Smoothly return to normal
+>
+> ---
+>
+> ### 5. Single-Tap Highlight (Semantic Interaction)
+>
+> * Gesture: Single tap on visible mesh only
+> * Action:
+>
+>   * Visual highlight (outline or emissive pulse)
+>   * Fire callback event: `onSelect(itemId)`
+> * Highlight must **not block** other gestures
+>
+> ---
+>
+> ### 6. Two-Finger Vertical Drag (Height / Layer View)
+>
+> * Gesture: Two fingers move vertically **together**
+> * Action:
+>
+>   * Adjust Y-axis elevation OR subtle layer separation
+> * Must feel controlled and physically plausible
+> * Must not introduce Z-axis drift or floating artifacts
+>
+> ---
+>
+> ### 7. Swipe Down to Dismiss
+>
+> * Gesture: Fast downward swipe (velocity-based)
+> * Action:
+>
+>   * Animate object downward + fade
+>   * Remove object from scene
+>   * Clean up gesture listeners and references
+>
+> ---
+>
+> ## **Technical Constraints**
+>
+> * Use **Raycaster** correctly for 2D → 3D mapping
+> * Touch and mouse input must be unified where possible
+> * No unnecessary external gesture libraries unless justified
+> * Code must be **modular**, reusable, and readable
+> * Gestures must be enable/disable-able per object
+> * Performance must be acceptable on **low-end mobile devices**
+>
+> ---
+>
+> ## **Deliverables**
+>
+> You must provide:
+>
+> 1. Clear, well-structured code
+> 2. Explicit gesture priority logic
+> 3. Comments explaining why each decision exists
+> 4. No magic numbers (use named constants)
+>
+> ---
+>
+> ## **Quality Bar**
+>
+> This is not a demo.
+> This is **production AR UX for food ordering**, where smoothness, realism, and trust matter.
+>
+> If something is ambiguous, choose the **more conservative, stable behavior**.
+>
+> Do NOT:
+>
+> * Merge multiple gestures into one handler
+> * Rely on “it should feel fine”
+> * Ignore edge cases (gesture cancellation, interruption, reset)
+>
+> Treat this as code that will be reviewed by a senior Three.js engineer.
+
