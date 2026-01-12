@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo, useEffect, Suspense, useCallback } fr
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Html, PerspectiveCamera, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { useGestures, GestureState } from "@/lib/gestures";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { useCartStore } from "@/lib/store";
@@ -31,9 +32,6 @@ import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 import { useGesture } from '@use-gesture/react';
-import { motion, AnimatePresence } from 'framer-motion';
-
-// --- Types & Constants ---
 interface ARItemState extends ApiMenuItem {
   instanceId: string;
   position: [number, number, number];
@@ -117,16 +115,25 @@ const ProductObject = ({
   setShowBottomUI: (val: boolean) => void;
   primaryColor?: string;
   isMobile: boolean;
-}) => {
-  const groupRef = useRef<THREE.Group>(null!);
-  const modelPath = item.threeDObject;
   const { camera, gl, raycaster } = useThree();
   const planeRef = useRef(new THREE.Plane());
   const isInteracting = useRef(false);
 
+  // GESTURE SYSTEM INTEGRATION
+  const gestureSystem = useGestures({
+    itemRef: groupRef,
+    camera,
+    gl,
+    onSelect,
+    onUpdate,
+    onDismiss: onRemove,
+    enabledGestures: [GestureState.DRAG, GestureState.PINCH_SCALE, GestureState.ROTATE]
+  });
+
   useGesture(
     {
-      onDrag: ({ active, xy: [x, y], event, first }) => {
+      onDrag: (state) => {
+        const { active, xy: [x, y], event, first } = state;
         const rect = gl.domElement.getBoundingClientRect();
         const ndc = new THREE.Vector2(
           ((x - rect.left) / rect.width) * 2 - 1,
@@ -142,6 +149,9 @@ const ProductObject = ({
 
         if (!isInteracting.current) return;
         
+        // Pass to gesture system for state management
+        gestureSystem.handlers.onDrag(state);
+
         if (event && 'cancelable' in event && event.cancelable) {
           (event as any)?.preventDefault?.();
         }
@@ -160,7 +170,8 @@ const ProductObject = ({
           }
         }
       },
-      onPinch: ({ active, offset: [s], event, first, origin: [ox, oy] }) => {
+      onPinch: (state) => {
+        const { active, offset: [s], event, first, origin: [ox, oy] } = state;
         if (first) {
           const rect = gl.domElement.getBoundingClientRect();
           const ndc = new THREE.Vector2(
@@ -175,6 +186,9 @@ const ProductObject = ({
 
         if (!isInteracting.current || !active) return;
         
+        // Pass to gesture system for state management
+        gestureSystem.handlers.onPinch(state);
+
         if (event && 'cancelable' in event && event.cancelable) {
           (event as any)?.preventDefault?.();
         }
