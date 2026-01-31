@@ -492,102 +492,103 @@ export default function ARRestaurantMenuPage() {
           <AnimatePresence>
             {activeObjectId && selectedItem && showBottomUI && (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="absolute bottom-24 md:bottom-32 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto overflow-hidden"
+                initial={{ x: -300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -300, opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="absolute left-0 top-0 bottom-0 z-[60] w-72 pointer-events-auto flex"
               >
-                <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl space-y-3 max-w-sm mx-auto w-full">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] uppercase font-bold text-white/40 tracking-wider">Arrangement</span>
+                <div className="flex-1 bg-black/40 backdrop-blur-md border-r border-white/10 p-4 pt-24 shadow-2xl space-y-4 overflow-y-auto custom-scrollbar">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] uppercase font-bold text-white/60 tracking-widest">Item Controls</span>
                     <Button 
-                      size="icon" variant="ghost" className="h-5 w-5 text-white/40 hover:text-white"
+                      size="icon" variant="ghost" className="h-8 w-8 text-white/40 hover:text-white hover:bg-white/10 rounded-full"
                       onClick={() => setShowBottomUI(false)}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex flex-col gap-1">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[8px] uppercase font-bold text-white/40 tracking-wider">Scale</span>
-                        <span className="text-[8px] font-mono text-white/60">{selectedItem.scale.toFixed(2)}x</span>
+                        <span className="text-[9px] uppercase font-bold text-white/40 tracking-wider">Scale</span>
+                        <span className="text-[9px] font-mono text-white/60">{selectedItem.scale.toFixed(2)}x</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button 
                           variant="outline" size="sm" 
-                          className="flex-1 bg-white/5 border-white/10 text-white h-7 text-[9px]"
+                          className="flex-1 bg-white/5 border-white/10 text-white h-8 text-[10px]"
                           onClick={() => updateSelectedItem({ scale: Math.max(0.1, selectedItem.scale - 0.1) })}
                         >
-                          <Minus className="h-2.5 w-2.5 mr-1" /> SHRINK
+                          <Minus className="h-3 w-3 mr-1" /> SHRINK
                         </Button>
                         <Button 
                           variant="outline" size="sm" 
-                          className="flex-1 bg-white/5 border-white/10 text-white h-7 text-[9px]"
+                          className="flex-1 bg-white/5 border-white/10 text-white h-8 text-[10px]"
                           onClick={() => updateSelectedItem({ scale: Math.min(3, selectedItem.scale + 0.1) })}
                         >
-                          <Plus className="h-2.5 w-2.5 mr-1" /> ENLARGE
+                          <Plus className="h-3 w-3 mr-1" /> ENLARGE
                         </Button>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[8px] uppercase font-bold text-white/40 tracking-wider">Rotation</span>
-                        <div className="flex gap-1">
-                          <span className="text-[8px] font-mono text-white/40">Y:{(selectedItem.rotation[1] * 180 / Math.PI).toFixed(0)}°</span>
-                          <span className="text-[8px] font-mono text-white/40">X:{(selectedItem.rotation[0] * 180 / Math.PI).toFixed(0)}°</span>
+                        <span className="text-[9px] uppercase font-bold text-white/40 tracking-wider">Rotation</span>
+                        <div className="flex gap-2">
+                          <span className="text-[9px] font-mono text-white/40">Y:{(selectedItem.rotation[1] * 180 / Math.PI).toFixed(0)}°</span>
+                          <span className="text-[9px] font-mono text-white/40">X:{(selectedItem.rotation[0] * 180 / Math.PI).toFixed(0)}°</span>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="flex gap-1">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex gap-2">
                           <Button 
                             variant="outline" size="icon" 
-                            className="h-6 flex-1 bg-white/5 border-white/10 text-white p-0"
+                            className="h-8 flex-1 bg-white/5 border-white/10 text-white p-0"
                             onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] - 0.2, selectedItem.rotation[2]] })}
                           >
-                            <RotateCcw className="h-2.5 w-2.5" />
+                            <RotateCcw className="h-3 w-3" />
                           </Button>
                           <Button 
                             variant="outline" size="icon" 
-                            className="h-6 flex-1 bg-white/5 border-white/10 text-white p-0"
+                            className="h-8 flex-1 bg-white/5 border-white/10 text-white p-0"
                             onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] + 0.2, selectedItem.rotation[2]] })}
                           >
-                            <RotateCw className="h-2.5 w-2.5" />
+                            <RotateCw className="h-3 w-3" />
                           </Button>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-2">
                           <Button 
                             variant="outline" size="icon" 
-                            className="h-6 flex-1 bg-white/5 border-white/10 text-white p-0"
+                            className="h-8 flex-1 bg-white/5 border-white/10 text-white p-0"
                             onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0] + 0.2, selectedItem.rotation[1], selectedItem.rotation[2]] })}
                           >
-                            <ChevronUp className="h-2.5 w-2.5" />
+                            <ChevronUp className="h-3 w-3" />
                           </Button>
                           <Button 
                             variant="outline" size="icon" 
-                            className="h-6 flex-1 bg-white/5 border-white/10 text-white p-0"
+                            className="h-8 flex-1 bg-white/5 border-white/10 text-white p-0"
                             onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0] - 0.2, selectedItem.rotation[1], selectedItem.rotation[2]] })}
                           >
-                            <ChevronDown className="h-2.5 w-2.5" />
+                            <ChevronDown className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  <div className="grid grid-cols-3 gap-2 pt-2">
                     <Button 
                       variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[8px] h-6 px-1"
+                      className="bg-white/5 border-white/10 text-[9px] h-8 px-1"
                       onClick={() => updateSelectedItem({ rotation: [0, 0, 0], scale: 1, depthOffset: 0 })}
                     >
                       RESET
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className={`bg-white/5 border-white/10 text-[8px] h-6 px-1 ${snapToTable ? 'text-white' : ''}`}
+                      className={`bg-white/5 border-white/10 text-[9px] h-8 px-1 ${snapToTable ? 'text-white' : ''}`}
                       style={snapToTable ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
                       onClick={() => setSnapToTable(!snapToTable)}
                     >
@@ -595,7 +596,7 @@ export default function ARRestaurantMenuPage() {
                     </Button>
                     <Button 
                       variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[8px] h-6 px-1"
+                      className="bg-white/5 border-white/10 text-[9px] h-8 px-1"
                       onClick={handleAutoArrange}
                     >
                       ARRANGE
