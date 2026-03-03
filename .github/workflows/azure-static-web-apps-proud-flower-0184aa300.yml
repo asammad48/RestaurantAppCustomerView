@@ -31,15 +31,15 @@ jobs:
         run: |
           ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no \
           ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-          "bash -lc ' 
-          DIR=\"${{ secrets.FRONTEND_DEPLOY_DIR }}\"; 
-          [ -n \"$DIR\" ] || (echo \"ERROR: FRONTEND_DEPLOY_DIR empty\"; exit 2); 
-          case \"$DIR\" in 
-            /|/opt|/opt/|/opt/apps|/opt/apps/|/opt/apps/myapp|/opt/apps/myapp/) 
-              echo \"ERROR: deploy dir too broad: $DIR\"; exit 3;; 
-          esac; 
-          mkdir -p \"$DIR\"; 
-          echo \"OK: $DIR\" 
+          "bash -lc '
+          DIR=\"${{ secrets.FRONTEND_DEPLOY_DIR }}\";
+          [ -n \"$DIR\" ] || (echo \"ERROR: FRONTEND_DEPLOY_DIR empty\"; exit 2);
+          case \"$DIR\" in
+            /|/opt|/opt/|/opt/apps|/opt/apps/|/opt/apps/myapp|/opt/apps/myapp/)
+              echo \"ERROR: deploy dir too broad: $DIR\"; exit 3;;
+          esac;
+          mkdir -p \"$DIR\";
+          echo \"OK: $DIR\"
           '"
 
       - name: Rsync frontend to VPS (SAFE)
@@ -47,3 +47,4 @@ jobs:
 
       - name: Reload nginx
         run: ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "sudo systemctl reload nginx"
+
