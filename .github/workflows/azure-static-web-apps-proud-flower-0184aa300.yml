@@ -20,7 +20,7 @@ jobs:
         run: npm ci && npm run build
         env:
           VITE_APP_ENV: qa
-          VITE_API_BASE_URL: https://customerview.restaurantapp.tech
+          VITE_API_BASE_URL: https://customer.scannify.net
 
       - name: SSH Agent
         uses: webfactory/ssh-agent@v0.9.0
