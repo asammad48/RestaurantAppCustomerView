@@ -1,0 +1,92 @@
+==================================================
+STEP 2 — IMPLEMENT UI FEATURES
+==================================================
+1) **Plus (+) Button**
+- Visible on each item
+- Tapping opens item’s detail card
+- Only one card active at a time
+
+```jsx
+function PlusButton({ itemId, setActiveItem, activeItem }) {
+  const isActive = activeItem === itemId;
+  return (
+    <button
+      className={`plus-button ${isActive ? 'active' : ''}`}
+      onPointerDown={() => setActiveItem(itemId)}
+    >
+      +
+    </button>
+  );
+}
+````
+
+2. **Close (❌) Button**
+
+* Closes the active card
+* Resets selected item state
+* Does NOT delete or hide item
+
+```jsx
+function CloseButton({ setActiveItem }) {
+  return (
+    <button
+      className="close-button"
+      onPointerDown={() => setActiveItem(null)}
+    >
+      ❌
+    </button>
+  );
+}
+```
+
+3. **Item Detail Card**
+
+* Shows item name, price, discount
+* Includes Close button
+
+```jsx
+function ItemDetailCard({ item, setActiveItem }) {
+  return (
+    <div className="item-card">
+      <h2>{item.name}</h2>
+      <div className="price-section">
+        <span className="price-tag">${item.price}</span>
+        {item.discount > 0 && (
+          <span className="discount-tag">-{item.discount}%</span>
+        )}
+      </div>
+      <CloseButton setActiveItem={setActiveItem} />
+    </div>
+  );
+}
+```
+
+4. **Multiple Items in View**
+
+```jsx
+{items.map(item => (
+  <div key={item.id} className="item-container">
+    <PlusButton
+      itemId={item.id}
+      activeItem={activeItem}
+      setActiveItem={setActiveItem}
+    />
+    {activeItem === item.id && (
+      <ItemDetailCard item={item} setActiveItem={setActiveItem} />
+    )}
+    <div className="price-section">
+      <span className="price-tag">${item.price}</span>
+      {item.discount > 0 && (
+        <span className="discount-tag">-{item.discount}%</span>
+      )}
+    </div>
+  </div>
+))}
+```
+
+**Logic:**
+
+* `activeItem` tracks currently active item
+* Clicking plus sets `activeItem = item.id`
+* Clicking close sets `activeItem = null`
+* Only one card active at a time

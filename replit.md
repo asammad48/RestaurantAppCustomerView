@@ -8,6 +8,43 @@ This project is a comprehensive, frontend-only restaurant ordering and service r
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+- **2025-10-23**: Guest user improvements and UX enhancements
+  - Removed authentication requirement from order feedback submission - guests can now submit reviews without logging in
+  - Fixed deviceId persistence by removing daily timestamp component - device IDs now remain stable across sessions
+  - Fixed allergens popup scrollability in cart modal by implementing ScrollArea with fixed height (h-60) for proper scrolling
+  - Fixed notification acknowledgment for guest users - notifications can now be acknowledged using deviceId instead of requiring authentication
+  
+- **2025-10-23**: Bug fixes for improved user experience
+  - Fixed notification icon visibility in navbar to show for guest users (previously only shown for authenticated users)
+  - Fixed allergens section scrolling in cart modal by implementing ScrollArea component for proper content scrolling
+  - Fixed infinite loop in placeholder image error handling on restaurant cards by adding fallback flag
+  - Fixed branchId URL parameter priority in restaurant menu page to take precedence over stored state
+  - Fixed customization options API formatting to support multiple selections as array of objects using flatMap
+
+- **2025-10-23**: Enhanced user experience and guest user support
+  - Modified service selection (delivery.tsx) to show locked/disabled options instead of hiding them when not enabled
+  - Added warning alert in payment modal for non-logged-in users about potential loss of order history with login button
+  - Made order history button always visible in navbar for both logged-in and guest users
+  - Implemented dual SignalR connection modes: access_token for authenticated users, deviceId for guest users
+  - Added proper connection handoff on login/logout transitions to maintain real-time updates for all users
+
+- **2025-09-30**: Successfully re-imported from GitHub and configured for Replit environment
+  - Configured Vite dev server with proper Replit settings (host: 0.0.0.0, port: 5000, allowedHosts: true)
+  - Fixed build output directory to match deployment script (dist/public)
+  - Set up workflow "Start application" with webview output on port 5000
+  - Configured deployment for autoscale with build and start commands
+  - Verified application runs successfully in Replit environment
+  - Build process tested and verified working correctly
+
+Previous changes:
+- **2025-09-23**: Successfully imported from GitHub and configured for Replit environment
+- Fixed replit-cartographer plugin compatibility issue by temporarily disabling it
+- Configured mock API system to work completely offline in Replit environment
+- Updated queryClient.ts to intercept all external API calls and provide mock data
+- Fixed allergens API integration in cart-modal.tsx to use mock data
+- Verified all core functionality works correctly in the Replit environment with full mock data support
+
 ## System Architecture
 
 ### UI/UX Decisions

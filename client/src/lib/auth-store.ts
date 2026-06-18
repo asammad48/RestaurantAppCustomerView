@@ -20,6 +20,10 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoginModalOpen: boolean;
   isSignupModalOpen: boolean;
+  isForgotPasswordModalOpen: boolean;
+  isResetPasswordModalOpen: boolean;
+  forgotPasswordEmail: string | null;
+  forgotPasswordUserId: number | null;
   previousPath: string | null;
   isLoading: boolean;
   error: string | null;
@@ -32,11 +36,16 @@ export interface AuthActions {
   logout: () => void;
   setLoginModalOpen: (open: boolean) => void;
   setSignupModalOpen: (open: boolean) => void;
+  setForgotPasswordModalOpen: (open: boolean) => void;
+  setResetPasswordModalOpen: (open: boolean) => void;
+  setForgotPasswordData: (email: string, userId: number) => void;
+  clearForgotPasswordData: () => void;
   setPreviousPath: (path: string | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   switchToLogin: () => void;
   switchToSignup: () => void;
+  switchToForgotPassword: () => void;
 }
 
 export type AuthStore = AuthState & AuthActions;
@@ -49,6 +58,10 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoginModalOpen: false,
       isSignupModalOpen: false,
+      isForgotPasswordModalOpen: false,
+      isResetPasswordModalOpen: false,
+      forgotPasswordEmail: null,
+      forgotPasswordUserId: null,
       previousPath: null,
       isLoading: false,
       error: null,
@@ -87,7 +100,35 @@ export const useAuthStore = create<AuthStore>()(
       setSignupModalOpen: (open: boolean) => set({ 
         isSignupModalOpen: open,
         isLoginModalOpen: false,
+        isForgotPasswordModalOpen: false,
+        isResetPasswordModalOpen: false,
         error: null
+      }),
+
+      setForgotPasswordModalOpen: (open: boolean) => set({ 
+        isForgotPasswordModalOpen: open,
+        isLoginModalOpen: false,
+        isSignupModalOpen: false,
+        isResetPasswordModalOpen: false,
+        error: null
+      }),
+
+      setResetPasswordModalOpen: (open: boolean) => set({ 
+        isResetPasswordModalOpen: open,
+        isLoginModalOpen: false,
+        isSignupModalOpen: false,
+        isForgotPasswordModalOpen: false,
+        error: null
+      }),
+
+      setForgotPasswordData: (email: string, userId: number) => set({ 
+        forgotPasswordEmail: email,
+        forgotPasswordUserId: userId
+      }),
+
+      clearForgotPasswordData: () => set({ 
+        forgotPasswordEmail: null,
+        forgotPasswordUserId: null
       }),
 
       setPreviousPath: (path: string | null) => set({ previousPath: path }),
@@ -99,12 +140,24 @@ export const useAuthStore = create<AuthStore>()(
       switchToLogin: () => set({ 
         isLoginModalOpen: true, 
         isSignupModalOpen: false,
+        isForgotPasswordModalOpen: false,
+        isResetPasswordModalOpen: false,
         error: null
       }),
 
       switchToSignup: () => set({ 
         isSignupModalOpen: true, 
         isLoginModalOpen: false,
+        isForgotPasswordModalOpen: false,
+        isResetPasswordModalOpen: false,
+        error: null
+      }),
+
+      switchToForgotPassword: () => set({ 
+        isForgotPasswordModalOpen: true, 
+        isLoginModalOpen: false,
+        isSignupModalOpen: false,
+        isResetPasswordModalOpen: false,
         error: null
       })
     }),

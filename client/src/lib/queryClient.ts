@@ -1,74 +1,55 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { mockStorage } from "./mock-data";
-import { API_CONFIG } from "./config";
+import { apiClient, ApiError } from "./api-client";
 
-// Mock API simulation for frontend-only operation
+// Real API integration for production use
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
   try {
     let result: any;
     
-    if (url.includes('/menu-items') && method === 'GET') {
-      if (url.includes('/menu-items/')) {
-        const id = url.split('/').pop();
-        result = await mockStorage.getMenuItem(id!);
-      } else {
-        result = await mockStorage.getMenuItems();
-      }
-    } else if (url.includes('/menu-data') && method === 'GET') {
-      result = await mockStorage.getMenuData();
-    } else if (url.includes('/deals') && method === 'GET') {
-      result = await mockStorage.getDeals();
-    } else if (url.includes('/orders') && method === 'GET') {
-      const urlParams = new URLSearchParams(url.split('?')[1]);
-      const tableNumber = urlParams.get('tableNumber');
-      result = await mockStorage.getOrders(tableNumber ? parseInt(tableNumber) : undefined);
-    } else if (url.includes('/orders') && method === 'POST') {
-      result = await mockStorage.createOrder(data as any);
-    } else if (url.includes('/orders/') && url.includes('/status') && method === 'PATCH') {
-      const id = url.split('/')[2];
-      const { status } = data as any;
-      result = await mockStorage.updateOrderStatus(id, status);
-    } else if (url.includes('/service-requests') && method === 'GET') {
-      const urlParams = new URLSearchParams(url.split('?')[1]);
-      const tableNumber = urlParams.get('tableNumber');
-      result = await mockStorage.getServiceRequests(tableNumber ? parseInt(tableNumber) : undefined);
-    } else if (url.includes('/service-requests') && method === 'POST') {
-      result = await mockStorage.createServiceRequest(data as any);
-    } else if (url.includes('/reviews') && method === 'GET') {
-      const urlParams = new URLSearchParams(url.split('?')[1]);
-      const orderId = urlParams.get('orderId');
-      result = await mockStorage.getReviews(orderId || undefined);
-    } else if (url.includes('/reviews') && method === 'POST') {
-      result = await mockStorage.createReview(data as any);
-    } else if (url.includes('/colors')) {
-      const urlParams = new URLSearchParams(url.split('?')[1]);
-      const theme = urlParams.get('theme') || 'default';
-      result = await mockStorage.getColors(theme);
-    } else if (url.includes('/themes')) {
-      result = await mockStorage.getThemes();
-    } else if (url.includes('/restaurants') && method === 'GET') {
-      const urlParams = new URLSearchParams(url.split('?')[1]);
-      const location = urlParams.get('location');
-      result = await mockStorage.getRestaurants(location || undefined);
-    } else if (url.includes('/tables') && method === 'GET') {
-      const urlParams = new URLSearchParams(url.split('?')[1]);
-      const guests = urlParams.get('guests');
-      result = await mockStorage.getTables(guests ? parseInt(guests) : undefined);
-    } else if (url.includes('/reservations') && method === 'GET') {
-      result = await mockStorage.getReservations();
-    } else if (url.includes('/reservations') && method === 'POST') {
-      result = await mockStorage.createReservation(data as any);
+    // Route API calls to the appropriate apiClient methods
+    if (url.includes('/api/Generic/allergens') && method === 'GET') {
+      const response = await apiClient.getAllergens();
+      result = response.data;
+    } else if (url.includes('/api/customer-search/branch/') && method === 'GET') {
+      // Extract branch ID from URL like '/api/customer-search/branch/1'
+      const branchId = parseInt(url.split('/').pop() || '1');
+      const response = await apiClient.get(`/api/customer-search/branch/${branchId}`);
+      result = response.data;
+    } else if (url.includes('/api/customer-search/get-branch-by-id') && method === 'POST') {
+      const response = await apiClient.getBranchById(data as any);
+      result = response.data;
     } else if (url.includes('/api/customer-search/estimate') && method === 'POST') {
-      result = await mockStorage.getBudgetEstimate(data as any);
+      const response = await apiClient.getBudgetEstimate(data as any);
+      result = response.data;
+    } else if (url.includes('/api/Order') && method === 'POST') {
+      const response = await apiClient.createOrder(data as any);
+      result = response.data;
     } else {
-      throw new Error(`Mock API endpoint not found: ${method} ${url}`);
+      // For other endpoints, make a direct API call
+      let response: any;
+      
+      switch (method) {
+        case 'GET':
+          response = await apiClient.get(url);
+          break;
+        case 'POST':
+          response = await apiClient.post(url, data);
+          break;
+        case 'PUT':
+          response = await apiClient.put(url, data);
+          break;
+        case 'DELETE':
+          response = await apiClient.delete(url);
+          break;
+        default:
+          throw new Error(`Unsupported HTTP method: ${method}`);
+      }
+      
+      result = response.data;
     }
 
     return new Response(JSON.stringify(result), {
@@ -76,6 +57,15 @@ export async function apiRequest(
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
+    console.error(`API Request failed: ${method} ${url}`, error);
+    
+    if (error instanceof ApiError) {
+      return new Response(JSON.stringify({ error: error.message, details: error.details }), {
+        status: error.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
     return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -94,22 +84,8 @@ export const getQueryFn: <T>(options: {
     try {
       let res: Response;
       
-      // Handle external API calls (customer-search)
-      if (url.includes('/api/customer-search/branch/')) {
-        const branchId = url.split('/').pop();
-        const externalUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CUSTOMER_SEARCH}/${branchId}`;
-        
-        res = await fetch(externalUrl, {
-          method: 'GET',
-          headers: {
-            'accept': 'text/plain',
-            'Content-Type': 'application/json'
-          }
-        });
-      } else {
-        // Use mock API for other endpoints
-        res = await apiRequest('GET', url);
-      }
+      // Handle all API calls with mock data for Replit environment
+      res = await apiRequest('GET', url);
       
       const data = await res.json();
       

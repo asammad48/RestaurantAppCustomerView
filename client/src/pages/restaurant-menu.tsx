@@ -12,15 +12,13 @@ import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info } from "lucide-react";
+import { Calculator, ArrowLeft, Star, Clock, MapPin, DollarSign, Search, ChevronLeft, ChevronRight, Plus, Tag, Calendar, Bot, Users, Pizza, Sandwich, Coffee, ChefHat, Cake, Sparkles, TrendingUp, Lightbulb, Info, Glasses } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
-import DeliveryDetailsModal from "@/components/modals/delivery-details-modal";
-import TakeawayDetailsModal from "@/components/modals/takeaway-details-modal";
 import PaymentModal from "@/components/modals/payment-modal";
 import SplitBillModal from "@/components/modals/split-bill-modal";
 import ReviewModal from "@/components/modals/review-modal";
@@ -31,6 +29,7 @@ import FoodCard from "@/components/food-card";
 import { getImageUrl } from "@/lib/config";
 import { applyBranchPrimaryColor } from "@/lib/colors";
 import { formatToLocalTime, formatBranchCurrency } from '@/lib/utils';
+import { useNotifications } from '@/hooks/use-notifications';
 
 export default function RestaurantMenuPage() {
   const { 
@@ -44,6 +43,9 @@ export default function RestaurantMenuPage() {
     setBranchCurrency,
     branchCurrency,
     addItem,
+    setSelectedBranch,
+    setSelectedRestaurant,
+    setServiceType,
   } = useCartStore();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -64,6 +66,9 @@ export default function RestaurantMenuPage() {
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Fetch notifications when page loads
+  const { notifications } = useNotifications();
 
   // Get URL parameters helper function
   const getUrlParams = () => {
@@ -99,20 +104,20 @@ export default function RestaurantMenuPage() {
   };
 
   // Get branch ID dynamically - can come from:
-  // 1. Selected branch (from takeaway/delivery flow)
-  // 2. URL parameters (for direct access)
-  // Note: No fallback to avoid showing wrong branch data
+  // 1. URL parameters (highest priority for direct access)
+  // 2. Selected branch (from takeaway/delivery flow)
+  // Note: URL parameter takes precedence to allow direct navigation to specific branches
   const getBranchId = () => {
-    // Check if branch is selected from the service flow
-    if (selectedBranch?.branchId) {
-      return selectedBranch.branchId;
-    }
-    
-    // Check URL parameters for branch ID
+    // Check URL parameters first for branch ID (highest priority)
     const urlParams = getUrlParams();
     const urlBranchId = urlParams.get('branchId');
     if (urlBranchId) {
       return parseInt(urlBranchId, 10);
+    }
+    
+    // Fall back to branch selected from the service flow
+    if (selectedBranch?.branchId) {
+      return selectedBranch.branchId;
     }
     
     // No fallback - return null to prevent accidental wrong branch display
@@ -133,6 +138,20 @@ export default function RestaurantMenuPage() {
   const methodType = getMethodType();
   const branchId = getBranchId();
   const locationId = getLocationId();
+
+  // Update store serviceType when URL method parameter changes
+  useEffect(() => {
+    const urlParams = getUrlParams();
+    const urlMethod = urlParams.get('method');
+    
+    // If there's a method in URL and it's different from store, update the store
+    if (urlMethod && ['delivery', 'takeaway', 'dine-in', 'qr'].includes(urlMethod)) {
+      if (serviceType !== urlMethod) {
+        console.log('🔄 Updating serviceType from URL:', urlMethod);
+        setServiceType(urlMethod as any);
+      }
+    }
+  }, [serviceType, setServiceType]);
 
   // API call to get branch information by ID
   const { data: branchData, isLoading: isBranchLoading, error: branchError } = useQuery<BranchByIdResponse>({
@@ -188,8 +207,8 @@ export default function RestaurantMenuPage() {
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
-    staleTime: 0, // Always consider data stale
-    refetchOnMount: true, // Refetch when component mounts
+    staleTime: Infinity, // Keep data fresh to enable local filtering
+    refetchOnMount: false, // Don't refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
@@ -240,10 +259,45 @@ export default function RestaurantMenuPage() {
 
   // Set branch currency when branch data is loaded
   useEffect(() => {
-    if (branchData?.currency) {
-      setBranchCurrency(branchData.currency);
+    if ((branchData as any)?.branchCurrency) {
+      setBranchCurrency((branchData as any).branchCurrency);
     }
-  }, [branchData?.currency, setBranchCurrency]);
+  }, [(branchData as any)?.branchCurrency, setBranchCurrency]);
+
+  // Hydrate store with branch data when directly accessing restaurant-menu page
+  useEffect(() => {
+    if (branchData && !selectedBranch) {
+      console.log('🏪 Store: Hydrating selectedBranch from API data', branchData);
+      setSelectedBranch({
+        branchId: branchData.branchId,
+        branchName: branchData.branchName,
+        branchLogo: branchData.branchLogo,
+        branchAddress: branchData.branchAddress,
+        branchOpenTime: branchData.branchOpenTime,
+        branchCloseTime: branchData.branchCloseTime,
+        isBranchClosed: branchData.isBranchClosed,
+        branchCurrency: (branchData as any).branchCurrency,
+        primaryColor: branchData.primaryColor
+      } as any);
+      
+      // Also set a basic restaurant object if not already set
+      if (!selectedRestaurant) {
+        console.log('🏪 Store: Hydrating selectedRestaurant from branch data');
+        setSelectedRestaurant({
+          id: branchData.branchId.toString(),
+          name: branchData.branchName,
+          image: branchData.branchLogo || '',
+          rating: 4.5, // Default rating
+          deliveryTime: '30-45 min', // Default delivery time
+          deliveryFee: '50', // Default fee
+          minimumOrder: '500', // Default minimum
+          address: branchData.branchAddress,
+          distance: '2.5 km', // Default distance
+          isOpen: !branchData.isBranchClosed
+        } as any);
+      }
+    }
+  }, [branchData, selectedBranch, selectedRestaurant, setSelectedBranch, setSelectedRestaurant]);
 
   // Get unique categories from menu items
   const categoryList = apiMenuData?.menuItems?.map((item: ApiMenuItem) => item.categoryName) || [];
@@ -380,7 +434,12 @@ export default function RestaurantMenuPage() {
     console.log('🛒 RESTAURANT MENU: Finished adding budget option to cart');
   };
   
-  // Filter items by category and search
+  // Reset pagination when search or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
+
+  // Filter items by category and search (local filtering)
   const filteredItems = apiMenuData?.menuItems?.filter((item: ApiMenuItem) => {
     const matchesCategory = selectedCategory === "all" || item.categoryName === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -694,7 +753,7 @@ export default function RestaurantMenuPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-container section-y">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <p className="text-red-600 mb-4">Invalid or missing QR link</p>
@@ -711,7 +770,7 @@ export default function RestaurantMenuPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-container section-y">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
@@ -728,7 +787,7 @@ export default function RestaurantMenuPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="page-container section-y">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <p className="text-red-600 mb-4">Failed to load restaurant information</p>
@@ -767,7 +826,7 @@ export default function RestaurantMenuPage() {
         {/* Service Type Indicator - Hidden for delivery */}
         {methodType !== 'delivery' && (
           <div className="absolute bottom-0 left-0 right-0 configurable-primary text-white py-3">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+            <div className="page-container flex items-center justify-center">
               {methodType === 'takeaway' && (
                 <>
                   <Clock className="mr-3" size={20} />
@@ -780,10 +839,12 @@ export default function RestaurantMenuPage() {
                   <span className="text-lg font-medium">Menu - {branchData?.branchName || 'Restaurant'}</span>
                 </>
               )}
-              {(methodType === 'dine-in' || !methodType) && (
+              {methodType === 'dine-in' && (
                 <>
                   <MapPin className="mr-3" size={20} />
-                  <span className="text-lg font-medium">Dine In Menu - {selectedRestaurant?.name || branchData?.branchName}</span>
+                  <span className="text-lg font-medium">
+                    {branchData?.locationName ? branchData.locationName : "Dine In Menu"}{(selectedRestaurant?.name || branchData?.branchName) ? ` - ${selectedRestaurant?.name || branchData?.branchName}` : ''}
+                  </span>
                 </>
               )}
             </div>
@@ -791,7 +852,7 @@ export default function RestaurantMenuPage() {
         )}
       </div>
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container section-y">
         {/* Back Button */}
         {methodType !== 'qr' && (
           <div className="mb-6">
@@ -843,7 +904,7 @@ export default function RestaurantMenuPage() {
         {apiMenuData?.recommendedForYou && apiMenuData.recommendedForYou.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold configurable-text-primary mb-6">Recommended For You</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="responsive-menu-grid gap-6">
               {apiMenuData.recommendedForYou.map((item) => (
                 <FoodCard 
                   key={item.menuItemId} 
@@ -896,13 +957,13 @@ export default function RestaurantMenuPage() {
           {/* Left Side - Menu Items */}
           <div className="flex-1">
             <section>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-2xl font-bold configurable-text-primary">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <h2 className="text-xl sm:text-2xl font-bold configurable-text-primary">
                     {viewMode === 'menu' ? 'Menu Items' : 'AI Budget Suggestions'}
                   </h2>
                   {/* View Toggle Buttons */}
-                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1 w-fit">
                     <Button
                       variant={viewMode === 'menu' ? 'default' : 'ghost'}
                       size="sm"
@@ -920,22 +981,54 @@ export default function RestaurantMenuPage() {
                       data-testid="button-switch-to-ai"
                     >
                       <Bot className="w-4 h-4 mr-1" />
-                      AI Budget
+                      <span className="hidden xs:inline">AI Budget</span>
+                      <span className="xs:hidden">AI</span>
                     </Button>
                   </div>
                 </div>
-                {/* Mobile AI Estimator Button */}
-                <div className="lg:hidden">
+                {/* Mobile Action Buttons */}
+                <div className="flex gap-2 lg:hidden">
+                  <Button
+                    onClick={() => {
+                      console.debug('🥽 Opening AR Menu');
+                      setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`);
+                    }}
+                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2 w-fit"
+                    size="sm"
+                    data-testid="button-ar-menu-mobile"
+                  >
+                    <Glasses className="w-4 h-4" />
+                    <span className="hidden xs:inline">AR Menu</span>
+                    <span className="xs:hidden">AR</span>
+                  </Button>
                   <Button
                     onClick={() => {
                       console.debug('🤖 Opening AI Estimator Modal from restaurant menu');
                       setAiEstimatorModalOpen(true);
                     }}
-                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2"
+                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2 w-fit"
+                    size="sm"
                     data-testid="button-open-ai-estimator-mobile"
                   >
                     <Bot className="w-4 h-4" />
-                    AI Estimator
+                    <span className="hidden xs:inline">AI Estimator</span>
+                    <span className="xs:hidden">AI</span>
+                  </Button>
+                </div>
+                
+                {/* Desktop AR Menu Button */}
+                <div className="hidden lg:block">
+                  <Button
+                    onClick={() => {
+                      console.debug('🥽 Opening AR Menu');
+                      setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`);
+                    }}
+                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2"
+                    size="sm"
+                    data-testid="button-ar-menu-desktop"
+                  >
+                    <Glasses className="w-4 h-4" />
+                    AR Menu
                   </Button>
                 </div>
               </div>
@@ -1401,7 +1494,7 @@ export default function RestaurantMenuPage() {
         {apiMenuData?.deals && apiMenuData.deals.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-bold configurable-text-primary mb-6">Special Deals</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="responsive-menu-grid gap-6">
               {apiMenuData.deals.map((deal) => renderDeal(deal))}
             </div>
           </section>
@@ -1438,8 +1531,6 @@ export default function RestaurantMenuPage() {
       {/* Modals */}
       <CartModal />
       <AddToCartModal />
-      <DeliveryDetailsModal />
-      <TakeawayDetailsModal />
       <PaymentModal />
       <SplitBillModal />
       <ReviewModal />

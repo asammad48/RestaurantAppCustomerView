@@ -39,6 +39,18 @@ export default function SplitBillModal() {
 
   const perPersonAmount = total / peopleCount;
 
+  // Get locationId from URL parameters for dine-in orders
+  const getLocationId = () => {
+    if (serviceType === 'dine-in') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLocationId = urlParams.get('locationId');
+      if (urlLocationId) {
+        return parseInt(urlLocationId, 10);
+      }
+    }
+    return undefined;
+  };
+
   const handleMobileNumberChange = (index: number, value: string) => {
     // Only allow numbers and limit to 10 digits
     const numericValue = value.replace(/\D/g, '').slice(0, 10);
@@ -99,6 +111,16 @@ export default function SplitBillModal() {
       }
     }
 
+    // Check if locationId is required and provided for dine-in orders
+    if (serviceType === 'dine-in' && !getLocationId()) {
+      toast({
+        title: "Location Required",
+        description: "Please select a table/location for your dine-in order.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       
@@ -107,6 +129,7 @@ export default function SplitBillModal() {
         cartItems: items,
         serviceType,
         branchId: selectedBranch?.branchId || 1,
+        locationId: getLocationId(),
         username: user?.name || user?.email || 'guest',
         tipAmount: 0,
         deliveryDetails: serviceType === 'delivery' ? deliveryDetails : null,
@@ -120,6 +143,11 @@ export default function SplitBillModal() {
         setOrderResponse(orderResponse.data);
         setSplitBillModalOpen(false);
         setOrderConfirmationOpen(true);
+        
+        // Clear the cart for this branch after successful order
+        if (selectedBranch) {
+          useCartStore.getState().clearCartForBranch(selectedBranch.branchId);
+        }
         
         toast({
           title: "Order Placed Successfully!",
@@ -167,7 +195,18 @@ export default function SplitBillModal() {
       items.forEach(item => {
         const assignedMobile = assignedPersons[item.id];
         if (assignedMobile && assignedMobile.length === 10) {
-          const itemTotal = parseFloat(item.price.toString()) * item.quantity;
+          const basePrice = parseFloat(item.price.toString());
+          
+          // Calculate modifier price for this item
+          let modifierPrice = 0;
+          if (item.customization?.selectedModifiers && item.modifiers) {
+            modifierPrice = Object.entries(item.customization.selectedModifiers).reduce((modTotal, [modifierId, qty]) => {
+              const modifier = item.modifiers?.find(mod => mod.id.toString() === modifierId);
+              return modTotal + (modifier ? modifier.price * qty : 0);
+            }, 0);
+          }
+          
+          const itemTotal = (basePrice + modifierPrice) * item.quantity;
           splitBills.push({
             splitType: 2, // By item
             price: Math.round(itemTotal * 100), // Convert to cents

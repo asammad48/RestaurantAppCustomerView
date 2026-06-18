@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Search, Star, Navigation, Map, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
+import { geolocationService } from "@/services/geolocation-service";
 import { Branch } from "@/types/branch";
 import { applyGreenTheme } from "@/lib/colors";
 import { useCartStore } from "@/lib/store";
@@ -24,7 +25,7 @@ export default function ReservationPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
-  const [maxDistance, setMaxDistance] = useState(20);
+  const [maxDistance, setMaxDistance] = useState<number | ''>(20);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { setSelectedBranch } = useCartStore();
@@ -45,7 +46,7 @@ export default function ReservationPage() {
         longitude,
         address: userLocation || "",
         branchName: searchQuery || "",
-        maxDistance
+        maxDistance: Number.isFinite(maxDistance as number) ? (maxDistance as number) : 20
       });
 
       setBranches(response.data);
@@ -82,24 +83,32 @@ export default function ReservationPage() {
     return matchesSearch;
   });
 
-  // Get current location
-  const getCurrentLocation = () => {
+  // Get current location using reliable geolocation service
+  const getCurrentLocation = async () => {
     setIsLoadingLocation(true);
     
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setUserCoords({ lat, lng });
-          searchReservationBranches(lat, lng);
-          setIsLoadingLocation(false);
-        },
-        () => {
-          setIsLoadingLocation(false);
-          alert("Unable to get location");
-        }
-      );
+    try {
+      const locationData = await geolocationService.getCurrentLocation();
+      
+      setUserLocation(locationData.address);
+      setUserCoords({ lat: locationData.latitude, lng: locationData.longitude });
+      
+      // Search for branches based on location
+      await searchReservationBranches(locationData.latitude, locationData.longitude);
+      
+      toast({
+        title: "Location Found",
+        description: `Found your location: ${locationData.address}`,
+      });
+    } catch (error: any) {
+      console.error('Error getting location:', error);
+      toast({
+        variant: "destructive",
+        title: "Location Error",
+        description: error.message || "Unable to get your location. Please enter address manually or use map picker.",
+      });
+    } finally {
+      setIsLoadingLocation(false);
     }
   };
 
@@ -115,7 +124,7 @@ export default function ReservationPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -188,7 +197,15 @@ export default function ReservationPage() {
               <Input
                 type="number"
                 value={maxDistance}
-                onChange={(e) => setMaxDistance(Number(e.target.value))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    setMaxDistance('');
+                  } else {
+                    const num = Number(value);
+                    setMaxDistance(Number.isFinite(num) ? num : '');
+                  }
+                }}
                 placeholder="20"
                 min="1"
                 max="50"

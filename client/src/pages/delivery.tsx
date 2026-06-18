@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { BranchService } from "@/services/branch-service";
+import { geolocationService } from "@/services/geolocation-service";
 import { Branch } from "@/types/branch";
 import { useCartStore } from "@/lib/store";
 import { applyGreenTheme } from "@/lib/colors";
+import { featureConfig } from "@/config/features";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -26,7 +28,7 @@ export default function DeliveryPage() {
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesError, setBranchesError] = useState<string | null>(null);
   const [maxDistance, setMaxDistance] = useState(20);
-  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('delivery');
+  const [selectedService, setSelectedService] = useState<'delivery' | 'takeaway' | 'dine-in' | 'reservation'>('dine-in');
   const { setServiceType } = useCartStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -172,8 +174,8 @@ export default function DeliveryPage() {
       const response = await BranchService.searchReservationBranches({
         latitude,
         longitude,
-        address: userLocation || "",
-        branchName: searchQuery || "",
+        address: "", // As requested, send empty string for address
+        branchName: searchQuery || "", // Use searchQuery for restaurant name
         maxDistance
       });
 
@@ -234,54 +236,32 @@ export default function DeliveryPage() {
     }
   };
 
-  // Get current location using browser geolocation
-  const getCurrentLocation = () => {
+  // Get current location using reliable geolocation service
+  const getCurrentLocation = async () => {
     setIsLoadingLocation(true);
     
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          
-          try {
-            // Try to get address using Google Geocoding (if you have the key)
-            setUserLocation(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-            setUserCoords({ lat, lng });
-            
-            // Search for branches based on selected service
-            await searchBranchesForService(lat, lng);
-            
-            toast({
-              title: "Location Found",
-              description: "Found your location and searching for nearby restaurants.",
-            });
-          } catch (error) {
-            console.error('Error processing location:', error);
-            setUserCoords({ lat, lng });
-            setUserLocation(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-          }
-          
-          setIsLoadingLocation(false);
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          setIsLoadingLocation(false);
-          toast({
-            variant: "destructive",
-            title: "Location Error",
-            description: "Unable to get your location. Please enter address manually or use map picker.",
-          });
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-      );
-    } else {
-      setIsLoadingLocation(false);
+    try {
+      const locationData = await geolocationService.getCurrentLocation();
+      
+      setUserLocation(locationData.address);
+      setUserCoords({ lat: locationData.latitude, lng: locationData.longitude });
+      
+      // Search for branches based on selected service
+      await searchBranchesForService(locationData.latitude, locationData.longitude);
+      
+      toast({
+        title: "Location Found",
+        description: `Found your location: ${locationData.address}`,
+      });
+    } catch (error: any) {
+      console.error('Error getting location:', error);
       toast({
         variant: "destructive",
-        title: "Not Supported",
-        description: "Geolocation is not supported by this browser.",
+        title: "Location Error",
+        description: error.message || "Unable to get your location. Please enter address manually or use map picker.",
       });
+    } finally {
+      setIsLoadingLocation(false);
     }
   };
 
@@ -329,14 +309,14 @@ export default function DeliveryPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container section-y">
         {/* Service Selection */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">
             Choose Your Service
           </h1>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="responsive-grid gap-4 mb-8">
             {[
               {
                 id: 'delivery',
@@ -344,6 +324,7 @@ export default function DeliveryPage() {
                 description: 'Get food delivered to your doorstep',
                 icon: Bike,
                 color: selectedService === 'delivery' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.delivery.enabled,
               },
               {
                 id: 'takeaway',
@@ -351,6 +332,7 @@ export default function DeliveryPage() {
                 description: 'Pick up your order from the restaurant',
                 icon: ShoppingBag,
                 color: selectedService === 'takeaway' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.takeaway.enabled,
               },
               {
                 id: 'dine-in',
@@ -358,6 +340,7 @@ export default function DeliveryPage() {
                 description: 'Eat at the restaurant',
                 icon: UtensilsCrossed,
                 color: selectedService === 'dine-in' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.dineIn.enabled,
               },
               {
                 id: 'reservation',
@@ -365,24 +348,31 @@ export default function DeliveryPage() {
                 description: 'Book a table for dining in',
                 icon: Calendar,
                 color: selectedService === 'reservation' ? 'configurable-primary text-white' : 'bg-white hover:bg-gray-50 border-gray-200',
+                enabled: featureConfig.services.reservation.enabled,
               },
             ].map((service) => {
               const Icon = service.icon;
+              const isLocked = !service.enabled;
               return (
                 <Card 
                   key={service.id} 
-                  className={`cursor-pointer transition-all duration-200 border ${service.color}`}
-                  onClick={() => handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
+                  className={`transition-all duration-200 border ${
+                    isLocked 
+                      ? 'opacity-50 cursor-not-allowed bg-gray-50' 
+                      : `cursor-pointer ${service.color}`
+                  }`}
+                  onClick={() => !isLocked && handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
                   data-testid={`service-option-${service.id}`}
                 >
-                  <CardContent className="flex flex-col items-center p-6 text-center">
-                    <div className={`p-3 rounded-full ${selectedService === service.id ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
-                      <Icon size={24} className={selectedService === service.id ? 'text-white' : 'configurable-primary-text'} />
+                  <CardContent className="flex flex-col items-center p-6 text-center relative">
+                    <div className={`p-3 rounded-full ${selectedService === service.id && !isLocked ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
+                      <Icon size={24} className={selectedService === service.id && !isLocked ? 'text-white' : 'configurable-primary-text'} />
                     </div>
                     <h3 className="font-semibold text-lg mb-1">
                       {service.title}
+                      {isLocked && <span className="text-xs ml-2 text-gray-400">(Locked)</span>}
                     </h3>
-                    <p className={`text-sm ${selectedService === service.id ? 'text-white/80' : 'text-gray-600'}`}>
+                    <p className={`text-sm ${selectedService === service.id && !isLocked ? 'text-white/80' : 'text-gray-600'}`}>
                       {service.description}
                     </p>
                   </CardContent>
@@ -395,6 +385,12 @@ export default function DeliveryPage() {
         {/* Dynamic Content Based on Service Selection */}
         {selectedService === 'delivery' && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="text-center mb-6">
+              <Bike className="w-12 h-12 configurable-primary-text mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Set Your Delivery Location</h3>
+              <p className="text-gray-600">Please set your location to find restaurants available for delivery in your area.</p>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -439,23 +435,6 @@ export default function DeliveryPage() {
                     </div>
                   </div>
                 )}
-                
-                <div className="flex gap-2">
-                  <Input
-                    value={userLocation}
-                    onChange={(e) => setUserLocation(e.target.value)}
-                    placeholder="Enter your delivery address"
-                    data-testid="input-delivery-location"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleAddressSearch}
-                    variant="outline"
-                    disabled={!userLocation.trim()}
-                  >
-                    Search
-                  </Button>
-                </div>
               </div>
               
               <div>
@@ -482,7 +461,7 @@ export default function DeliveryPage() {
               <p className="text-gray-600">Please set your location to find restaurants available for pickup in your area.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
@@ -525,23 +504,6 @@ export default function DeliveryPage() {
                     </div>
                   </div>
                 )}
-                
-                <div className="flex gap-2">
-                  <Input
-                    value={userLocation}
-                    onChange={(e) => setUserLocation(e.target.value)}
-                    placeholder="Enter your pickup location"
-                    data-testid="input-pickup-location"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleAddressSearch}
-                    variant="outline"
-                    disabled={!userLocation.trim()}
-                  >
-                    Search
-                  </Button>
-                </div>
               </div>
 
               <div>
@@ -556,6 +518,44 @@ export default function DeliveryPage() {
                   data-testid="input-search-restaurants"
                 />
               </div>
+              
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Max Distance (km)
+                </label>
+                <Input
+                  type="number"
+                  value={maxDistance || ''}
+                  onChange={(e) => setMaxDistance(Number(e.target.value) || 0)}
+                  placeholder="Maximum distance in km"
+                  min="1"
+                  max="100"
+                  data-testid="input-max-distance-takeaway"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={async () => {
+                  if (!userCoords) {
+                    toast({
+                      variant: "destructive",
+                      title: "Location Required",
+                      description: "Please set your location to search for restaurants.",
+                    });
+                    return;
+                  }
+                  await searchBranchesForService(userCoords.lat, userCoords.lng);
+                }}
+                disabled={!userCoords || branchesLoading}
+                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
+                data-testid="button-search-takeaway"
+              >
+                <Search className="w-4 h-4" />
+                {branchesLoading ? 'Searching...' : 'Search Restaurants'}
+              </Button>
             </div>
           </div>
         )}
@@ -611,23 +611,6 @@ export default function DeliveryPage() {
                     </div>
                   </div>
                 )}
-                
-                <div className="flex gap-2">
-                  <Input
-                    value={userLocation}
-                    onChange={(e) => setUserLocation(e.target.value)}
-                    placeholder="Enter area to search restaurants"
-                    data-testid="input-dinein-location"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleAddressSearch}
-                    variant="outline"
-                    disabled={!userLocation.trim()}
-                  >
-                    Search
-                  </Button>
-                </div>
               </div>
 
               <div>
@@ -643,6 +626,28 @@ export default function DeliveryPage() {
                 />
               </div>
             </div>
+            
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={async () => {
+                  if (!userCoords) {
+                    toast({
+                      variant: "destructive",
+                      title: "Location Required",
+                      description: "Please set your location to search for restaurants.",
+                    });
+                    return;
+                  }
+                  await searchBranchesForService(userCoords.lat, userCoords.lng);
+                }}
+                disabled={!userCoords || branchesLoading}
+                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
+                data-testid="button-search-dinein"
+              >
+                <Search className="w-4 h-4" />
+                {branchesLoading ? 'Searching...' : 'Search Restaurants'}
+              </Button>
+            </div>
           </div>
         )}
 
@@ -654,11 +659,11 @@ export default function DeliveryPage() {
               <p className="text-gray-600">Book a table at your favorite restaurant for the perfect dining experience.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
-                  Restaurant Location
+                  Your Location
                 </label>
                 
                 <div className="grid grid-cols-2 gap-2 mb-2">
@@ -697,15 +702,21 @@ export default function DeliveryPage() {
                     </div>
                   </div>
                 )}
-                
-                <Input
-                  value={userLocation}
-                  onChange={(e) => setUserLocation(e.target.value)}
-                  placeholder="Enter area or restaurant name"
-                  data-testid="input-reservation-location"
-                />
               </div>
 
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Search className="w-4 h-4 mr-1 configurable-primary-text" />
+                  Search by Restaurant Name
+                </label>
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Enter restaurant name"
+                  data-testid="input-restaurant-name"
+                />
+              </div>
+              
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 mr-1 configurable-primary-text" />
@@ -713,8 +724,8 @@ export default function DeliveryPage() {
                 </label>
                 <Input
                   type="number"
-                  value={maxDistance}
-                  onChange={(e) => setMaxDistance(Number(e.target.value) || 20)}
+                  value={maxDistance || ''}
+                  onChange={(e) => setMaxDistance(Number(e.target.value) || 0)}
                   placeholder="Maximum distance in km"
                   min="1"
                   max="100"
@@ -722,7 +733,6 @@ export default function DeliveryPage() {
                 />
               </div>
             </div>
-            
             
             <div className="flex justify-center">
               <Button
@@ -738,7 +748,7 @@ export default function DeliveryPage() {
                   await searchBranchesForService(userCoords.lat, userCoords.lng);
                 }}
                 disabled={!userCoords || branchesLoading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
                 data-testid="button-search-reservations"
               >
                 <Search className="w-4 h-4" />
@@ -791,6 +801,7 @@ export default function DeliveryPage() {
                 loading={branchesLoading}
                 onSelectBranch={handleSelectBranch}
                 serviceType={selectedService}
+                maxDistance={maxDistance}
               />
             </>
           )}

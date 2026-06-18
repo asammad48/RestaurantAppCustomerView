@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
 import { useAuthStore } from "@/lib/auth-store";
@@ -65,13 +66,11 @@ export default function CartModal() {
     }
   };
 
-  // Fetch allergens data
-  const { data: allergensResponse, isLoading: allergensLoading, error: allergensError } = useQuery({
+  // Fetch allergens data using mock API
+  const { data: allergens = [], isLoading: allergensLoading, error: allergensError } = useQuery<Allergen[]>({
     queryKey: ['/api/Generic/allergens'],
-    queryFn: () => apiClient.getAllergens(),
   });
 
-  const allergens = allergensResponse?.data || [];
 
   // Handle allergen selection
   const handleAllergenToggle = (allergenId: number) => {
@@ -246,20 +245,20 @@ export default function CartModal() {
     <Dialog open={isCartOpen} onOpenChange={setCartOpen}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="border-b border-gray-200 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-2 pr-6">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               {selectedBranchView !== null && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedBranchView(null)}
-                  className="p-1"
+                  className="p-1 flex-shrink-0"
                   data-testid="button-back-to-summary"
                 >
                   <ArrowLeft size={16} />
                 </Button>
               )}
-              <DialogTitle className="text-xl font-bold text-black">
+              <DialogTitle className="text-base sm:text-xl font-bold text-black truncate">
                 {selectedBranchView !== null
                   ? branchSummary.find(b => b.branchId === selectedBranchView)?.branchName || 'Branch Cart'
                   : 'Your cart'
@@ -269,11 +268,11 @@ export default function CartModal() {
             <Button 
               variant="ghost" 
               onClick={clearCart} 
-              className="configurable-primary-text font-medium hover:configurable-primary-hover hover:text-white"
+              className="configurable-primary-text font-medium hover:configurable-primary-hover hover:text-white text-xs sm:text-sm px-2 sm:px-4 flex-shrink-0"
               data-testid="button-clear-cart"
             >
               {showBranchSummary ? 'Clear All' : 
-               selectedBranchView !== null ? 'Clear Branch' : 'Clear Cart'}
+               selectedBranchView !== null ? 'Clear' : 'Clear'}
             </Button>
           </div>
           {isRestaurantMenuPage && selectedBranch && (
@@ -545,14 +544,14 @@ export default function CartModal() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0" align="start">
-                <div className="max-h-60 overflow-auto">
-                  {allergensLoading ? (
-                    <div className="p-4 text-center text-sm text-gray-500">Loading allergens...</div>
-                  ) : allergensError ? (
-                    <div className="p-4 text-center text-sm text-red-500">Failed to load allergens</div>
-                  ) : allergens.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-gray-500">No allergens available</div>
-                  ) : (
+                {allergensLoading ? (
+                  <div className="p-4 text-center text-sm text-gray-500">Loading allergens...</div>
+                ) : allergensError ? (
+                  <div className="p-4 text-center text-sm text-red-500">Failed to load allergens</div>
+                ) : allergens.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-gray-500">No allergens available</div>
+                ) : (
+                  <ScrollArea className="h-60">
                     <div className="p-2">
                       {allergens.map((allergen: Allergen) => (
                         <div
@@ -578,8 +577,8 @@ export default function CartModal() {
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </ScrollArea>
+                )}
               </PopoverContent>
             </Popover>
           </div>

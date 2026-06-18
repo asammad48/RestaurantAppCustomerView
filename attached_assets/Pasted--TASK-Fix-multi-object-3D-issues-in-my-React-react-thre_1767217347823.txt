@@ -1,0 +1,124 @@
+````
+TASK: Fix multi-object 3D issues in my React + react-three-fiber project. Currently:
+
+1. Rotating one object also rotates other objects.
+2. Objects move unexpectedly across the screen.
+3. Objects do not expand/scale properly.
+4. Mobile and desktop gestures are inconsistent.
+
+REQUIREMENTS:
+1. Each 3D object must have **independent rotation and scale state**.
+2. Only the **selected object** should rotate or scale.
+3. Objects must stay **fixed in world space**; no unintended movement.
+4. Pinch gesture (mobile) or mouse wheel (desktop) should **scale only the selected object**.
+5. Camera should optionally orbit the **selected object** without affecting others.
+6. UI elements (Plus button, Close button, Price/Discount tags) must remain functional.
+7. Mobile gestures:
+   - Single-finger drag → rotate selected object (or camera around it)
+   - Pinch → scale selected object
+   - Tap → select object to open detail card
+8. Desktop gestures:
+   - Mouse drag → rotate selected object or camera
+   - Ctrl + mouse wheel → scale selected object
+   - Click → select object to open detail card
+
+SUGGESTED CODING APPROACH:
+
+```jsx
+import { Canvas, useFrame } from '@react-three/fiber';
+import { useRef, useState } from 'react';
+import { useGLTF, OrbitControls } from '@react-three/drei';
+
+function RotatingObject({ model, position, isActive, scale, onSelect }) {
+  const ref = useRef();
+  const gltf = useGLTF(model);
+
+  // Independent rotation per object
+  useFrame(() => {
+    if (isActive && ref.current) {
+      ref.current.rotation.y += 0.01; // rotate only if active
+    }
+  });
+
+  return (
+    <primitive
+      object={gltf.scene}
+      ref={ref}
+      position={position}
+      scale={[scale, scale, scale]}
+      onPointerDown={onSelect} // select this object
+    />
+  );
+}
+
+export default function Scene() {
+  const [activeObject, setActiveObject] = useState(null);
+  const [scales, setScales] = useState({ 1: 1, 2: 1, 3: 1 });
+
+  // Example pinch/scroll scaling function
+  const handleScale = (id, newScale) => {
+    setScales(prev => ({ ...prev, [id]: newScale }));
+  };
+
+  return (
+    <Canvas camera={{ position: [0, 2, 6], fov: 50 }}>
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 5, 5]} />
+      <OrbitControls
+        enablePan={false}
+        enableZoom={true}
+        enableRotate={true}
+        minDistance={3}
+        maxDistance={10}
+        enableDamping
+        dampingFactor={0.1}
+      />
+
+      <RotatingObject
+        model="/model1.glb"
+        position={[-2, 0, 0]}
+        isActive={activeObject === 1}
+        scale={scales[1]}
+        onSelect={() => setActiveObject(1)}
+      />
+      <RotatingObject
+        model="/model2.glb"
+        position={[0, 0, 0]}
+        isActive={activeObject === 2}
+        scale={scales[2]}
+        onSelect={() => setActiveObject(2)}
+      />
+      <RotatingObject
+        model="/model3.glb"
+        position={[2, 0, 0]}
+        isActive={activeObject === 3}
+        scale={scales[3]}
+        onSelect={() => setActiveObject(3)}
+      />
+    </Canvas>
+  );
+}
+````
+
+NOTES:
+
+* Each object has its **own rotation and scale**.
+* Rotation only occurs if `isActive` is true → prevents one object from rotating another.
+* `scale` state is managed independently per object.
+* Camera orbit controlled by **OrbitControls**; pan disabled to keep objects in place.
+* Pinch / scroll can update `scale` for only the active object.
+* UI from Step 2 can overlay as before (Plus/Close buttons, Price/Discount tags).
+
+REQUEST:
+
+* Provide **full Replit-ready solution** with:
+
+  * Isolated rotation per object
+  * Independent scaling
+  * Fixed positions
+  * Mobile + desktop gestures
+  * Integrated UI for object selection
+
+```
+
+---

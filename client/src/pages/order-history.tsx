@@ -6,7 +6,7 @@ export default function OrderHistoryPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 page-container section-y">
         <OrderHistory />
       </main>
       <Footer />

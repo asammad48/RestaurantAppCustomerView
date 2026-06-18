@@ -13,7 +13,7 @@ export default function AddToCartModal() {
   const [quantity, setQuantity] = useState(1);
   const [selectedVariation, setSelectedVariation] = useState<number | null>(null);
   const [selectedModifiers, setSelectedModifiers] = useState<{[key: number]: number}>({});
-  const [selectedCustomizations, setSelectedCustomizations] = useState<{[key: number]: number}>({});
+  const [selectedCustomizations, setSelectedCustomizations] = useState<{[key: number]: number[]}>({});
   
   // Reset selections when modal opens or closes
   useEffect(() => {
@@ -45,11 +45,24 @@ export default function AddToCartModal() {
     });
   };
 
-  const selectCustomizationOption = (customizationId: number, optionId: number) => {
-    setSelectedCustomizations(prev => ({
-      ...prev,
-      [customizationId]: optionId
-    }));
+  const toggleCustomizationOption = (customizationId: number, optionId: number) => {
+    setSelectedCustomizations(prev => {
+      const currentOptions = prev[customizationId] || [];
+      const isSelected = currentOptions.includes(optionId);
+      
+      if (isSelected) {
+        // Remove the option
+        const newOptions = currentOptions.filter(id => id !== optionId);
+        if (newOptions.length === 0) {
+          const { [customizationId]: removed, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [customizationId]: newOptions };
+      } else {
+        // Add the option
+        return { ...prev, [customizationId]: [...currentOptions, optionId] };
+      }
+    });
   };
 
   // Helper function to calculate discounted price from original price and discount percentage
@@ -94,11 +107,14 @@ export default function AddToCartModal() {
         return total + (modifier?.price || 0) * qty;
       }, 0);
       
-      // Add customizations price
-      const customizationsPrice = Object.entries(selectedCustomizations).reduce((total, [customizationId, optionId]) => {
+      // Add customizations price - support multiple options per customization
+      const customizationsPrice = Object.entries(selectedCustomizations).reduce((total, [customizationId, optionIds]) => {
         const customization = menuItem.customizations?.find(c => c.id === parseInt(customizationId));
-        const option = customization?.options.find(o => o.id === optionId);
-        return total + (option?.price || 0);
+        const optionsTotal = optionIds.reduce((optTotal, optionId) => {
+          const option = customization?.options.find(o => o.id === optionId);
+          return optTotal + (option?.price || 0);
+        }, 0);
+        return total + optionsTotal;
       }, 0);
       
       basePrice += modifiersPrice + customizationsPrice;
@@ -188,9 +204,9 @@ export default function AddToCartModal() {
 
         {/* Allergen Information for Deal */}
         {deal.allergenItemContains && (
-          <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-            <h4 className="text-sm font-medium text-orange-800 mb-1">⚠️ Deal Allergen Information:</h4>
-            <p className="text-sm text-orange-700">
+          <div className="p-3 rounded-lg border" style={{ backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}10`, borderColor: `${selectedBranch?.primaryColor || '#16a34a'}30` }}>
+            <h4 className="text-sm font-medium mb-1" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>⚠️ Deal Allergen Information:</h4>
+            <p className="text-sm" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>
               Contains: {deal.allergenItemContains}
             </p>
           </div>
@@ -215,8 +231,8 @@ export default function AddToCartModal() {
                         
                         {/* Allergen Information for Individual Menu Item */}
                         {item.allergenItemContains && (
-                          <div className="ml-4 mb-2 p-2 rounded bg-orange-50 border border-orange-200">
-                            <p className="text-xs text-orange-700">
+                          <div className="ml-4 mb-2 p-2 rounded border" style={{ backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}10`, borderColor: `${selectedBranch?.primaryColor || '#16a34a'}30` }}>
+                            <p className="text-xs" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>
                               <span className="font-medium">⚠️ Contains:</span> {item.allergenItemContains}
                             </p>
                           </div>
@@ -257,7 +273,7 @@ export default function AddToCartModal() {
           )}
           
           {/* Deal End Date with shading */}
-          <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-primary)' }}>
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: selectedBranch?.primaryColor || '#16a34a' }}>
             <div className="p-2 rounded bg-gray-100">
               <p className="text-xs configurable-text-primary font-medium">
                 Valid until: {formatToLocalTime(deal.dealEndDate, 'MMM dd, yyyy')}
@@ -288,7 +304,7 @@ export default function AddToCartModal() {
               </div>
             </div>
             {deal.discount && deal.discount.value > 0 && (
-              <div className="mt-2 p-2 rounded" style={{backgroundColor: 'var(--configurable-primary-alpha-20)'}}>
+              <div className="mt-2 p-2 rounded" style={{backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}33`}}>
                 <p className="text-xs font-medium configurable-primary-text">
                   You save {deal.discount.value}% on this deal!
                 </p>
@@ -314,9 +330,9 @@ export default function AddToCartModal() {
 
         {/* Allergen Information */}
         {menuItem.allergenItemContains && (
-          <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-            <h4 className="text-sm font-medium text-orange-800 mb-1">⚠️ Allergen Information:</h4>
-            <p className="text-sm text-orange-700">
+          <div className="p-3 rounded-lg border" style={{ backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}10`, borderColor: `${selectedBranch?.primaryColor || '#16a34a'}30` }}>
+            <h4 className="text-sm font-medium mb-1" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>⚠️ Allergen Information:</h4>
+            <p className="text-sm" style={{ color: selectedBranch?.primaryColor || '#16a34a' }}>
               Contains: {menuItem.allergenItemContains}
             </p>
           </div>
@@ -336,7 +352,7 @@ export default function AddToCartModal() {
                       ? 'border-2 configurable-border configurable-primary-text' 
                       : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
                   }`}
-                  style={selectedVariation === variation.id ? { backgroundColor: 'var(--configurable-primary-alpha-20)' } : {}}
+                  style={selectedVariation === variation.id ? { backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}33` } : {}}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{variation.name}</span>
@@ -408,25 +424,32 @@ export default function AddToCartModal() {
                   {customizationsOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2 space-y-2">
-                  {customization.options.map((option) => (
-                    <button
-                      key={option.id}
-                      onClick={() => selectCustomizationOption(customization.id, option.id)}
-                      className={`w-full text-left p-2 rounded text-sm ${
-                        selectedCustomizations[customization.id] === option.id 
-                          ? 'border configurable-border' 
-                          : 'bg-gray-50 hover:bg-gray-100'
-                      }`}
-                      style={selectedCustomizations[customization.id] === option.id ? { backgroundColor: 'var(--configurable-primary-alpha-20)' } : {}}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span>{option.name}</span>
-                        {option.price > 0 && (
-                          <span className="text-xs font-medium">+{formatBranchCurrency(option.price, branchCurrency)}</span>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                  {customization.options.map((option) => {
+                    const isSelected = (selectedCustomizations[customization.id] || []).includes(option.id);
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => toggleCustomizationOption(customization.id, option.id)}
+                        className={`w-full text-left p-2 rounded text-sm ${
+                          isSelected
+                            ? 'border configurable-border' 
+                            : 'bg-gray-50 hover:bg-gray-100'
+                        }`}
+                        style={isSelected ? { backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}33` } : {}}
+                        data-testid={`customization-option-${customization.id}-${option.id}`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="flex items-center gap-2">
+                            {isSelected && <span className="text-xs">✓</span>}
+                            {option.name}
+                          </span>
+                          {option.price > 0 && (
+                            <span className="text-xs font-medium">+{formatBranchCurrency(option.price, branchCurrency)}</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </CollapsibleContent>
               </Collapsible>
             ))}
@@ -439,9 +462,33 @@ export default function AddToCartModal() {
   return (
     <Dialog open={isAddToCartModalOpen} onOpenChange={setAddToCartModalOpen}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogTitle className="text-center text-xl font-bold">
-          {lastAddedItem && isDeal(lastAddedItem) ? 'Deal Details' : 'Customization'}
-        </DialogTitle>
+        {/* Item Image and Header */}
+        {lastAddedItem && (
+          <div className="space-y-3 -mt-6 -mx-6 mb-4 pb-4 border-b">
+            {(lastAddedItem.picture || 'picture' in lastAddedItem ? lastAddedItem.picture : undefined) && (
+              <div className="w-full h-40 bg-gray-100 rounded-none overflow-hidden">
+                <img
+                  src={lastAddedItem.picture || 'picture' in lastAddedItem ? lastAddedItem.picture : ''}
+                  alt={lastAddedItem.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            <div className="px-6 space-y-2">
+              <DialogTitle className="text-xl font-bold text-left">
+                {lastAddedItem.name}
+              </DialogTitle>
+              {lastAddedItem.description && (
+                <p className="text-sm text-gray-600">
+                  {lastAddedItem.description}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           {lastAddedItem && isDeal(lastAddedItem) && renderDealContent(lastAddedItem)}
@@ -461,21 +508,24 @@ export default function AddToCartModal() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-8 h-8 rounded configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover"
+                className="w-8 h-8 rounded text-white flex items-center justify-center hover:opacity-80"
+                style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
               >
                 <Minus size={14} />
               </button>
               <span className="w-8 text-center text-sm font-medium">{quantity}</span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-8 h-8 rounded configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover"
+                className="w-8 h-8 rounded text-white flex items-center justify-center hover:opacity-80"
+                style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
               >
                 <Plus size={14} />
               </button>
             </div>
             <Button
               onClick={handleAddToCart}
-              className="configurable-primary hover:configurable-primary-hover text-white px-8 py-3 rounded-lg font-medium"
+              className="text-white px-8 py-3 rounded-lg font-medium hover:opacity-90"
+              style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
             >
               {formatBranchCurrency(getTotalPrice(), branchCurrency)} Add to cart
             </Button>

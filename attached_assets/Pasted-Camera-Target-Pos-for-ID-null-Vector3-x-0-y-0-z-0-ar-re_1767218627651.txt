@@ -1,0 +1,30 @@
+Camera Target Pos for ID null: _Vector3 {x: 0, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 2. Current Active: null
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 2: _Vector3 {x: 0, y: 0, z: 0}
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 2: _Vector3 {x: -1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 3. Current Active: 2
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 3: _Vector3 {x: 1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 2. Current Active: 3
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 2: _Vector3 {x: -1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 2. Current Active: 2
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID null: _Vector3 {x: 0, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 3. Current Active: null
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 3: _Vector3 {x: 1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 3. Current Active: 3
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID null: _Vector3 {x: 0, y: 0, z: 0}x: 0y: 0z: 0[[Prototype]]: Object
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 3. Current Active: null
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 3: _Vector3 {x: 1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 3. Current Active: 3
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID null: _Vector3 {x: 0, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 2. Current Active: null
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 2: _Vector3 {x: -1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 3. Current Active: 2
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 3: _Vector3 {x: 1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 2. Current Active: 3
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 2: _Vector3 {x: -1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 3. Current Active: 2
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 3: _Vector3 {x: 1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 2. Current Active: 3
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 2: _Vector3 {x: -1.25, y: 0, z: 0}
+ar-restaurant-menu.tsx:87 [DEBUG] Object Clicked: 3. Current Active: 2
+ar-restaurant-menu.tsx:203 Camera Target Pos for ID 3: _Vector3 {x: 1.25, y: 0, z: 0}

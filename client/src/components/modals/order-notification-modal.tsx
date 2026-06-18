@@ -103,16 +103,6 @@ export default function OrderNotificationModal({
   };
 
   const handleSubmit = async () => {
-    // Check authentication
-    if (!isAuthenticated || !token) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to submit feedback.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Validate feedback fields if feedback is required
     if (content.IsFeedbackNeeded && (!feedback.trim() || rating === 0)) {
       toast({
@@ -141,8 +131,8 @@ export default function OrderNotificationModal({
         paymentReceipt: paymentReceiptBase64
       };
 
-      // Submit feedback via API
-      const response = await apiClient.submitOrderFeedback(token, feedbackData);
+      // Submit feedback via API (token is optional)
+      const response = await apiClient.submitOrderFeedback(feedbackData, token || undefined);
       
       if (response.data.isSuccess) {
         toast({
@@ -192,7 +182,7 @@ export default function OrderNotificationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" data-testid="modal-order-notification">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto [&>button]:hidden" data-testid="modal-order-notification">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Package className="w-5 h-5 text-blue-600" />
@@ -238,9 +228,10 @@ export default function OrderNotificationModal({
                 {/* Tip Field */}
                 {content.IsTipNeeded && (
                   <div className="space-y-2 mb-4">
-                    <Label htmlFor="tipAmount" className="flex items-center space-x-2 font-medium">
-                      <DollarSign className="w-4 h-4 text-green-600" />
-                      <span>Tip Amount ({content.Currency})</span>
+                    <Label htmlFor="tipAmount" className="flex flex-wrap items-center gap-1 sm:gap-2 font-medium">
+                      <DollarSign className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base">Tip Amount</span>
+                      <span className="text-xs sm:text-sm text-gray-500">({content.Currency})</span>
                     </Label>
                     <div className="relative">
                       <Input
@@ -251,10 +242,10 @@ export default function OrderNotificationModal({
                         placeholder="Enter tip amount (e.g. 5.00)"
                         value={tipAmount}
                         onChange={(e) => setTipAmount(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 pr-3"
                         data-testid="input-tip-amount"
                       />
-                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
                         {content.Currency === 'USD' ? '$' : content.Currency}
                       </div>
                     </div>
@@ -266,21 +257,21 @@ export default function OrderNotificationModal({
                 {content.IsScreenshotNeeded && (
                   <div className="space-y-2 mb-4">
                     <Label htmlFor="screenshot" className="flex items-center space-x-2 font-medium">
-                      <Camera className="w-4 h-4 text-blue-600" />
-                      <span>Payment Screenshot</span>
+                      <Camera className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base">Payment Screenshot</span>
                     </Label>
                     <Input
                       id="screenshot"
                       type="file"
                       accept="image/*"
                       onChange={handleScreenshotUpload}
-                      className="file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className="text-xs sm:text-sm file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                       data-testid="input-payment-screenshot"
                     />
                     {screenshot && (
                       <div className="mt-3">
                         <div className="flex items-center space-x-2 mb-2">
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
                             File uploaded: {screenshot.name}
                           </Badge>
                         </div>

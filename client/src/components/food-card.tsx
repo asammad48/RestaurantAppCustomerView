@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store";
 import { getImageUrl } from "@/lib/config";
 import { formatBranchCurrency } from "@/lib/utils";
+import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 
 interface FoodCardProps {
   item: MenuItem | ApiMenuItem;
@@ -45,6 +46,7 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
   
   const [selectedSize, setSelectedSize] = useState<string>(defaultSize);
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const getPrice = () => {
     if (isApiMenuItem(item)) {
@@ -123,33 +125,50 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
 
   if (variant === "list") {
     return (
-      <div className="food-card bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row gap-4">
-        <div className="relative w-full sm:w-32 h-32 flex-shrink-0">
-          <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg" />
-          {isRecommended && (
-            <Badge className="absolute top-2 right-2 configurable-recommended text-white text-xs">
-              Recommended
-            </Badge>
-          )}
-          {discountPercentage > 0 && (
-            <Badge className="absolute top-2 left-2 configurable-deal text-white">
-              {discountPercentage}% OFF
-            </Badge>
-          )}
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold configurable-text-primary text-lg mb-2">{item.name}</h3>
-          <p className="configurable-text-secondary text-sm mb-3">{item.description}</p>
+      <>
+        <MenuItemDetailModal 
+          item={item}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          isRecommended={isRecommended}
+        />
+        <div className="food-card bg-white rounded-xl shadow-sm p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div 
+            className="relative w-full sm:w-32 h-32 flex-shrink-0 cursor-pointer"
+            onClick={() => setIsDetailModalOpen(true)}
+            data-testid={`image-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
+          >
+            <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity" />
+            {isRecommended && (
+              <Badge className="absolute top-2 right-2 configurable-recommended text-white text-xs">
+                Recommended
+              </Badge>
+            )}
+            {discountPercentage > 0 && (
+              <Badge className="absolute top-2 left-2 configurable-deal text-white">
+                {discountPercentage}% OFF
+              </Badge>
+            )}
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold configurable-text-primary text-base sm:text-lg mb-2 truncate">{item.name}</h3>
+            <p 
+              className="configurable-text-secondary text-xs sm:text-sm mb-3 line-clamp-2 cursor-pointer hover:underline"
+              onClick={() => setIsDetailModalOpen(true)}
+              data-testid={`description-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
+            >
+              {item.description}
+            </p>
           
           {/* Size Selection */}
           <div className="mb-3">
             <p className="text-sm font-medium configurable-text-primary mb-2">Variation</p>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-1 sm:gap-2">
               {sizes.map((size) => (
                 <button
                   key={size.name}
                   onClick={() => setSelectedSize(size.name)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+                  className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border transition-colors ${
                     selectedSize === size.name
                       ? 'configurable-primary text-white configurable-border'
                       : 'configurable-secondary configurable-text-secondary configurable-border hover:configurable-border'
@@ -179,28 +198,46 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
           </div>
         </div>
       </div>
+      </>
     );
   }
 
   if (variant === "compact") {
     return (
-      <div className={`food-card bg-white rounded-lg shadow-sm p-3 flex gap-3 h-full ${className}`}>
-        <div className="relative w-20 h-20 flex-shrink-0">
-          <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg" />
-          {isRecommended && (
-            <Badge className="absolute -top-1 -right-1 configurable-recommended text-white text-xs scale-75">
-              Rec
-            </Badge>
-          )}
-          {discountPercentage > 0 && (
-            <Badge className="absolute -top-1 -left-1 configurable-deal text-white text-xs scale-75">
-              {discountPercentage}%
-            </Badge>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold configurable-text-primary text-sm mb-1 truncate">{item.name}</h3>
-          <p className="configurable-text-secondary text-xs mb-2 line-clamp-2">{item.description}</p>
+      <>
+        <MenuItemDetailModal 
+          item={item}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          isRecommended={isRecommended}
+        />
+        <div className={`food-card bg-white rounded-lg shadow-sm p-3 flex gap-3 h-full ${className}`}>
+          <div 
+            className="relative w-20 h-20 flex-shrink-0 cursor-pointer"
+            onClick={() => setIsDetailModalOpen(true)}
+            data-testid={`image-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
+          >
+            <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity" />
+            {isRecommended && (
+              <Badge className="absolute -top-1 -right-1 configurable-recommended text-white text-xs scale-75">
+                Rec
+              </Badge>
+            )}
+            {discountPercentage > 0 && (
+              <Badge className="absolute -top-1 -left-1 configurable-deal text-white text-xs scale-75">
+                {discountPercentage}%
+              </Badge>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold configurable-text-primary text-sm mb-1 truncate">{item.name}</h3>
+            <p 
+              className="configurable-text-secondary text-xs mb-2 line-clamp-2 cursor-pointer hover:underline"
+              onClick={() => setIsDetailModalOpen(true)}
+              data-testid={`description-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
+            >
+              {item.description}
+            </p>
           
           {/* Price and Add Button */}
           <div className="flex items-center justify-between">
@@ -225,32 +262,50 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
           </div>
         </div>
       </div>
+      </>
     );
   }
 
   return (
-    <div className={`food-card bg-white rounded-xl shadow-sm overflow-hidden h-full ${className}`}>
-      <div className="relative">
-        <img src={getImage()} alt={item.name} className="w-full h-48 object-cover" />
-        {isRecommended && (
-          <Badge className="absolute top-3 right-3 configurable-recommended text-white text-xs">
-            Recommended
-          </Badge>
-        )}
-        {discountPercentage > 0 && (
-          <Badge className="absolute top-3 left-3 configurable-deal text-white">
-            {discountPercentage}% OFF
-          </Badge>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="font-semibold configurable-text-primary mb-2">{item.name}</h3>
-        <p className="text-sm configurable-text-secondary mb-3 line-clamp-2">{item.description}</p>
+    <>
+      <MenuItemDetailModal 
+        item={item}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        isRecommended={isRecommended}
+      />
+      <div className={`food-card bg-white rounded-xl shadow-sm overflow-hidden h-full ${className}`}>
+        <div 
+          className="relative cursor-pointer"
+          onClick={() => setIsDetailModalOpen(true)}
+          data-testid={`image-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
+        >
+          <img src={getImage()} alt={item.name} className="w-full h-48 object-cover hover:opacity-90 transition-opacity" />
+          {isRecommended && (
+            <Badge className="absolute top-3 right-3 configurable-recommended text-white text-xs">
+              Recommended
+            </Badge>
+          )}
+          {discountPercentage > 0 && (
+            <Badge className="absolute top-3 left-3 configurable-deal text-white">
+              {discountPercentage}% OFF
+            </Badge>
+          )}
+        </div>
+        <div className="p-4">
+          <h3 className="font-semibold configurable-text-primary mb-2 text-sm sm:text-base truncate">{item.name}</h3>
+          <p 
+            className="text-xs sm:text-sm configurable-text-secondary mb-3 line-clamp-2 cursor-pointer hover:underline"
+            onClick={() => setIsDetailModalOpen(true)}
+            data-testid={`description-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
+          >
+            {item.description}
+          </p>
         
         {/* Size Selection */}
         <div className="mb-3">
           <p className="text-sm font-medium configurable-text-primary mb-2">Variation</p>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-1 sm:gap-2">
             {sizes.map((size) => (
               <button
                 key={size.name}
@@ -282,12 +337,13 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
           <Button 
             onClick={handleAddToCart} 
             size="sm"
-            className="configurable-primary text-white hover:configurable-primary-hover"
+            className="configurable-primary text-white hover:configurable-primary-hover text-xs sm:text-sm px-3 sm:px-4"
           >
             Add to cart
           </Button>
         </div>
       </div>
     </div>
+    </>
   );
 }

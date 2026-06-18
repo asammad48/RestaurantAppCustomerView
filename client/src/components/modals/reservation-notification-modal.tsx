@@ -81,7 +81,7 @@ export default function ReservationNotificationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" data-testid="modal-reservation-notification">
+      <DialogContent className="sm:max-w-md [&>button]:hidden" data-testid="modal-reservation-notification">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Calendar className="w-5 h-5 text-blue-600" />
