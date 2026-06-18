@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect, Suspense, useCallback } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html, PerspectiveCamera, Environment, ContactShadows, useGLTF } from '@react-three/drei';
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
+import { Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
@@ -8,9 +8,12 @@ import { useCartStore } from "@/lib/store";
 import { ApiMenuItem, ApiMenuResponse } from "@/lib/mock-data";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { 
-  ArrowLeft, ShoppingCart, Menu, X, Plus, ChevronUp, ChevronDown, 
-  RotateCcw, RotateCw, Trash2, Info, Sun, Moon, Layers, Eye, EyeOff, ShoppingBag, Search, Minus, Camera, RefreshCcw, Image as ImageIcon, Palette
+import { getImageUrl } from "@/lib/config";
+import { formatBranchCurrency } from "@/lib/utils";
+import {
+  ArrowLeft, ShoppingCart, X, Plus, Minus, Trash2, Info, Search,
+  Camera, Image as ImageIcon, Palette, RotateCw, ScanLine, Box,
+  Hand, Sparkles, Utensils, ChevronRight
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,17 +24,14 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import Navbar from "@/components/navbar";
+import { useGesture } from '@use-gesture/react';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import NotificationTray from "@/components/notification-tray";
 import CartModal from "@/components/modals/cart-modal";
 import AddToCartModal from "@/components/modals/add-to-cart-modal";
 import PaymentModal from "@/components/modals/payment-modal";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
-import { useGesture } from '@use-gesture/react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Types & Constants ---
 interface ARItemState extends ApiMenuItem {
@@ -39,42 +39,55 @@ interface ARItemState extends ApiMenuItem {
   position: [number, number, number];
   rotation: [number, number, number];
   scale: number;
-  depthOffset: number;
-  showNutritional?: boolean;
 }
 
-const SCALE_PRESETS = {
-  S: 0.8,
-  M: 1.2,
-  L: 1.8
-};
+const SCALE_MIN = 0.5;
+const SCALE_MAX = 2.5;
+const DEFAULT_PRIMARY = '#16a34a';
+
+// Fallback 3D model applied to any dish whose API record has no threeDObject (GLB) yet.
+const DEFAULT_MODEL = '/models/default-dish.glb';
+useGLTF.preload(DEFAULT_MODEL);
+
+// Returns the GLB url for a dish: its own model, or the shared default when none is set.
+function modelUrlFor(item: ApiMenuItem): string {
+  return item.threeDObject && item.threeDObject.trim() ? item.threeDObject : DEFAULT_MODEL;
+}
+
+const TABLE_SCENES = [
+  { name: 'Modern Wood', path: '/attached_assets/stock_images/restaurant_table_top_56b7c559.jpg' },
+  { name: 'Elegant Setup', path: '/attached_assets/stock_images/restaurant_table_top_a6a979fc.jpg' },
+  { name: 'Rustic Table', path: '/attached_assets/stock_images/restaurant_table_top_9bd071c7.jpg' },
+];
+
+// Resolve the display price of a menu item (discounted when available)
+function itemPrice(item: ApiMenuItem): number {
+  const v = item.variations?.[0];
+  if (!v) return 0;
+  return (v.discountedPrice != null && v.discountedPrice < v.price) ? v.discountedPrice : v.price;
+}
 
 // --- Camera Feed Component ---
-function CameraFeed({ facingMode }: { facingMode: "user" | "environment" }) {
+function CameraFeed({ facingMode, onError }: { facingMode: "user" | "environment"; onError?: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    let activeStream: MediaStream | null = null;
     async function startCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode },
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+        activeStream = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
       } catch (err) {
         console.error("Error accessing camera:", err);
+        onError?.();
       }
     }
     startCamera();
-    
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-        tracks.forEach(track => track.stop());
-      }
+      if (activeStream) activeStream.getTracks().forEach(t => t.stop());
     };
-  }, [facingMode]);
+  }, [facingMode, onError]);
 
   return (
     <video
@@ -83,76 +96,154 @@ function CameraFeed({ facingMode }: { facingMode: "user" | "environment" }) {
       playsInline
       muted
       className="absolute inset-0 w-full h-full object-cover"
-      style={{ filter: "brightness(0.7)" }}
+      style={{ filter: "brightness(0.78)" }}
     />
   );
 }
 
-// --- Product Component ---
-const ProductObject = ({ 
-  item, 
-  isSelected, 
-  onSelect,
-  onUpdate,
-  snapToTable,
-  showNutritionalInfo,
-  onRemove,
-  onShowDetails,
-  onAddToCart,
-  showBottomUI,
-  setShowBottomUI,
-  primaryColor,
-  isMobile
-}: { 
-  item: ARItemState; 
-  isSelected: boolean; 
+// --- Error boundary so a missing/broken GLB never crashes the page ---
+class ModelErrorBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch() {
+    // Swallow: the 3D model failed to load — we render the plated-photo fallback instead.
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
+
+// Loads a GLB model and auto-fits it into a ~2 unit box
+function Dish3D({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  const cloned = useMemo(() => {
+    const c = scene.clone();
+    c.traverse((node: any) => {
+      if (node.isMesh) {
+        node.castShadow = true;
+        node.receiveShadow = true;
+        if (node.material) {
+          node.material.depthWrite = true;
+          node.material.transparent = false;
+          node.material.side = THREE.DoubleSide;
+        }
+      }
+    });
+    const box = new THREE.Box3().setFromObject(c);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const norm = 2.0 / (maxDim || 1);
+    c.scale.set(norm, norm, norm);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    c.position.set(-center.x * norm, -center.y * norm, -center.z * norm);
+    return c;
+  }, [scene]);
+  return <primitive object={cloned} />;
+}
+
+// The dish photo as a textured disc (used inside DishFallback)
+function PhotoTop({ imageUrl }: { imageUrl: string }) {
+  const texture = useLoader(THREE.TextureLoader, imageUrl);
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} castShadow>
+      <circleGeometry args={[0.86, 48]} />
+      <meshBasicMaterial map={texture} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// Graceful 3D stand-in for dishes without a (valid) GLB: a ceramic plate + the dish photo
+function DishFallback({ item, primaryColor }: { item: ARItemState; primaryColor: string }) {
+  const plainDisc = (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+      <circleGeometry args={[0.86, 48]} />
+      <meshStandardMaterial color={primaryColor} roughness={0.6} />
+    </mesh>
+  );
+  return (
+    <group>
+      <mesh position={[0, -0.05, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1, 1, 0.14, 48]} />
+        <meshStandardMaterial color="#f4f4f5" roughness={0.45} metalness={0.05} />
+      </mesh>
+      <mesh position={[0, 0.02, 0]}>
+        <cylinderGeometry args={[0.92, 0.92, 0.04, 48]} />
+        <meshStandardMaterial color="#e7e5e4" roughness={0.5} />
+      </mesh>
+      <ModelErrorBoundary fallback={plainDisc}>
+        <Suspense fallback={plainDisc}>
+          <PhotoTop imageUrl={getImageUrl(item.picture)} />
+        </Suspense>
+      </ModelErrorBoundary>
+    </group>
+  );
+}
+
+// --- Product (3D dish) Component ---
+interface ProductObjectProps {
+  item: ARItemState;
+  isSelected: boolean;
+  autoRotate: boolean;
+  primaryColor: string;
   onSelect: () => void;
+  onInteract: () => void;
   onUpdate: (updates: Partial<ARItemState>) => void;
-  snapToTable: boolean;
-  showNutritionalInfo: boolean;
-  onRemove: () => void;
-  onShowDetails: () => void;
-  onAddToCart: () => void;
-  showBottomUI: boolean;
-  setShowBottomUI: (val: boolean) => void;
-  primaryColor?: string;
-  isMobile: boolean;
-}) => {
+  onReset: () => void;
+}
+
+const ProductObject = ({
+  item, isSelected, autoRotate, primaryColor, onSelect, onInteract, onUpdate, onReset,
+}: ProductObjectProps) => {
   const groupRef = useRef<THREE.Group>(null!);
-  const modelPath = item.threeDObject;
   const { camera, gl, raycaster } = useThree();
   const planeRef = useRef(new THREE.Plane());
   const isInteracting = useRef(false);
+  const lastTapRef = useRef(0);
+
+  const hitTest = useCallback((clientX: number, clientY: number) => {
+    const rect = gl.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -(((clientY - rect.top) / rect.height) * 2 - 1)
+    );
+    raycaster.setFromCamera(ndc, camera);
+    return { ndc, hit: raycaster.intersectObject(groupRef.current, true).length > 0 };
+  }, [camera, gl, raycaster]);
 
   useGesture(
     {
-      onDrag: ({ active, xy: [x, y], event, first }) => {
-        const rect = gl.domElement.getBoundingClientRect();
-        const ndc = new THREE.Vector2(
-          ((x - rect.left) / rect.width) * 2 - 1,
-          -(((y - rect.top) / rect.height) * 2 - 1)
-        );
+      onDrag: ({ active, xy: [x, y], event, first, tap }) => {
+        const { ndc, hit } = hitTest(x, y);
+
+        if (tap && hit) {
+          const now = Date.now();
+          if (now - lastTapRef.current < 320) onReset();
+          lastTapRef.current = now;
+          onSelect();
+          return;
+        }
 
         if (first) {
-          raycaster.setFromCamera(ndc, camera);
-          const intersects = raycaster.intersectObject(groupRef.current, true);
-          isInteracting.current = intersects.length > 0;
-          if (isInteracting.current) onSelect();
+          isInteracting.current = hit;
+          if (hit) { onSelect(); onInteract(); }
         }
-
         if (!isInteracting.current) return;
-        
-        if (event && 'cancelable' in event && event.cancelable) {
-          (event as any)?.preventDefault?.();
-        }
+        if (event && 'cancelable' in event && (event as any).cancelable) (event as any)?.preventDefault?.();
 
         if (active) {
           const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion);
           const basePos = new THREE.Vector3(...item.position);
-          if (snapToTable) basePos.y = -0.6;
-          
           planeRef.current.setFromNormalAndCoplanarPoint(normal, basePos);
-
           raycaster.setFromCamera(ndc, camera);
           const intersectPoint = new THREE.Vector3();
           if (raycaster.ray.intersectPlane(planeRef.current, intersectPoint)) {
@@ -160,197 +251,161 @@ const ProductObject = ({
           }
         }
       },
-      onPinch: ({ active, offset: [s], event, first, origin: [ox, oy] }) => {
+      onPinch: ({ active, offset: [s, a], event, first, origin: [ox, oy] }) => {
         if (first) {
-          const rect = gl.domElement.getBoundingClientRect();
-          const ndc = new THREE.Vector2(
-            ((ox - rect.left) / rect.width) * 2 - 1,
-            -(((oy - rect.top) / rect.height) * 2 - 1)
-          );
-          raycaster.setFromCamera(ndc, camera);
-          const intersects = raycaster.intersectObject(groupRef.current, true);
-          isInteracting.current = intersects.length > 0;
-          if (isInteracting.current) onSelect();
+          const { hit } = hitTest(ox, oy);
+          isInteracting.current = hit;
+          if (hit) { onSelect(); onInteract(); }
         }
-
         if (!isInteracting.current || !active) return;
-        
-        if (event && 'cancelable' in event && event.cancelable) {
-          (event as any)?.preventDefault?.();
-        }
-        
-        const newScale = THREE.MathUtils.clamp(s, 0.5, 2.5);
-        onUpdate({ scale: newScale });
-      }
+        if (event && 'cancelable' in event && (event as any).cancelable) (event as any)?.preventDefault?.();
+        onUpdate({
+          scale: THREE.MathUtils.clamp(s, SCALE_MIN, SCALE_MAX),
+          rotation: [item.rotation[0], THREE.MathUtils.degToRad(a), item.rotation[2]],
+        });
+      },
     },
     {
       target: gl.domElement,
       eventOptions: { passive: false },
       drag: { filterTaps: true, threshold: 5 },
-      pinch: { from: () => [item.scale, 0], scaleBounds: { min: 0.5, max: 2.5 } },
-      enabled: true
+      pinch: {
+        from: () => [item.scale, THREE.MathUtils.radToDeg(item.rotation[1])],
+        scaleBounds: { min: SCALE_MIN, max: SCALE_MAX },
+      },
+      enabled: true,
     }
   );
 
-  const { scene } = useGLTF(modelPath || '/models/food_1.glb');
-  const clonedScene = useMemo(() => {
-    if (scene) {
-      const cloned = scene.clone();
-      cloned.traverse((node: any) => {
-        if (node.isMesh) {
-          node.castShadow = true;
-          node.receiveShadow = true;
-          if (node.material) {
-            node.material.depthWrite = true;
-            node.material.transparent = false;
-            node.material.side = THREE.DoubleSide;
-          }
-        }
-      });
-      
-      const box = new THREE.Box3().setFromObject(cloned);
-      const sizeVec = new THREE.Vector3();
-      box.getSize(sizeVec);
-      const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
-      const scale = 2.0 / (maxDim || 1);
-      cloned.scale.set(scale, scale, scale);
-      
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      cloned.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-      
-      return cloned;
-    }
-    return null;
-  }, [scene]);
+  useFrame((_, delta) => {
+    const g = groupRef.current;
+    if (!g) return;
+    const tPos = new THREE.Vector3(...item.position);
+    g.position.lerp(tPos, 0.15);
+    g.scale.lerp(new THREE.Vector3(item.scale, item.scale, item.scale), 0.15);
 
-  useFrame(() => {
-    if (groupRef.current) {
-      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-      const pos = new THREE.Vector3(...item.position);
-      
-      if (snapToTable) {
-        pos.y = -0.6;
-      }
-
-      const depthOffsetVec = forward.multiplyScalar(-item.depthOffset);
-      pos.add(depthOffsetVec);
-
-      const tPos = new THREE.Vector3(...item.position);
-      const tRot = new THREE.Euler(...item.rotation);
-      const tScale = new THREE.Vector3(item.scale, item.scale, item.scale);
-
-      groupRef.current.position.lerp(pos, 0.15);
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, tRot.x, 0.15);
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, tRot.y, 0.15);
-      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, tRot.z, 0.15);
-      groupRef.current.scale.lerp(tScale, 0.15);
+    if (autoRotate && isSelected) {
+      g.rotation.y += delta * 0.7;
+    } else {
+      g.rotation.x = THREE.MathUtils.lerp(g.rotation.x, item.rotation[0], 0.15);
+      g.rotation.y = THREE.MathUtils.lerp(g.rotation.y, item.rotation[1], 0.15);
+      g.rotation.z = THREE.MathUtils.lerp(g.rotation.z, item.rotation[2], 0.15);
     }
   });
 
   return (
-    <group 
-      ref={groupRef}
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        onSelect();
-      }}
-    >
-      <group>
-        {clonedScene ? (
-          <primitive object={clonedScene} />
-        ) : (
-          <mesh>
-            <sphereGeometry args={[0.5, 32, 32]} />
-            <meshStandardMaterial color="orange" emissive="orange" emissiveIntensity={0.2} />
-          </mesh>
-        )}
-      </group>
+    <group ref={groupRef} onPointerDown={(e) => { e.stopPropagation(); onSelect(); }}>
+      <ModelErrorBoundary fallback={<DishFallback item={item} primaryColor={primaryColor} />}>
+        <Suspense fallback={null}>
+          <Dish3D url={modelUrlFor(item)} />
+        </Suspense>
+      </ModelErrorBoundary>
 
       {isSelected && (
         <group>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
-            <ringGeometry args={[1.2, 1.3, 32]} />
-            <meshBasicMaterial color={primaryColor || "#16a34a"} transparent opacity={0.8} />
+            <ringGeometry args={[1.15, 1.32, 48]} />
+            <meshBasicMaterial color={primaryColor} transparent opacity={0.85} />
           </mesh>
-          <pointLight color={primaryColor || "#16a34a"} intensity={2} distance={3} position={[0, 1, 0]} />
+          <pointLight color={primaryColor} intensity={1.6} distance={3} position={[0, 1.2, 0]} />
         </group>
       )}
-
-      {/* Item-top Buttons */}
-      <Html position={[0, 1.5, 0]} center style={{ pointerEvents: 'none' }}>
-        <AnimatePresence>
-          {isSelected && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.9 }}
-              className="flex flex-col items-center gap-2"
-              style={{ pointerEvents: 'auto' }}
-            >
-              <div className="flex items-center gap-2 bg-black/80 backdrop-blur-xl p-1.5 rounded-full border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
-                <Button 
-                  size="icon" variant="ghost" 
-                  className="h-8 w-8 rounded-full text-red-500 hover:bg-red-500/20"
-                  onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="icon" variant="ghost" 
-                  className="h-8 w-8 rounded-full text-white hover:bg-white/20"
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    setShowBottomUI(!showBottomUI); 
-                  }}
-                >
-                  {showBottomUI ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-                <Button 
-                  size="icon" variant="ghost" 
-                  className="h-8 w-8 rounded-full hover:bg-white/20"
-                  style={{ color: primaryColor || '#16a34a' }}
-                  onClick={(e) => { e.stopPropagation(); onAddToCart(); }}
-                >
-                  <ShoppingBag className="h-4 w-4" />
-                </Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Html>
     </group>
   );
 };
 
+// --- Gesture Coach Overlay ---
+function GestureCoach({ primaryColor, onDismiss }: { primaryColor: string; onDismiss: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 5200);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+
+  const tips = [
+    { icon: <Hand className="h-5 w-5" />, label: 'Drag to move' },
+    { icon: <Sparkles className="h-5 w-5" />, label: 'Pinch to resize' },
+    { icon: <RotateCw className="h-5 w-5" />, label: 'Twist to rotate' },
+    { icon: <ScanLine className="h-5 w-5" />, label: 'Double-tap to reset' },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-[80] flex items-center justify-center bg-black/55 backdrop-blur-[2px] px-6 pointer-events-auto"
+      onClick={onDismiss}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 16, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ type: 'spring', damping: 22, stiffness: 240 }}
+        className="w-full max-w-sm bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-5">
+          <div className="h-11 w-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: primaryColor }}>
+            <Box className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-lg leading-tight">Build your table</h3>
+            <p className="text-white/50 text-xs">Add dishes and arrange them in your space</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {tips.map((t) => (
+            <div key={t.label} className="flex items-center gap-3 bg-white/5 border border-white/5 rounded-2xl px-3 py-3">
+              <div className="text-white/80 shrink-0" style={{ color: primaryColor }}>{t.icon}</div>
+              <span className="text-white/80 text-xs font-semibold leading-tight">{t.label}</span>
+            </div>
+          ))}
+        </div>
+        <Button
+          className="w-full h-12 rounded-2xl text-white font-bold text-base"
+          style={{ backgroundColor: primaryColor }}
+          onClick={onDismiss}
+        >
+          Got it
+        </Button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // --- Main Page Component ---
 export default function ARRestaurantMenuPage() {
   const isMobile = useIsMobile();
-  const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
+
+  const [viewMode, setViewMode] = useState<'ar' | '3d'>('ar');
   const [arItems, setArItems] = useState<ARItemState[]>([]);
-  const [categoryExpanded, setCategoryExpanded] = useState(false);
-  const [snapToTable, setSnapToTable] = useState(false);
-  const [lightingMode, setLightingMode] = useState<'day' | 'night'>('day');
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [activeItemDetails, setActiveItemDetails] = useState<ARItemState | null>(null);
-  const [showBottomUI, setShowBottomUI] = useState(false);
+  const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
-  const [bgConfig, setBgConfig] = useState<{ type: 'camera' | 'color' | 'image', value: string }>({ type: 'camera', value: 'environment' });
-  
-  const [, setLocation] = useLocation();
-  const { 
-    selectedRestaurant, 
-    selectedBranch, 
-    getCartCount, 
+  const [bgConfig, setBgConfig] = useState<{ type: 'camera' | 'color' | 'image'; value: string }>({ type: 'camera', value: 'environment' });
+  const [cameraDenied, setCameraDenied] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [showCoach, setShowCoach] = useState(true);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [activeItemDetails, setActiveItemDetails] = useState<ARItemState | null>(null);
+  const sheetDragControls = useDragControls();
+
+  const {
+    selectedBranch,
+    getCartCount,
+    getCartTotal,
     setCartOpen,
     setLastAddedItem,
-    setAddToCartModalOpen
+    setAddToCartModalOpen,
+    branchCurrency,
   } = useCartStore();
 
+  const primaryColor = selectedBranch?.primaryColor || DEFAULT_PRIMARY;
   const branchId = selectedBranch?.branchId;
-  const { data: menuData, isLoading } = useQuery({
+
+  const { data: menuData } = useQuery({
     queryKey: [`/api/customer-search/branch/${branchId}`],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!branchId,
@@ -360,8 +415,7 @@ export default function ARRestaurantMenuPage() {
 
   const uniqueCategories = useMemo(() => {
     if (!apiMenuData?.menuItems) return ["all"];
-    const cats = apiMenuData.menuItems.map(item => item.categoryName);
-    return ["all", ...Array.from(new Set(cats))];
+    return ["all", ...Array.from(new Set(apiMenuData.menuItems.map(i => i.categoryName)))];
   }, [apiMenuData?.menuItems]);
 
   const filteredMenuItems = useMemo(() => {
@@ -373,302 +427,233 @@ export default function ARRestaurantMenuPage() {
     });
   }, [apiMenuData?.menuItems, selectedCategory, searchTerm]);
 
+  const selectedItem = useMemo(
+    () => arItems.find(i => i.instanceId === activeObjectId),
+    [arItems, activeObjectId]
+  );
+
   const handleAddItemToAR = (menuItem: ApiMenuItem) => {
     const newItem: ARItemState = {
       ...menuItem,
-      instanceId: Math.random().toString(36).substr(2, 9),
-      position: [0, 0, 0],
+      instanceId: Math.random().toString(36).slice(2, 11),
+      position: [arItems.length > 0 ? (arItems.length % 2 === 0 ? 1 : -1) * Math.ceil(arItems.length / 2) * 1.6 : 0, 0, 0],
       rotation: [0, 0, 0],
       scale: 1,
-      depthOffset: 0,
     };
-    
-    // Offset subsequent items slightly so they don't perfectly overlap initially
-    if (arItems.length > 0) {
-      newItem.position[0] = arItems.length * 0.5;
-    }
-
     setArItems(prev => [...prev, newItem]);
     setActiveObjectId(newItem.instanceId);
-    setCategoryExpanded(false);
+    setAutoRotate(true);
   };
 
   const updateSelectedItem = useCallback((updates: Partial<ARItemState>) => {
-    setArItems(prev => prev.map(item => 
+    setArItems(prev => prev.map(item =>
       item.instanceId === activeObjectId ? { ...item, ...updates } : item
     ));
   }, [activeObjectId]);
 
-  const handleAutoArrange = () => {
-    setArItems(prev => prev.map((item, i) => ({
-      ...item,
-      position: [(i - (prev.length - 1) / 2) * 2.5, 0, 0],
-      rotation: [0, 0, 0],
-      depthOffset: 0
-    })));
+  const removeItem = useCallback((id: string) => {
+    setArItems(prev => prev.filter(i => i.instanceId !== id));
+    setActiveObjectId(prev => (prev === id ? null : prev));
+  }, []);
+
+  const handleAddToCart = (item: ARItemState) => {
+    setLastAddedItem(item);
+    setAddToCartModalOpen(true);
   };
 
-  const selectedItem = useMemo(() => 
-    arItems.find(i => i.instanceId === activeObjectId), 
-    [arItems, activeObjectId]
-  );
+  const cartCount = getCartCount();
+  const cartTotal = getCartTotal();
+
+  // --- Empty state: no branch in store (page reads branch from persisted store) ---
+  if (!selectedBranch) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[100dvh] bg-zinc-950 text-white px-8 text-center">
+        <div className="h-16 w-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-5">
+          <Utensils className="h-7 w-7 text-white/40" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">No restaurant selected</h2>
+        <p className="text-white/50 text-sm max-w-xs mb-6">
+          Open the AR menu from a restaurant page to preview its dishes in 3D and AR.
+        </p>
+        <Button
+          className="h-12 px-6 rounded-2xl text-white font-bold"
+          style={{ backgroundColor: primaryColor }}
+          onClick={() => setLocation('/restaurant-menu')}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to menu
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-black overflow-hidden relative font-sans text-white select-none">
-      <Navbar />
-      
-      <div className="flex-1 relative overflow-hidden h-full w-full">
-        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-black h-full w-full">
-          {bgConfig.type === 'camera' ? (
-            <CameraFeed facingMode={bgConfig.value as "user" | "environment"} />
-          ) : bgConfig.type === 'color' ? (
-            <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: bgConfig.value }} />
-          ) : (
-            <img src={bgConfig.value} className="absolute inset-0 w-full h-full object-cover" alt="Background" />
-          )}
-          
-        <div 
-          className="absolute inset-0"
-          style={{
-            touchAction: "none",
-            overscrollBehavior: "none",
-            WebkitUserSelect: "none",
-            userSelect: "none",
-          }}
+    <div className="relative h-[100dvh] w-full bg-zinc-950 overflow-hidden font-sans text-white select-none">
+      {/* ===== Layer 0: Background ===== */}
+      <div className="absolute inset-0 z-0">
+        {viewMode === '3d' ? (
+          <div
+            className="absolute inset-0"
+            style={{ background: 'radial-gradient(circle at 50% 38%, #2a2a3e 0%, #16161f 55%, #0a0a0f 100%)' }}
+          />
+        ) : bgConfig.type === 'camera' && !cameraDenied ? (
+          <CameraFeed
+            facingMode={bgConfig.value as "user" | "environment"}
+            onError={() => setCameraDenied(true)}
+          />
+        ) : bgConfig.type === 'color' ? (
+          <div className="absolute inset-0" style={{ backgroundColor: bgConfig.value }} />
+        ) : bgConfig.type === 'image' ? (
+          <img src={bgConfig.value} className="absolute inset-0 w-full h-full object-cover" alt="Background" />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{ background: 'radial-gradient(circle at 50% 38%, #2a2a3e 0%, #16161f 55%, #0a0a0f 100%)' }}
+          />
+        )}
+      </div>
+
+      {/* ===== Layer 1: 3D Canvas ===== */}
+      <div
+        className="absolute inset-0 z-10"
+        style={{ touchAction: "none", overscrollBehavior: "none", userSelect: "none" }}
+      >
+        <Canvas
+          shadows
+          dpr={[1, 2]}
+          camera={{ position: isMobile ? [0, 2, 12] : [0, 2, 8], fov: isMobile ? 60 : 50 }}
+          gl={{ alpha: true, antialias: true }}
+          onPointerMissed={() => setActiveObjectId(null)}
         >
-          <Canvas
-            shadows
-            dpr={[1, 2]}
-            camera={{ position: isMobile ? [0, 2, 12] : [0, 2, 8], fov: isMobile ? 65 : 50 }}
-            style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
-            gl={{ alpha: true, antialias: true }}
-          >
-            <ambientLight intensity={lightingMode === 'day' ? 0.7 : 0.2} />
-            <spotLight 
-              position={[10, 10, 10]} 
-              angle={0.15} 
-              penumbra={1} 
-              intensity={lightingMode === 'day' ? 2 : 5} 
-              color={lightingMode === 'day' ? "#ffffff" : "#ffaa44"}
-              castShadow 
-            />
-            <Environment preset={lightingMode === 'day' ? "city" : "apartment"} />
-            
-            <Suspense fallback={null}>
-              {arItems.map((item) => (
-                <ProductObject 
-                  key={item.instanceId}
-                  item={item}
-                  isSelected={activeObjectId === item.instanceId}
-                  onSelect={() => setActiveObjectId(item.instanceId)}
-                  onUpdate={updateSelectedItem}
-                  snapToTable={snapToTable}
-                  showNutritionalInfo={!!item.showNutritional}
-                  showBottomUI={showBottomUI}
-                  setShowBottomUI={setShowBottomUI}
-                  primaryColor={selectedBranch?.primaryColor}
-                  isMobile={isMobile}
-                  onRemove={() => {
-                    setArItems(prev => prev.filter(i => i.instanceId !== item.instanceId));
-                    setActiveObjectId(null);
-                  }}
-                  onShowDetails={() => {
-                    setActiveItemDetails(item);
-                    setShowDetailsModal(true);
-                  }}
-                  onAddToCart={() => {
-                    setLastAddedItem(item);
-                    setAddToCartModalOpen(true);
-                  }}
-                />
-              ))}
-            </Suspense>
-
-            <ContactShadows position={[0, -0.6, 0]} opacity={0.6} scale={20} blur={2} far={4} />
-          </Canvas>
-        </div>
-
-          {/* Controls UI Overlay */}
-          <AnimatePresence>
-            {activeObjectId && selectedItem && showBottomUI && (
-              <motion.div 
-                initial={{ x: -300, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -300, opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="absolute left-0 top-0 bottom-0 z-[60] w-72 pointer-events-auto flex"
-              >
-                <div className="flex-1 bg-black/40 backdrop-blur-md border-r border-white/10 p-4 pt-24 shadow-2xl space-y-4 overflow-y-auto custom-scrollbar">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] uppercase font-bold text-white/60 tracking-widest">Item Controls</span>
-                    <Button 
-                      size="icon" variant="ghost" className="h-8 w-8 text-white/40 hover:text-white hover:bg-white/10 rounded-full"
-                      onClick={() => setShowBottomUI(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] uppercase font-bold text-white/40 tracking-wider">Scale</span>
-                        <span className="text-[9px] font-mono text-white/60">{selectedItem.scale.toFixed(2)}x</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" size="sm" 
-                          className="flex-1 bg-white/5 border-white/10 text-white h-8 text-[10px]"
-                          onClick={() => updateSelectedItem({ scale: Math.max(0.1, selectedItem.scale - 0.1) })}
-                        >
-                          <Minus className="h-3 w-3 mr-1" /> SHRINK
-                        </Button>
-                        <Button 
-                          variant="outline" size="sm" 
-                          className="flex-1 bg-white/5 border-white/10 text-white h-8 text-[10px]"
-                          onClick={() => updateSelectedItem({ scale: Math.min(3, selectedItem.scale + 0.1) })}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> ENLARGE
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] uppercase font-bold text-white/40 tracking-wider">Rotation</span>
-                        <div className="flex gap-2">
-                          <span className="text-[9px] font-mono text-white/40">Y:{(selectedItem.rotation[1] * 180 / Math.PI).toFixed(0)}°</span>
-                          <span className="text-[9px] font-mono text-white/40">X:{(selectedItem.rotation[0] * 180 / Math.PI).toFixed(0)}°</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" size="icon" 
-                            className="h-8 flex-1 bg-white/5 border-white/10 text-white p-0"
-                            onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] - 0.2, selectedItem.rotation[2]] })}
-                          >
-                            <RotateCcw className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            variant="outline" size="icon" 
-                            className="h-8 flex-1 bg-white/5 border-white/10 text-white p-0"
-                            onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0], selectedItem.rotation[1] + 0.2, selectedItem.rotation[2]] })}
-                          >
-                            <RotateCw className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" size="icon" 
-                            className="h-8 flex-1 bg-white/5 border-white/10 text-white p-0"
-                            onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0] + 0.2, selectedItem.rotation[1], selectedItem.rotation[2]] })}
-                          >
-                            <ChevronUp className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            variant="outline" size="icon" 
-                            className="h-8 flex-1 bg-white/5 border-white/10 text-white p-0"
-                            onClick={() => updateSelectedItem({ rotation: [selectedItem.rotation[0] - 0.2, selectedItem.rotation[1], selectedItem.rotation[2]] })}
-                          >
-                            <ChevronDown className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 pt-2">
-                    <Button 
-                      variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[9px] h-8 px-1"
-                      onClick={() => updateSelectedItem({ rotation: [0, 0, 0], scale: 1, depthOffset: 0 })}
-                    >
-                      RESET
-                    </Button>
-                    <Button 
-                      variant="outline" size="sm" 
-                      className={`bg-white/5 border-white/10 text-[9px] h-8 px-1 ${snapToTable ? 'text-white' : ''}`}
-                      style={snapToTable ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
-                      onClick={() => setSnapToTable(!snapToTable)}
-                    >
-                      TABLE
-                    </Button>
-                    <Button 
-                      variant="outline" size="sm" 
-                      className="bg-white/5 border-white/10 text-[9px] h-8 px-1"
-                      onClick={handleAutoArrange}
-                    >
-                      ARRANGE
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1.5 border-t border-white/5 gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[8px] uppercase font-bold text-white/40 tracking-wider">Presets</span>
-                      <div className="flex gap-1">
-                        {Object.entries(SCALE_PRESETS).map(([label, val]) => (
-                          <Button 
-                            key={label}
-                            variant="outline" size="sm" 
-                            className={`bg-white/5 border-white/10 text-[8px] h-5 w-5 p-0 ${Math.abs(selectedItem.scale - val) < 0.1 ? 'text-white' : 'text-white/60'}`}
-                            style={Math.abs(selectedItem.scale - val) < 0.1 ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a', borderColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
-                            onClick={() => updateSelectedItem({ scale: val })}
-                          >
-                            {label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Button 
-                        variant="outline" size="sm" 
-                        className="bg-white/5 border-white/10 text-[8px] h-5 px-1.5"
-                        onClick={() => setLightingMode(lightingMode === 'day' ? 'night' : 'day')}
-                      >
-                        {lightingMode === 'day' ? <Sun className="h-2.5 w-2.5 mr-1" /> : <Moon className="h-2.5 w-2.5 mr-1" />}
-                        {lightingMode.toUpperCase()}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {!activeObjectId && arItems.length > 0 && (
-            <div className="absolute bottom-40 text-center px-6 pointer-events-none animate-pulse">
-              <p className="text-xs font-bold text-white/60 uppercase tracking-widest">Tap an item to interact</p>
-            </div>
+          <ambientLight intensity={viewMode === '3d' ? 0.85 : 0.7} />
+          <spotLight
+            position={[8, 12, 8]}
+            angle={0.25}
+            penumbra={1}
+            intensity={viewMode === '3d' ? 2.4 : 2}
+            castShadow
+          />
+          {viewMode === '3d' && (
+            <spotLight position={[-6, 4, -6]} angle={0.3} penumbra={1} intensity={0.9} color="#6688ff" />
           )}
-        </div>
+          <Environment preset={viewMode === '3d' ? "studio" : "city"} />
 
-        <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
+          <Suspense fallback={null}>
+            {arItems.map((item) => (
+              <ProductObject
+                key={item.instanceId}
+                item={item}
+                isSelected={activeObjectId === item.instanceId}
+                autoRotate={autoRotate}
+                primaryColor={primaryColor}
+                onSelect={() => setActiveObjectId(item.instanceId)}
+                onInteract={() => setAutoRotate(false)}
+                onUpdate={updateSelectedItem}
+                onReset={() => updateSelectedItem({ rotation: [0, 0, 0], scale: 1 })}
+              />
+            ))}
+          </Suspense>
+
+          <ContactShadows position={[0, -0.6, 0]} opacity={0.55} scale={20} blur={2.2} far={4} />
+        </Canvas>
+      </div>
+
+      {/* ===== Layer 2: Top bar ===== */}
+      <div className="absolute top-0 inset-x-0 z-40 pointer-events-none">
+        <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2 max-w-3xl mx-auto">
+          <button
+            onClick={() => setLocation('/restaurant-menu')}
+            className="pointer-events-auto h-11 w-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-black/65 transition-all active:scale-95 shadow-lg"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+
+          <div className="pointer-events-auto flex items-center gap-2.5 bg-black/45 backdrop-blur-xl border border-white/10 rounded-full pl-2 pr-4 h-11 shadow-lg max-w-[55%]">
+            {selectedBranch.branchLogo ? (
+              <img src={getImageUrl(selectedBranch.branchLogo)} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: primaryColor }}>
+                <Utensils className="h-4 w-4 text-white" />
+              </div>
+            )}
+            <div className="min-w-0 leading-tight">
+              <p className="text-[9px] uppercase tracking-widest text-white/45 font-bold">AR Menu</p>
+              <p className="text-xs font-bold truncate">{selectedBranch.branchName}</p>
+            </div>
+          </div>
+
+          <div className="pointer-events-auto flex items-center gap-2">
+            <div className="h-11 w-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/10 flex items-center justify-center shadow-lg">
+              <NotificationTray />
+            </div>
+            <button
+              onClick={() => setCartOpen(true)}
+              className="relative h-11 w-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-black/65 transition-all active:scale-95 shadow-lg"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== Layer 3: Mode toggle (AR | 3D) ===== */}
+      <div className="absolute top-[68px] inset-x-0 z-40 flex justify-center pointer-events-none">
+        <div className="pointer-events-auto bg-black/45 backdrop-blur-xl border border-white/10 rounded-full p-1 flex items-center shadow-lg">
+          {(['ar', '3d'] as const).map((mode) => {
+            const active = viewMode === mode;
+            return (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`relative h-9 px-5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 ${active ? 'text-white' : 'text-white/50'}`}
+              >
+                {active && (
+                  <motion.div
+                    layoutId="modePill"
+                    className="absolute inset-0 rounded-full"
+                    style={{ backgroundColor: primaryColor }}
+                    transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  {mode === 'ar' ? <Camera className="h-3.5 w-3.5" /> : <Box className="h-3.5 w-3.5" />}
+                  {mode === 'ar' ? 'AR' : '3D'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ===== Layer 4: Secondary controls (top-right) ===== */}
+      <div className="absolute top-[116px] right-3 z-40 flex flex-col gap-2">
+        {viewMode === 'ar' && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" size="icon" 
-                className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl hover:bg-black/80 transition-all"
-              >
-                {bgConfig.type === 'camera' ? <Camera className="h-6 w-6" /> : bgConfig.type === 'color' ? <Palette className="h-6 w-6" /> : <ImageIcon className="h-6 w-6" />}
-              </Button>
+              <button className="h-11 w-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-black/65 transition-all active:scale-95 shadow-lg">
+                {bgConfig.type === 'camera' ? <Camera className="h-5 w-5" /> : bgConfig.type === 'color' ? <Palette className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-black/90 backdrop-blur-xl border-white/10 text-white w-56 p-2 rounded-2xl shadow-2xl">
-              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Environment</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => setBgConfig({ type: 'camera', value: 'environment' })} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
+            <DropdownMenuContent align="end" className="bg-zinc-900/95 backdrop-blur-xl border-white/10 text-white w-56 p-2 rounded-2xl shadow-2xl">
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Camera</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => { setCameraDenied(false); setBgConfig({ type: 'camera', value: 'environment' }); }} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
                 <Camera className="h-4 w-4" /> Back Camera
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setBgConfig({ type: 'camera', value: 'user' })} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
+              <DropdownMenuItem onClick={() => { setCameraDenied(false); setBgConfig({ type: 'camera', value: 'user' }); }} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
                 <Camera className="h-4 w-4 rotate-180" /> Front Camera
               </DropdownMenuItem>
-              
+
               <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Solid Colors</DropdownMenuLabel>
-              <div className="grid grid-cols-4 gap-1 p-1">
-                {['#1a1a1a', '#2e2e2e', '#3d3d3d', selectedBranch?.primaryColor || '#16a34a'].map(color => (
-                  <button 
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Backdrop Color</DropdownMenuLabel>
+              <div className="grid grid-cols-4 gap-1.5 p-1">
+                {['#1a1a1a', '#2e2e2e', '#3d3d3d', primaryColor].map(color => (
+                  <button
                     key={color}
-                    className="h-8 rounded-md border border-white/10 transition-transform active:scale-90"
+                    className="h-8 rounded-lg border border-white/10 transition-transform active:scale-90"
                     style={{ backgroundColor: color }}
                     onClick={() => setBgConfig({ type: 'color', value: color })}
                   />
@@ -678,17 +663,13 @@ export default function ARRestaurantMenuPage() {
               <DropdownMenuSeparator className="bg-white/10" />
               <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Table Scenes</DropdownMenuLabel>
               <div className="grid grid-cols-1 gap-1 p-1">
-                {[
-                  { name: 'Modern Wood', path: '/attached_assets/stock_images/restaurant_table_top_56b7c559.jpg' },
-                  { name: 'Elegant Setup', path: '/attached_assets/stock_images/restaurant_table_top_a6a979fc.jpg' },
-                  { name: 'Rustic Table', path: '/attached_assets/stock_images/restaurant_table_top_9bd071c7.jpg' }
-                ].map(table => (
-                  <button 
+                {TABLE_SCENES.map(table => (
+                  <button
                     key={table.path}
                     className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/10 text-xs transition-colors group"
                     onClick={() => setBgConfig({ type: 'image', value: table.path })}
                   >
-                    <div className="h-10 w-16 rounded border border-white/10 overflow-hidden">
+                    <div className="h-9 w-14 rounded border border-white/10 overflow-hidden shrink-0">
                       <img src={table.path} className="h-full w-full object-cover" alt={table.name} />
                     </div>
                     <span className="group-hover:text-white text-white/70">{table.name}</span>
@@ -697,113 +678,306 @@ export default function ARRestaurantMenuPage() {
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
+        )}
 
-          <Button 
-            variant="ghost" size="icon" 
-            className="bg-black/60 backdrop-blur-md rounded-full text-white border border-white/10 h-12 w-12 shadow-xl hover:bg-black/80 transition-all"
-            onClick={() => {
-              setArItems([]);
-              setActiveObjectId(null);
-            }}
+        {arItems.length > 0 && (
+          <button
+            onClick={() => { setArItems([]); setActiveObjectId(null); }}
+            className="h-11 w-11 rounded-full bg-black/45 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-red-500/20 hover:border-red-500/30 transition-all active:scale-95 shadow-lg"
+            title="Clear table"
           >
-            <RefreshCcw className="h-6 w-6" />
-          </Button>
+            <Trash2 className="h-5 w-5 text-red-400" />
+          </button>
+        )}
+      </div>
+
+      {/* Camera-denied hint */}
+      {viewMode === 'ar' && cameraDenied && bgConfig.type === 'camera' && (
+        <div className="absolute top-[116px] left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 text-[11px] text-white/70">
+            Camera unavailable — showing studio backdrop
+          </div>
         </div>
+      )}
 
-        <div className="absolute bottom-6 left-0 right-0 px-4 z-50 flex flex-col gap-4 pointer-events-none">
-          <div className="pointer-events-auto max-w-md mx-auto w-full">
-            <Collapsible open={categoryExpanded} onOpenChange={setCategoryExpanded}>
-              <CollapsibleTrigger asChild>
-                <Button className="w-full bg-black/40 backdrop-blur-md text-white border border-white/10 rounded-2xl h-14 flex items-center justify-between px-6 shadow-xl hover:bg-black/60 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="p-1.5 rounded-lg shadow-lg" style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}>
-                      <Menu className="h-5 w-5" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-[10px] text-white/60 uppercase tracking-wider font-bold">Menu</p>
-                      <p className="text-xs font-bold">Add 3D Dishes</p>
-                    </div>
+      {/* Idle hint when items exist but none selected */}
+      {!activeObjectId && arItems.length > 0 && !showCoach && (
+        <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 text-center px-6 pointer-events-none">
+          <p className="text-xs font-semibold text-white/40 uppercase tracking-widest animate-pulse">Tap a dish to interact</p>
+        </div>
+      )}
+
+      {/* ===== Layer 5: Bottom stack (selection toolbar + Your Table + Browse) ===== */}
+      <div className="absolute bottom-0 inset-x-0 z-40 px-3 pb-3 pt-2 flex flex-col gap-2.5 pointer-events-none">
+        <div className="max-w-2xl mx-auto w-full flex flex-col gap-2.5">
+
+          {/* Selection toolbar */}
+          <AnimatePresence>
+            {selectedItem && (
+              <motion.div
+                key="sel-toolbar"
+                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.96 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                className="pointer-events-auto bg-black/55 backdrop-blur-xl border border-white/10 rounded-3xl p-2.5 shadow-2xl"
+              >
+                <div className="flex items-center justify-between gap-2 mb-2.5 px-1.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold truncate">{selectedItem.name}</p>
+                    <p className="text-[11px] text-white/50">{formatBranchCurrency(itemPrice(selectedItem), branchCurrency)}</p>
                   </div>
-                  {categoryExpanded ? <ChevronDown className="h-4 w-4 text-white/40" /> : <ChevronUp className="h-4 w-4 text-white/40" />}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl mt-3 p-4 max-h-[50vh] overflow-y-auto shadow-2xl overflow-x-hidden custom-scrollbar flex flex-col gap-4">
-                <div className="relative group pointer-events-auto">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-white transition-colors" />
-                  <Input 
-                    placeholder="Search dishes..." 
-                    className="bg-white/5 border-white/10 pl-10 h-10 rounded-xl text-white placeholder:text-white/20 focus-visible:ring-white/20"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                  <button
+                    onClick={() => { setActiveItemDetails(selectedItem); setShowDetailsModal(true); }}
+                    className="shrink-0 h-9 px-3 rounded-full bg-white/10 border border-white/10 flex items-center gap-1.5 text-xs font-semibold hover:bg-white/15 transition-colors active:scale-95"
+                  >
+                    <Info className="h-3.5 w-3.5" /> Details
+                  </button>
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar pointer-events-auto">
-                  {uniqueCategories.map((cat) => (
+                <div className="flex items-center gap-2">
+                  {/* Scale stepper */}
+                  <div className="flex items-center bg-white/8 border border-white/10 rounded-full h-12">
                     <button
-                      key={cat}
-                      className={`cursor-pointer whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                        selectedCategory === cat 
-                          ? "text-white shadow-lg" 
-                          : "bg-white/5 border-white/5 text-white/50 hover:bg-white/10"
-                      }`}
-                      style={selectedCategory === cat ? { backgroundColor: selectedBranch?.primaryColor || '#16a34a', borderColor: selectedBranch?.primaryColor || '#16a34a' } : {}}
-                      onClick={() => setSelectedCategory(cat)}
+                      onClick={() => { setAutoRotate(false); updateSelectedItem({ scale: Math.max(SCALE_MIN, +(selectedItem.scale - 0.15).toFixed(2)) }); }}
+                      className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-white/10 active:scale-90 transition-all"
                     >
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      <Minus className="h-4 w-4" />
                     </button>
-                  ))}
-                </div>
+                    <span className="w-9 text-center text-xs font-mono text-white/70">{selectedItem.scale.toFixed(1)}×</span>
+                    <button
+                      onClick={() => { setAutoRotate(false); updateSelectedItem({ scale: Math.min(SCALE_MAX, +(selectedItem.scale + 0.15).toFixed(2)) }); }}
+                      className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-white/10 active:scale-90 transition-all"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
 
-                <div className="grid grid-cols-1 gap-2 pointer-events-auto">
-                  {filteredMenuItems.length > 0 ? (
-                    filteredMenuItems.map((item) => (
-                      <button
-                        key={item.menuItemId}
-                        className="w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all text-white/70 bg-white/[0.02] hover:bg-white/10 hover:text-white flex justify-between items-center group active:scale-[0.98] border border-transparent hover:border-white/5"
-                        onClick={() => handleAddItemToAR(item)}
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="truncate flex-1">{item.name}</span>
-                          <span className="text-[10px] text-white/40 font-medium">{item.categoryName}</span>
-                        </div>
-                        <Plus className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: selectedBranch?.primaryColor || '#16a34a' }} />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="py-8 text-center text-white/30 text-sm">
-                      No dishes found
-                    </div>
-                  )}
+                  {/* Rotate (auto-spin) toggle */}
+                  <button
+                    onClick={() => setAutoRotate(v => !v)}
+                    className="h-12 w-12 shrink-0 rounded-full border flex items-center justify-center transition-all active:scale-90"
+                    style={autoRotate
+                      ? { backgroundColor: primaryColor, borderColor: 'transparent' }
+                      : { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.1)' }}
+                    title="Spin"
+                  >
+                    <RotateCw className="h-5 w-5" />
+                  </button>
+
+                  {/* Remove */}
+                  <button
+                    onClick={() => removeItem(selectedItem.instanceId)}
+                    className="h-12 w-12 shrink-0 rounded-full bg-white/8 border border-white/10 flex items-center justify-center hover:bg-red-500/20 hover:border-red-500/30 transition-all active:scale-90"
+                    title="Remove"
+                  >
+                    <Trash2 className="h-5 w-5 text-red-400" />
+                  </button>
+
+                  {/* Add to cart (primary) */}
+                  <button
+                    onClick={() => handleAddToCart(selectedItem)}
+                    className="flex-1 h-12 rounded-full text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    <ShoppingCart className="h-5 w-5" /> Add
+                  </button>
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Your Table tray */}
+          {arItems.length > 0 && (
+            <div className="pointer-events-auto bg-black/45 backdrop-blur-xl border border-white/10 rounded-3xl p-2.5 shadow-xl">
+              <div className="flex items-center justify-between px-1.5 mb-2">
+                <span className="text-[10px] uppercase tracking-widest text-white/45 font-bold">Your Table · {arItems.length}</span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+                {arItems.map((item) => {
+                  const active = item.instanceId === activeObjectId;
+                  return (
+                    <div key={item.instanceId} className="relative shrink-0">
+                      <button
+                        onClick={() => setActiveObjectId(item.instanceId)}
+                        className="h-16 w-16 rounded-2xl overflow-hidden border-2 transition-all active:scale-95"
+                        style={{ borderColor: active ? primaryColor : 'rgba(255,255,255,0.1)' }}
+                      >
+                        <img src={getImageUrl(item.picture)} alt={item.name} className="h-full w-full object-cover" />
+                      </button>
+                      <button
+                        onClick={() => removeItem(item.instanceId)}
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 border-2 border-zinc-950 flex items-center justify-center active:scale-90"
+                      >
+                        <X className="h-2.5 w-2.5 text-white" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Browse Menu + cart summary */}
+          <div className="pointer-events-auto flex items-center gap-2.5">
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="flex-1 h-14 rounded-3xl text-white font-bold text-base flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform shadow-xl"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <Plus className="h-5 w-5" /> Browse Menu
+            </button>
+            {cartCount > 0 && (
+              <button
+                onClick={() => setCartOpen(true)}
+                className="h-14 px-4 rounded-3xl bg-black/55 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center shadow-xl active:scale-[0.98] transition-transform"
+              >
+                <span className="text-[10px] text-white/50 font-semibold leading-none mb-0.5">{cartCount} in cart</span>
+                <span className="text-xs font-bold leading-none">{formatBranchCurrency(cartTotal, branchCurrency)}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
+      {/* ===== Layer 6: Dish browser bottom sheet ===== */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[60] bg-black/50"
+              onClick={() => setDrawerOpen(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 280 }}
+              drag="y"
+              dragListener={false}
+              dragControls={sheetDragControls}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.4 }}
+              onDragEnd={(_, info) => { if (info.offset.y > 120) setDrawerOpen(false); }}
+              className="absolute bottom-0 inset-x-0 z-[61] max-h-[72vh] bg-zinc-900/95 backdrop-blur-2xl border-t border-white/10 rounded-t-3xl shadow-2xl flex flex-col"
+            >
+              {/* Grabber strip — the only drag initiator (keeps inputs/list usable) */}
+              <div
+                className="shrink-0 px-4 pt-2.5 pb-2 touch-none cursor-grab active:cursor-grabbing"
+                onPointerDown={(e) => sheetDragControls.start(e)}
+              >
+                <div className="mx-auto h-1.5 w-12 rounded-full bg-white/20" />
+              </div>
+
+              {/* Header content (not draggable) */}
+              <div className="shrink-0 px-4 pb-3">
+                <div className="flex items-center justify-between mb-3 max-w-2xl mx-auto w-full">
+                  <h3 className="text-lg font-bold">Browse Menu</h3>
+                  <button
+                    onClick={() => setDrawerOpen(false)}
+                    className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors active:scale-95"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="max-w-2xl mx-auto w-full">
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                    <Input
+                      placeholder="Search dishes..."
+                      className="bg-white/5 border-white/10 pl-10 h-11 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-white/20"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+                    {uniqueCategories.map((cat) => {
+                      const active = selectedCategory === cat;
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${active ? 'text-white' : 'bg-white/5 border-white/5 text-white/50 hover:bg-white/10'}`}
+                          style={active ? { backgroundColor: primaryColor, borderColor: primaryColor } : {}}
+                        >
+                          {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Dish list */}
+              <div className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar">
+                <div className="max-w-2xl mx-auto w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {filteredMenuItems.length > 0 ? filteredMenuItems.map((item) => (
+                    <div
+                      key={item.menuItemId}
+                      className="flex items-center gap-3 bg-white/[0.04] border border-white/5 rounded-2xl p-2.5 hover:bg-white/[0.07] transition-colors"
+                    >
+                      <div className="h-16 w-16 rounded-xl overflow-hidden shrink-0 bg-white/5 relative">
+                        <img src={getImageUrl(item.picture)} alt={item.name} className="h-full w-full object-cover" />
+                        {item.threeDObject && (
+                          <div className="absolute bottom-0.5 right-0.5 h-5 w-5 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                            <Box className="h-2.5 w-2.5" style={{ color: primaryColor }} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold truncate">{item.name}</p>
+                        <p className="text-[11px] text-white/40 truncate">{item.categoryName}</p>
+                        <p className="text-xs font-bold mt-0.5" style={{ color: primaryColor }}>
+                          {formatBranchCurrency(itemPrice(item), branchCurrency)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleAddItemToAR(item)}
+                        className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white active:scale-90 transition-transform shadow-lg"
+                        style={{ backgroundColor: primaryColor }}
+                        title={`Add ${item.name}`}
+                      >
+                        <Plus className="h-5 w-5" />
+                      </button>
+                    </div>
+                  )) : (
+                    <div className="col-span-full py-12 text-center text-white/30 text-sm">No dishes found</div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ===== Layer 7: Gesture coach ===== */}
+      <AnimatePresence>
+        {showCoach && (
+          <GestureCoach primaryColor={primaryColor} onDismiss={() => setShowCoach(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Modals (preserved cart flow) */}
       <CartModal />
       <AddToCartModal />
       <PaymentModal />
       {activeItemDetails && (
-        <MenuItemDetailModal 
+        <MenuItemDetailModal
           item={activeItemDetails}
           isOpen={showDetailsModal}
           onClose={() => setShowDetailsModal(false)}
         />
       )}
-      
+
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 10px;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
       `}</style>
     </div>
   );
