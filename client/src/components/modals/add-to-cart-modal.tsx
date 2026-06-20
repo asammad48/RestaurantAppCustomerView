@@ -31,7 +31,8 @@ export default function AddToCartModal() {
   
   // Collapsible states
   const [modifiersOpen, setModifiersOpen] = useState(true);
-  const [customizationsOpen, setCustomizationsOpen] = useState(false);
+  // Accordion: only one customization group open at a time (null = all closed)
+  const [openCustomizationId, setOpenCustomizationId] = useState<number | null>(null);
 
   const updateModifierQuantity = (modifierId: number, change: number) => {
     setSelectedModifiers(prev => {
@@ -195,8 +196,8 @@ export default function AddToCartModal() {
       <div className="space-y-4">
         {/* Max Allowed Amount Note */}
         {(deal.maxAllowedAmount ?? 0) > 0 && (
-          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-            <p className="text-sm font-medium text-blue-800">
+          <div className="p-3 rounded-2xl" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' }}>
+            <p className="text-sm font-semibold configurable-primary-text">
               Max Allowed discount for the Order is {formatBranchCurrency(deal.maxAllowedAmount || 0, branchCurrency)}
             </p>
           </div>
@@ -321,8 +322,8 @@ export default function AddToCartModal() {
       <div className="space-y-4">
         {/* Max Allowed Amount Note */}
         {(menuItem.maxAllowedAmount ?? 0) > 0 && (
-          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-            <p className="text-sm font-medium text-blue-800">
+          <div className="p-3 rounded-2xl" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' }}>
+            <p className="text-sm font-semibold configurable-primary-text">
               Max Allowed discount for the Order is {formatBranchCurrency(menuItem.maxAllowedAmount || 0, branchCurrency)}
             </p>
           </div>
@@ -341,38 +342,52 @@ export default function AddToCartModal() {
         {/* Variations */}
         {menuItem.variations && menuItem.variations.length > 0 && (
           <div>
-            <h3 className="font-bold text-lg mb-3">Size/Variation</h3>
+            <h3 className="font-bold text-base configurable-text-primary mb-2.5">Size / Variation</h3>
             <div className="space-y-2">
-              {menuItem.variations.map((variation) => (
-                <button
-                  key={variation.id}
-                  onClick={() => setSelectedVariation(variation.id)}
-                  className={`w-full text-left p-3 rounded-lg border ${
-                    selectedVariation === variation.id 
-                      ? 'border-2 configurable-border configurable-primary-text' 
-                      : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
-                  }`}
-                  style={selectedVariation === variation.id ? { backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}33` } : {}}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{variation.name}</span>
-                    <div className="text-sm">
-                      {(variation.discountedPrice && variation.discountedPrice < variation.price) || 
-                       (menuItem.discount && menuItem.discount.value > 0) ? (
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold configurable-primary-text">
-                            {formatBranchCurrency((variation.discountedPrice || 
-                                  calculateDiscountedPrice(variation.price, menuItem.discount?.value || 0)), branchCurrency)}
-                          </span>
-                          <span className="text-gray-500 line-through text-xs">{formatBranchCurrency(variation.price, branchCurrency)}</span>
-                        </div>
-                      ) : (
-                        <span className="font-bold">{formatBranchCurrency(variation.price, branchCurrency)}</span>
-                      )}
+              {menuItem.variations.map((variation) => {
+                const isActive = selectedVariation === variation.id;
+                return (
+                  <button
+                    key={variation.id}
+                    onClick={() => setSelectedVariation(variation.id)}
+                    className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
+                      isActive
+                        ? 'border-2'
+                        : 'bg-white border-gray-200 hover:border-gray-300'
+                    }`}
+                    style={isActive ? {
+                      backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))',
+                      borderColor: 'var(--color-primary)',
+                    } : {}}
+                  >
+                    <div className="flex justify-between items-center gap-3">
+                      <span className="flex items-center gap-2 font-semibold configurable-text-primary">
+                        <span
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isActive ? '' : 'border-gray-300'}`}
+                          style={isActive ? { borderColor: 'var(--color-primary)' } : {}}
+                        >
+                          {isActive && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }} />}
+                        </span>
+                        {variation.name}
+                      </span>
+                      <div className="text-sm">
+                        {(variation.discountedPrice && variation.discountedPrice < variation.price) ||
+                         (menuItem.discount && menuItem.discount.value > 0) ? (
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold configurable-primary-text">
+                              {formatBranchCurrency((variation.discountedPrice ||
+                                    calculateDiscountedPrice(variation.price, menuItem.discount?.value || 0)), branchCurrency)}
+                            </span>
+                            <span className="text-gray-400 line-through text-xs">{formatBranchCurrency(variation.price, branchCurrency)}</span>
+                          </div>
+                        ) : (
+                          <span className="font-extrabold configurable-text-primary">{formatBranchCurrency(variation.price, branchCurrency)}</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -380,36 +395,45 @@ export default function AddToCartModal() {
         {/* Modifiers Section */}
         {menuItem.modifiers && menuItem.modifiers.length > 0 && (
           <Collapsible open={modifiersOpen} onOpenChange={setModifiersOpen}>
-            <CollapsibleTrigger className="w-full p-3 rounded-lg flex items-center justify-between font-medium bg-gray-100">
+            <CollapsibleTrigger className="w-full px-4 py-3 rounded-2xl flex items-center justify-between font-bold configurable-text-primary bg-gray-50 hover:bg-gray-100 transition-colors">
               Modifiers
               {modifiersOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
             </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 space-y-2">
-              {menuItem.modifiers.map((modifier) => (
-                <div key={modifier.id} className="flex items-center justify-between py-2">
-                  <span className="text-sm">{modifier.name}</span>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium">{formatBranchCurrency(modifier.price, branchCurrency)}</span>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => updateModifierQuantity(modifier.id, -1)}
-                        className="w-6 h-6 rounded configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="w-6 text-center text-xs font-medium">
-                        {selectedModifiers[modifier.id] || 0}
-                      </span>
-                      <button
-                        onClick={() => updateModifierQuantity(modifier.id, 1)}
-                        className="w-6 h-6 rounded configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover"
-                      >
-                        <Plus size={12} />
-                      </button>
+            <CollapsibleContent className="mt-2 space-y-1">
+              {menuItem.modifiers.map((modifier) => {
+                const qty = selectedModifiers[modifier.id] || 0;
+                return (
+                  <div
+                    key={modifier.id}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                    style={qty > 0 ? { backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' } : {}}
+                  >
+                    <span className="text-sm font-medium configurable-text-primary">{modifier.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold configurable-text-secondary whitespace-nowrap">{formatBranchCurrency(modifier.price, branchCurrency)}</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updateModifierQuantity(modifier.id, -1)}
+                          className="w-7 h-7 rounded-full configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover active:scale-90 transition-transform"
+                          aria-label={`Remove ${modifier.name}`}
+                        >
+                          <Minus size={13} />
+                        </button>
+                        <span className="w-5 text-center text-sm font-bold configurable-text-primary">
+                          {qty}
+                        </span>
+                        <button
+                          onClick={() => updateModifierQuantity(modifier.id, 1)}
+                          className="w-7 h-7 rounded-full configurable-primary text-white flex items-center justify-center hover:configurable-primary-hover active:scale-90 transition-transform"
+                          aria-label={`Add ${modifier.name}`}
+                        >
+                          <Plus size={13} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </CollapsibleContent>
           </Collapsible>
         )}
@@ -418,33 +442,45 @@ export default function AddToCartModal() {
         {menuItem.customizations && menuItem.customizations.length > 0 && (
           <div className="space-y-4">
             {menuItem.customizations.map((customization) => (
-              <Collapsible key={customization.id} open={customizationsOpen} onOpenChange={setCustomizationsOpen}>
-                <CollapsibleTrigger className="w-full p-3 rounded-lg flex items-center justify-between font-medium bg-gray-100">
+              <Collapsible
+                key={customization.id}
+                open={openCustomizationId === customization.id}
+                onOpenChange={(open) => setOpenCustomizationId(open ? customization.id : null)}
+              >
+                <CollapsibleTrigger className="w-full px-4 py-3 rounded-2xl flex items-center justify-between font-bold configurable-text-primary bg-gray-50 hover:bg-gray-100 transition-colors">
                   {customization.name}
-                  {customizationsOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
+                  {openCustomizationId === customization.id ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2 space-y-2">
+                <CollapsibleContent className="mt-2 space-y-1.5">
                   {customization.options.map((option) => {
                     const isSelected = (selectedCustomizations[customization.id] || []).includes(option.id);
                     return (
                       <button
                         key={option.id}
                         onClick={() => toggleCustomizationOption(customization.id, option.id)}
-                        className={`w-full text-left p-2 rounded text-sm ${
+                        className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm border transition-all ${
                           isSelected
-                            ? 'border configurable-border' 
-                            : 'bg-gray-50 hover:bg-gray-100'
+                            ? 'border-2'
+                            : 'bg-white border-gray-200 hover:border-gray-300'
                         }`}
-                        style={isSelected ? { backgroundColor: `${selectedBranch?.primaryColor || '#16a34a'}33` } : {}}
+                        style={isSelected ? {
+                          backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))',
+                          borderColor: 'var(--color-primary)',
+                        } : {}}
                         data-testid={`customization-option-${customization.id}-${option.id}`}
                       >
-                        <div className="flex justify-between items-center">
-                          <span className="flex items-center gap-2">
-                            {isSelected && <span className="text-xs">✓</span>}
+                        <div className="flex justify-between items-center gap-2">
+                          <span className="flex items-center gap-2 font-medium configurable-text-primary">
+                            <span
+                              className={`w-4 h-4 rounded-md border-2 flex items-center justify-center flex-shrink-0 text-white text-[10px] ${isSelected ? '' : 'border-gray-300'}`}
+                              style={isSelected ? { borderColor: 'var(--color-primary)', backgroundColor: 'var(--color-primary)' } : {}}
+                            >
+                              {isSelected && '✓'}
+                            </span>
                             {option.name}
                           </span>
                           {option.price > 0 && (
-                            <span className="text-xs font-medium">+{formatBranchCurrency(option.price, branchCurrency)}</span>
+                            <span className="text-xs font-semibold configurable-primary-text whitespace-nowrap">+{formatBranchCurrency(option.price, branchCurrency)}</span>
                           )}
                         </div>
                       </button>
@@ -465,10 +501,10 @@ export default function AddToCartModal() {
         {/* Item Image and Header */}
         {lastAddedItem && (
           <div className="space-y-3 -mt-6 -mx-6 mb-4 pb-4 border-b">
-            {(lastAddedItem.picture || 'picture' in lastAddedItem ? lastAddedItem.picture : undefined) && (
-              <div className="w-full h-40 bg-gray-100 rounded-none overflow-hidden">
+            {('picture' in lastAddedItem ? lastAddedItem.picture : undefined) && (
+              <div className="w-full h-44 bg-gray-100 overflow-hidden">
                 <img
-                  src={lastAddedItem.picture || 'picture' in lastAddedItem ? lastAddedItem.picture : ''}
+                  src={'picture' in lastAddedItem ? lastAddedItem.picture : ''}
                   alt={lastAddedItem.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -504,31 +540,26 @@ export default function AddToCartModal() {
           )}
 
           {/* Quantity and Add to Cart */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between gap-3 pt-4 sticky bottom-0 bg-white">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-8 h-8 rounded text-white flex items-center justify-center hover:opacity-80"
-                style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
+                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-90 transition-transform"
               >
-                <Minus size={14} />
+                <Minus size={16} />
               </button>
-              <span className="w-8 text-center text-sm font-medium">{quantity}</span>
+              <span className="w-8 text-center text-base font-bold">{quantity}</span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-8 h-8 rounded text-white flex items-center justify-center hover:opacity-80"
-                style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
+                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-90 transition-transform"
               >
-                <Plus size={14} />
+                <Plus size={16} />
               </button>
             </div>
-            <Button
-              onClick={handleAddToCart}
-              className="text-white px-8 py-3 rounded-lg font-medium hover:opacity-90"
-              style={{ backgroundColor: selectedBranch?.primaryColor || '#16a34a' }}
-            >
-              {formatBranchCurrency(getTotalPrice(), branchCurrency)} Add to cart
-            </Button>
+            <button onClick={handleAddToCart} className="vibe-pill flex-1 h-12 text-sm">
+              <span>Add to cart</span>
+              <span className="font-extrabold">· {formatBranchCurrency(getTotalPrice(), branchCurrency)}</span>
+            </button>
           </div>
         </div>
       </DialogContent>

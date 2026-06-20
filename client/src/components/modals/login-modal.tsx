@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Utensils } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 export function LoginModal() {
@@ -71,16 +71,19 @@ export function LoginModal() {
 
   return (
     <Dialog open={isLoginModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[95%] max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto">
-        <div className="flex flex-col items-center space-y-6 py-4 px-2 sm:px-4">
-          {/* Logo placeholder */}
-          <div className="w-16 h-16 bg-gray-300 rounded-lg"></div>
-          
+      <DialogContent className="w-[95%] max-w-md mx-auto rounded-3xl">
+        <div className="flex flex-col items-center space-y-5 py-3 px-1 sm:px-3">
+          {/* Branded logo */}
+          <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: 'var(--color-primary)' }}>
+            <Utensils className="w-8 h-8" />
+          </div>
+
           {/* Title */}
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-semibold text-center">
-              Welcome Back!
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-2xl font-extrabold text-center configurable-text-primary">
+              Welcome back!
             </DialogTitle>
+            <p className="text-sm configurable-text-muted text-center">Log in to track orders & save favourites</p>
           </DialogHeader>
 
           {/* Error Alert */}
@@ -91,7 +94,7 @@ export function LoginModal() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <form onSubmit={handleSubmit} className="w-full space-y-3">
             <div className="space-y-2">
               <Label htmlFor="email" className="sr-only">Email or username</Label>
               <Input
@@ -101,7 +104,7 @@ export function LoginModal() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 disabled={isLoading}
-                className="w-full focus:border-[#15803d] focus:ring-[#15803d]"
+                className="w-full h-12 rounded-2xl"
                 required
               />
             </div>
@@ -115,30 +118,27 @@ export function LoginModal() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 disabled={isLoading}
-                className="w-full focus:border-[#15803d] focus:ring-[#15803d]"
+                className="w-full h-12 rounded-2xl"
                 required
               />
             </div>
 
             {/* Forgot Password Link */}
-            <div className="text-left">
+            <div className="text-right">
               <button
                 type="button"
                 onClick={switchToForgotPassword}
-                className="text-sm text-[#15803d] hover:text-[#15803d]/80 transition-colors"
+                className="text-sm font-semibold transition-colors"
+                style={{ color: 'var(--color-primary)' }}
                 disabled={isLoading}
                 data-testid="link-forgot-password"
               >
-                Forget Password?
+                Forgot password?
               </button>
             </div>
 
             {/* Login Button */}
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-[#15803d] hover:bg-[#15803d]/90 text-white py-3"
-            >
+            <button type="submit" disabled={isLoading} className="vibe-pill w-full h-12 text-base">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -147,7 +147,7 @@ export function LoginModal() {
               ) : (
                 'Log In'
               )}
-            </Button>
+            </button>
           </form>
 
           {/* OR Divider */}
@@ -187,7 +187,8 @@ export function LoginModal() {
             <button
               type="button"
               onClick={switchToSignup}
-              className="text-sm text-[#15803d] hover:text-[#15803d]/80 font-medium transition-colors"
+              className="text-sm font-bold transition-colors"
+              style={{ color: 'var(--color-primary)' }}
               disabled={isLoading}
             >
               Sign up

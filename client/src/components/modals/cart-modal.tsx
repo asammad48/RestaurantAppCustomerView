@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
 import { useAuthStore } from "@/lib/auth-store";
@@ -244,41 +242,42 @@ export default function CartModal() {
   return (
     <Dialog open={isCartOpen} onOpenChange={setCartOpen}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="border-b border-gray-200 pb-4">
-          <div className="flex items-start justify-between gap-2 pr-6">
+        <DialogHeader className="border-b border-gray-100 pb-3">
+          <div className="flex items-center justify-between gap-2 pr-6">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {selectedBranchView !== null && (
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={() => setSelectedBranchView(null)}
-                  className="p-1 flex-shrink-0"
+                  className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0 active:scale-90 transition-transform"
                   data-testid="button-back-to-summary"
                 >
                   <ArrowLeft size={16} />
-                </Button>
+                </button>
               )}
-              <DialogTitle className="text-base sm:text-xl font-bold text-black truncate">
+              <DialogTitle className="text-lg sm:text-xl font-extrabold configurable-text-primary truncate flex items-center gap-2">
                 {selectedBranchView !== null
                   ? branchSummary.find(b => b.branchId === selectedBranchView)?.branchName || 'Branch Cart'
-                  : 'Your cart'
+                  : 'Your Cart'
                 }
+                {!showBranchSummary && displayItems.length > 0 && (
+                  <span className="text-xs font-bold text-white rounded-full px-2 py-0.5" style={{ backgroundColor: 'var(--color-primary)' }}>
+                    {displayItems.length}
+                  </span>
+                )}
               </DialogTitle>
             </div>
-            <Button 
-              variant="ghost" 
-              onClick={clearCart} 
-              className="configurable-primary-text font-medium hover:configurable-primary-hover hover:text-white text-xs sm:text-sm px-2 sm:px-4 flex-shrink-0"
+            <button
+              onClick={clearCart}
+              className="text-xs sm:text-sm font-bold text-red-500 hover:text-red-600 px-2 shrink-0"
               data-testid="button-clear-cart"
             >
-              {showBranchSummary ? 'Clear All' : 
-               selectedBranchView !== null ? 'Clear' : 'Clear'}
-            </Button>
+              {showBranchSummary ? 'Clear All' : 'Clear'}
+            </button>
           </div>
           {isRestaurantMenuPage && selectedBranch && (
-            <p className="text-sm text-gray-600 mt-2" data-testid="text-restaurant-cart-info">
-              <Store size={14} className="inline mr-1" />
-              You are seeing only the cart of this restaurant
+            <p className="text-xs configurable-text-muted mt-2 flex items-center gap-1" data-testid="text-restaurant-cart-info">
+              <Store size={13} />
+              Showing this restaurant's cart only
             </p>
           )}
         </DialogHeader>
@@ -286,32 +285,27 @@ export default function CartModal() {
         <div className="space-y-6 pt-4">
           {/* Branch Summary View */}
           {showBranchSummary && (
-            <div className="space-y-4">
-              <h4 className="font-bold text-black text-base mb-3">Cart Summary by Restaurant</h4>
+            <div className="space-y-3">
+              <h4 className="font-extrabold configurable-text-primary text-base mb-1">Cart by Restaurant</h4>
               {branchSummary.map((branch) => (
-                <div 
-                  key={branch.branchId} 
-                  className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                <div
+                  key={branch.branchId}
+                  className="vibe-card vibe-card-press p-4 cursor-pointer"
                   onClick={() => setSelectedBranchView(branch.branchId)}
                   data-testid={`card-branch-summary-${branch.branchId}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h5 className="font-semibold text-black text-base">{branch.branchName}</h5>
-                      <p className="text-sm text-gray-600 mt-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h5 className="font-bold configurable-text-primary text-base truncate">{branch.branchName}</h5>
+                      <p className="text-sm configurable-text-muted mt-0.5">
                         {branch.count} item{branch.count > 1 ? 's' : ''}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-black text-lg">{formatBranchCurrency(branch.total, branchCurrency)}</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        data-testid={`button-view-branch-${branch.branchId}`}
-                      >
+                    <div className="text-right shrink-0">
+                      <p className="font-extrabold text-lg" style={{ color: 'var(--color-primary)' }}>{formatBranchCurrency(branch.total, branchCurrency)}</p>
+                      <span className="vibe-pill-soft h-7 px-3 text-xs mt-1.5 inline-flex" data-testid={`button-view-branch-${branch.branchId}`}>
                         View Details
-                      </Button>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -323,11 +317,11 @@ export default function CartModal() {
           {!showBranchSummary && (
             <div className="space-y-4">
               {displayItems.map((item) => (
-              <div key={`${item.id}-${item.variation || 'default'}-${item.branchId}`} className="border-b border-gray-100 pb-4 last:border-b-0">
-                <div className="flex gap-4">
+              <div key={`${item.id}-${item.variation || 'default'}-${item.branchId}`} className="bg-gray-50 rounded-2xl p-3">
+                <div className="flex gap-3">
                   {/* Item Image */}
                   <div className="w-20 h-20 flex-shrink-0">
-                    <img src={getItemImage(item)} alt={item.name} className="w-full h-full object-cover rounded-lg border border-gray-200" />
+                    <img src={getItemImage(item)} alt={item.name} className="w-full h-full object-cover rounded-xl" />
                   </div>
                   
                   {/* Item Details */}
@@ -425,37 +419,39 @@ export default function CartModal() {
                 </div>
                 
                 {/* Quantity Controls and Delete */}
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
                     <button
                       onClick={() => {
                         const compositeKey = `${item.id}-${item.variation || 'default'}-${item.branchId}`;
                         updateQuantity(compositeKey, item.quantity - 1);
                       }}
-                      className="w-8 h-8 configurable-primary text-white rounded flex items-center justify-center hover:configurable-primary-hover"
+                      className="w-9 h-9 rounded-full text-white flex items-center justify-center active:scale-90 transition-transform"
+                      style={{ backgroundColor: 'var(--color-primary)' }}
                     >
                       <Minus size={14} />
                     </button>
-                    <span className="w-12 text-center font-medium text-black">{item.quantity}</span>
+                    <span className="w-10 text-center font-bold text-black">{item.quantity}</span>
                     <button
                       onClick={() => {
                         const compositeKey = `${item.id}-${item.variation || 'default'}-${item.branchId}`;
                         updateQuantity(compositeKey, item.quantity + 1);
                       }}
-                      className="w-8 h-8 configurable-primary text-white rounded flex items-center justify-center hover:configurable-primary-hover"
+                      className="w-9 h-9 rounded-full text-white flex items-center justify-center active:scale-90 transition-transform"
+                      style={{ backgroundColor: 'var(--color-primary)' }}
                     >
                       <Plus size={14} />
                     </button>
                   </div>
-                  
+
                   <button
                     onClick={() => {
                       const compositeKey = `${item.id}-${item.variation || 'default'}-${item.branchId}`;
                       removeItem(compositeKey);
                     }}
-                    className="p-2 text-red-500 hover:text-red-700"
+                    className="h-9 w-9 rounded-full bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
@@ -467,22 +463,22 @@ export default function CartModal() {
           {!showBranchSummary && (
             <>
               <div className="pt-4">
-                <h4 className="font-bold text-black text-base mb-3">Promo code</h4>
+                <h4 className="font-extrabold configurable-text-primary text-base mb-2">Promo code</h4>
                 <div className="flex gap-2">
-                  <Input 
-                    placeholder="" 
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2" 
+                  <Input
+                    placeholder="Enter code"
+                    className="flex-1 h-12 rounded-2xl"
                   />
-                  <Button className="configurable-primary text-white px-6 py-2 rounded-lg hover:configurable-primary-hover font-medium">
+                  <button className="vibe-pill h-12 px-6">
                     Apply
-                  </Button>
+                  </button>
                 </div>
               </div>
               
               {/* Order Summary */}
               <div className="pt-6">
-            <h4 className="font-bold text-black text-base mb-4">Order Summary</h4>
-            <div className="space-y-3">
+            <h4 className="font-extrabold configurable-text-primary text-base mb-3">Order Summary</h4>
+            <div className="space-y-2.5 bg-gray-50 rounded-2xl p-4">
               <div className="flex justify-between text-sm">
                 <span className="text-black">Sub Total</span>
                 <span className="text-black font-medium">{formatBranchCurrency(subtotal, branchCurrency)}</span>
@@ -516,11 +512,9 @@ export default function CartModal() {
                   <span className="text-black font-medium">{formatBranchCurrency(taxAmount, branchCurrency)}</span>
                 </div>
               )}
-              <div className="border-t border-gray-200 pt-3">
-                <div className="flex justify-between">
-                  <span className="text-black font-bold text-base">Grand Total</span>
-                  <span className="text-black font-bold text-base">{formatBranchCurrency(grandTotal, branchCurrency)}</span>
-                </div>
+              <div className="flex justify-between items-center vibe-header -mx-4 -mb-4 mt-3 px-4 py-3 rounded-b-2xl">
+                <span className="text-white font-bold text-base">Grand Total</span>
+                <span className="text-white font-extrabold text-lg">{formatBranchCurrency(grandTotal, branchCurrency)}</span>
               </div>
             </div>
           </div>
@@ -543,7 +537,7 @@ export default function CartModal() {
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
+              <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)]" align="start">
                 {allergensLoading ? (
                   <div className="p-4 text-center text-sm text-gray-500">Loading allergens...</div>
                 ) : allergensError ? (
@@ -551,33 +545,32 @@ export default function CartModal() {
                 ) : allergens.length === 0 ? (
                   <div className="p-4 text-center text-sm text-gray-500">No allergens available</div>
                 ) : (
-                  <ScrollArea className="h-60">
-                    <div className="p-2">
-                      {allergens.map((allergen: Allergen) => (
-                        <div
+                  <div
+                    className="max-h-64 overflow-y-auto overscroll-contain p-1.5"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
+                  >
+                    {allergens.map((allergen: Allergen) => {
+                      const checked = selectedAllergens.includes(allergen.id);
+                      return (
+                        <button
+                          type="button"
                           key={allergen.id}
-                          className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={() => handleAllergenToggle(allergen.id)}
                           data-testid={`checkbox-allergen-${allergen.id}`}
+                          aria-pressed={checked}
+                          className={`w-full flex items-center gap-3 rounded-xl px-3 min-h-[44px] text-left text-sm transition-colors ${checked ? 'bg-accent' : 'hover:bg-accent active:bg-accent'}`}
                         >
-                          <Checkbox
-                            id={`allergen-${allergen.id}`}
-                            checked={selectedAllergens.includes(allergen.id)}
-                            onChange={() => handleAllergenToggle(allergen.id)}
-                          />
-                          <label 
-                            htmlFor={`allergen-${allergen.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? 'border-transparent text-white' : 'border-gray-300'}`}
+                            style={checked ? { backgroundColor: 'var(--color-primary)' } : {}}
                           >
-                            {allergen.name}
-                          </label>
-                          {selectedAllergens.includes(allergen.id) && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                            {checked && <Check className="h-3.5 w-3.5" />}
+                          </span>
+                          <span className="flex-1 font-medium configurable-text-primary">{allergen.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </PopoverContent>
             </Popover>
@@ -595,16 +588,16 @@ export default function CartModal() {
             />
               </div>
               
-              <Button 
+              <button
                 onClick={handleProceedToPayment}
-                className="w-full configurable-primary text-white py-4 text-base font-medium hover:configurable-primary-hover rounded-lg mt-6"
+                className="vibe-pill w-full h-14 text-base mt-6 disabled:cursor-not-allowed"
                 disabled={displayItems.length === 0 || showBranchSummary}
                 data-testid="button-proceed-to-payment"
               >
                 {showBranchSummary ? 'Select a branch to proceed' :
-                 serviceType === 'delivery' ? 'Enter Delivery Details' : 
+                 serviceType === 'delivery' ? 'Enter Delivery Details' :
                  serviceType === 'takeaway' ? 'Enter Pickup Details' : 'Proceed to Payment'}
-              </Button>
+              </button>
             </>
           )}
         </div>

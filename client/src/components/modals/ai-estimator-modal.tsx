@@ -1,13 +1,8 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/lib/store";
 import { formatBranchCurrency } from "@/lib/utils";
 import { Users, DollarSign, Pizza, Sandwich, Coffee, ChefHat, Cake, Plus, Bot, Sparkles, Clock, TrendingUp, Info, Lightbulb } from "lucide-react";
@@ -147,20 +142,24 @@ export default function AiEstimatorModal() {
   return (
     <Dialog open={isAiEstimatorModalOpen} onOpenChange={setAiEstimatorModalOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="border-b border-gray-200 pb-4">
-          <DialogTitle className="text-2xl font-bold text-black flex items-center gap-2">
-            <Bot className="w-6 h-6 configurable-primary-text" />
+        <DialogHeader className="border-b border-gray-100 pb-4">
+          <DialogTitle className="text-xl font-extrabold configurable-text-primary flex items-center gap-2.5">
+            <span className="h-10 w-10 rounded-2xl flex items-center justify-center text-white shadow-md" style={{ backgroundColor: 'var(--color-primary)' }}>
+              <Bot className="w-5 h-5" />
+            </span>
             AI Budget Estimator
             <Sparkles className="w-5 h-5 text-yellow-500" />
           </DialogTitle>
         </DialogHeader>
 
         {step === 'input' && (
-          <div className="space-y-6 pt-6">
+          <div className="space-y-5 pt-5">
             {/* Group Size */}
             <div className="space-y-2">
-              <Label htmlFor="group-size" className="text-sm font-medium flex items-center gap-2">
-                <Users className="w-4 h-4" />
+              <Label htmlFor="group-size" className="text-sm font-bold configurable-text-primary flex items-center gap-2">
+                <span className="h-7 w-7 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))', color: 'var(--color-primary)' }}>
+                  <Users className="w-4 h-4" />
+                </span>
                 Group Size
               </Label>
               <Input
@@ -170,15 +169,17 @@ export default function AiEstimatorModal() {
                 max="20"
                 value={groupSize}
                 onChange={(e) => setGroupSize(parseInt(e.target.value) || 1)}
-                className="w-full"
+                className="w-full h-12 rounded-2xl text-base"
                 data-testid="input-group-size"
               />
             </div>
 
             {/* Budget */}
-            <div className="space-y-3">
-              <Label htmlFor="budget" className="text-sm font-medium flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
+            <div className="space-y-2.5">
+              <Label htmlFor="budget" className="text-sm font-bold configurable-text-primary flex items-center gap-2">
+                <span className="h-7 w-7 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))', color: 'var(--color-primary)' }}>
+                  <DollarSign className="w-4 h-4" />
+                </span>
                 Total Budget ({branchCurrency})
               </Label>
               <Input
@@ -188,49 +189,55 @@ export default function AiEstimatorModal() {
                 step="100"
                 value={budget}
                 onChange={(e) => setBudget(parseInt(e.target.value) || 500)}
-                className="w-full"
+                className="w-full h-12 rounded-2xl text-base"
                 data-testid="input-budget"
               />
-              <p className="text-sm text-gray-600">
-                About {formatBranchCurrency(Math.round(budget / groupSize), branchCurrency)} per person
+              <p className="text-sm font-semibold configurable-primary-text">
+                ≈ {formatBranchCurrency(Math.round(budget / groupSize), branchCurrency)} per person
               </p>
-              
+
               {/* Popular Budget Suggestions */}
-              <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="pt-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">Popular Budget Ranges</span>
+                  <TrendingUp className="w-4 h-4 configurable-primary-text" />
+                  <span className="text-sm font-bold configurable-text-primary">Popular Budget Ranges</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: 'Light', range: '1000-2000', perPerson: '500-1000' },
                     { label: 'Standard', range: '2000-5000', perPerson: '1000-2500' },
                     { label: 'Premium', range: '5000+', perPerson: '2500+' }
-                  ].map((option) => (
-                    <Button
-                      key={option.label}
-                      variant="outline"
-                      size="sm"
-                      className="h-auto p-2 flex flex-col items-center text-xs"
-                      onClick={() => setBudget(parseInt(option.range.split('-')[0]))}
-                    >
-                      <span className="font-medium">{option.label}</span>
-                      <span className="text-gray-600">{option.perPerson}/person</span>
-                    </Button>
-                  ))}
+                  ].map((option) => {
+                    const value = parseInt(option.range.split('-')[0]);
+                    const active = budget === value;
+                    return (
+                      <button
+                        key={option.label}
+                        type="button"
+                        onClick={() => setBudget(value)}
+                        className={`rounded-2xl p-2.5 flex flex-col items-center text-center border transition-all ${active ? 'border-2' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                        style={active ? { backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))', borderColor: 'var(--color-primary)' } : {}}
+                      >
+                        <span className="text-xs font-bold configurable-text-primary">{option.label}</span>
+                        <span className="text-[10px] configurable-text-muted">{option.perPerson}/person</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
 
             {/* Meal Type Selection */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Meal Type (Optional)
+            <div className="space-y-2">
+              <Label className="text-sm font-bold configurable-text-primary flex items-center gap-2">
+                <span className="h-7 w-7 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))', color: 'var(--color-primary)' }}>
+                  <Clock className="w-4 h-4" />
+                </span>
+                Meal Type <span className="font-normal configurable-text-muted">(Optional)</span>
               </Label>
               <Select value={mealType} onValueChange={setMealType}>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 rounded-2xl">
                   <SelectValue placeholder="Select meal type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -243,105 +250,109 @@ export default function AiEstimatorModal() {
             </div>
 
             {/* Dietary Preferences */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Dietary Preferences (Optional)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {['Vegetarian', 'Spicy', 'Low Calorie', 'Family Friendly'].map(pref => (
-                  <div key={pref} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`pref-${pref}`}
-                      checked={dietaryPrefs.includes(pref)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
+            <div className="space-y-2">
+              <Label className="text-sm font-bold configurable-text-primary">Dietary Preferences <span className="font-normal configurable-text-muted">(Optional)</span></Label>
+              <div className="flex flex-wrap gap-2">
+                {['Vegetarian', 'Spicy', 'Low Calorie', 'Family Friendly'].map(pref => {
+                  const active = dietaryPrefs.includes(pref);
+                  return (
+                    <button
+                      key={pref}
+                      type="button"
+                      onClick={() => {
+                        if (!active) {
                           setDietaryPrefs(prev => [...prev, pref]);
                         } else {
                           setDietaryPrefs(prev => prev.filter(p => p !== pref));
                         }
                       }}
-                    />
-                    <Label htmlFor={`pref-${pref}`} className="text-sm">
+                      className={`vibe-chip h-9 px-3.5 ${active ? 'vibe-chip-active' : ''}`}
+                    >
                       {pref}
-                    </Label>
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Category Selection */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Food Categories (Optional)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {uniqueCategories.map(category => (
-                  <div key={category} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`category-${category}`}
-                      checked={selectedCategories.includes(category)}
-                      onCheckedChange={(checked) => handleCategoryToggle(category, checked as boolean)}
-                    />
-                    <Label htmlFor={`category-${category}`} className="text-sm flex items-center gap-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold configurable-text-primary">Food Categories <span className="font-normal configurable-text-muted">(Optional)</span></Label>
+              <div className="flex flex-wrap gap-2">
+                {uniqueCategories.map(category => {
+                  const active = selectedCategories.includes(category);
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => handleCategoryToggle(category, !active)}
+                      className={`vibe-chip h-9 px-3.5 gap-1.5 ${active ? 'vibe-chip-active' : ''}`}
+                    >
                       {getCategoryIcon(category)}
                       {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </Label>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tips Section */}
+            <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 configurable-primary-text" />
+                <span className="text-sm font-bold configurable-primary-text">Smart Ordering Tips</span>
+              </div>
+              <div className="space-y-2 text-xs configurable-text-secondary">
+                {[
+                  'Budget 20% extra for drinks and desserts',
+                  'Combo meals often provide better value than individual items',
+                  'Consider sharing family-sized portions for groups of 3+',
+                  'AI suggestions prioritize variety and balanced nutrition',
+                ].map((tip) => (
+                  <div key={tip} className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: 'var(--color-primary)' }}></span>
+                    <span>{tip}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Tips Section */}
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Smart Ordering Tips</span>
-              </div>
-              <div className="space-y-2 text-xs text-green-700">
-                <div className="flex items-start gap-2">
-                  <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>Budget 20% extra for drinks and desserts</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>Combo meals often provide better value than individual items</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>Consider sharing family-sized portions for groups of 3+</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="w-1 h-1 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                  <span>AI suggestions prioritize variety and balanced nutrition</span>
-                </div>
-              </div>
-            </div>
-
             {/* How AI Works */}
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <div className="rounded-2xl p-4 bg-gray-50">
               <div className="flex items-center gap-2 mb-3">
-                <Info className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium text-purple-800">How Our AI Works</span>
+                <Info className="w-4 h-4 configurable-text-secondary" />
+                <span className="text-sm font-bold configurable-text-primary">How Our AI Works</span>
               </div>
-              <div className="text-xs text-purple-700 space-y-2">
+              <div className="text-xs configurable-text-secondary space-y-2">
                 <p>Our smart algorithm analyzes your preferences and creates personalized food combinations that:</p>
-                <div className="grid grid-cols-1 gap-1 ml-2">
-                  <span>• Maximize variety within your budget</span>
-                  <span>• Balance nutritional value and taste</span>
-                  <span>• Consider group sharing opportunities</span>
-                  <span>• Optimize price-per-person ratios</span>
+                <div className="space-y-1">
+                  {[
+                    'Maximize variety within your budget',
+                    'Balance nutritional value and taste',
+                    'Consider group sharing opportunities',
+                    'Optimize price-per-person ratios',
+                  ].map((point) => (
+                    <div key={point} className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: 'var(--color-primary)' }}></span>
+                      <span>{point}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* Generate Button */}
-            <div className="pt-4">
-              <Button
+            <div className="pt-2">
+              <button
                 onClick={handleGenerateSuggestions}
-                className="w-full configurable-primary hover:configurable-primary-hover text-white py-3"
-                disabled={groupSize <= 0 || budget <= 0}
+                className="vibe-pill w-full h-14 text-base"
+                disabled={groupSize <= 0 || budget <= 0 || budgetEstimateMutation.isPending}
                 data-testid="button-generate-ai-suggestions"
               >
-                <Bot className="w-4 h-4 mr-2" />
-                Generate AI Suggestions
-              </Button>
-              <p className="text-xs text-gray-500 text-center mt-2">
+                <Bot className="w-5 h-5" />
+                {budgetEstimateMutation.isPending ? 'Generating…' : 'Generate AI Suggestions'}
+              </button>
+              <p className="text-xs configurable-text-muted text-center mt-2">
                 Get personalized meal combinations in seconds
               </p>
             </div>
@@ -349,27 +360,38 @@ export default function AiEstimatorModal() {
         )}
 
         {step === 'suggestions' && (
-          <div className="space-y-6 pt-6">
+          <div className="space-y-5 pt-5">
             {/* Summary */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">Your Request</h3>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>Group size: {groupSize} people</p>
-                <p>Budget: {formatBranchCurrency(budget, branchCurrency)}</p>
-                <p>Per person: {formatBranchCurrency(Math.round(budget / groupSize), branchCurrency)}</p>
-                {selectedCategories.length > 0 && (
-                  <p>Categories: {selectedCategories.join(', ')}</p>
-                )}
+            <div className="rounded-2xl p-4 bg-gray-50">
+              <h3 className="font-bold configurable-text-primary mb-3">Your Request</h3>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-white p-2.5 text-center">
+                  <p className="text-base font-extrabold configurable-text-primary">{groupSize}</p>
+                  <p className="text-[10px] uppercase tracking-wide configurable-text-muted font-semibold">People</p>
+                </div>
+                <div className="rounded-xl bg-white p-2.5 text-center">
+                  <p className="text-base font-extrabold configurable-text-primary">{formatBranchCurrency(budget, branchCurrency)}</p>
+                  <p className="text-[10px] uppercase tracking-wide configurable-text-muted font-semibold">Budget</p>
+                </div>
+                <div className="rounded-xl bg-white p-2.5 text-center">
+                  <p className="text-base font-extrabold configurable-primary-text">{formatBranchCurrency(Math.round(budget / groupSize), branchCurrency)}</p>
+                  <p className="text-[10px] uppercase tracking-wide configurable-text-muted font-semibold">Per Person</p>
+                </div>
               </div>
+              {selectedCategories.length > 0 && (
+                <p className="text-xs configurable-text-secondary mt-3">
+                  <span className="font-semibold">Categories:</span> {selectedCategories.join(', ')}
+                </p>
+              )}
               {maxAllowedDiscount > 0 && (
-                <div className="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                <div className="mt-3 p-3 rounded-xl" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' }}>
                   <div className="flex items-center gap-2">
-                    <Info className="w-4 h-4 text-yellow-600" />
-                    <p className="text-sm font-medium text-yellow-800">
+                    <Info className="w-4 h-4 configurable-primary-text" />
+                    <p className="text-sm font-bold configurable-primary-text">
                       Max Discount Available
                     </p>
                   </div>
-                  <p className="text-sm text-yellow-700 mt-1">
+                  <p className="text-sm configurable-text-secondary mt-1">
                     Maximum allowed discount for each order: {formatBranchCurrency(maxAllowedDiscount, branchCurrency)}
                   </p>
                 </div>
@@ -379,178 +401,148 @@ export default function AiEstimatorModal() {
             {/* Budget Options */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold">Budget Options</h3>
-                <div className="flex gap-2">
-                  <Badge className="configurable-primary text-white">
-                    {budgetOptions.length} Options Found
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    Step: {step}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Debug Info Panel */}
-              <div className="bg-gray-50 p-3 rounded text-xs">
-                <p><strong>Debug Info:</strong></p>
-                <p>Branch ID: {branchId}</p>
-                <p>Menu Items: {apiMenuData?.menuItems?.length || 0}</p>
-                <p>Deals: {apiMenuData?.deals?.length || 0}</p>
-                <p>Budget: {formatBranchCurrency(budget, branchCurrency)}, Group: {groupSize}</p>
-                <p>Categories: {selectedCategories.length > 0 ? selectedCategories.join(', ') : 'All'}</p>
+                <h3 className="text-lg font-extrabold configurable-text-primary">Budget Options</h3>
+                <span className="text-xs font-bold text-white px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }}>
+                  {budgetOptions.length} Options Found
+                </span>
               </div>
 
               {budgetOptions.length === 0 ? (
-                <Card>
-                  <CardContent className="p-6 text-center">
-                    <p className="text-gray-600">No suitable combinations found within your budget. Try increasing your budget or adjusting preferences.</p>
-                  </CardContent>
-                </Card>
+                <div className="vibe-card p-6 text-center">
+                  <p className="configurable-text-secondary">No suitable combinations found within your budget. Try increasing your budget or adjusting preferences.</p>
+                </div>
               ) : (
                 <div className="grid gap-4">
                   {budgetOptions.map((option, index) => (
-                    <Card key={index} className="border-2 hover:border-gray-300 transition-colors relative">
-                      {/* Option Number Badge in Top Left Corner */}
-                      <div className="absolute top-3 left-3 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold z-10">
-                        {index + 1}
+                    <div key={index} className="vibe-card relative p-4">
+                      {/* Header row */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          <span className="w-9 h-9 text-white rounded-full flex items-center justify-center text-sm font-extrabold flex-shrink-0" style={{ backgroundColor: 'var(--color-primary)' }}>
+                            {index + 1}
+                          </span>
+                          <div>
+                            <div className="text-xl font-extrabold configurable-text-primary leading-tight">
+                              {formatBranchCurrency(option.totalCost, branchCurrency)}
+                            </div>
+                            <div className="text-xs configurable-text-muted">
+                              Serves {option.totalPeopleServed} • {formatBranchCurrency(Math.round(option.totalCost / option.totalPeopleServed), branchCurrency)}/person
+                            </div>
+                          </div>
+                        </div>
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${option.isWithinBudget ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {option.isWithinBudget ? '✓ Within Budget' : '✗ Over Budget'}
+                        </span>
                       </div>
-                      <CardHeader className="pb-3 pt-6 pl-16">
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <Badge variant="outline" className={option.isWithinBudget ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}>
-                            {option.isWithinBudget ? 'Within Budget' : 'Over Budget'}
-                          </Badge>
-                        </CardTitle>
-                        <div className="text-lg font-semibold text-gray-900">
-                          {formatBranchCurrency(option.totalCost, branchCurrency)}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Serves {option.totalPeopleServed} people • {formatBranchCurrency(Math.round(option.totalCost / option.totalPeopleServed), branchCurrency)} per person
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        {/* Menu Items */}
-                        {option.menuItems.length > 0 && (
-                          <div className="space-y-2 mb-4">
-                            <h4 className="text-sm font-medium text-gray-700">Menu Items:</h4>
-                            {option.menuItems.map((item, itemIndex) => (
-                              <div key={itemIndex} className="bg-gray-50 p-2 rounded space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <div>
-                                    <span className="font-medium">{item.variations[0]?.quantity}x {item.name}</span>
-                                    <div className="text-xs text-gray-500">
-                                      {item.variations[0]?.name} • {item.categoryName}
-                                    </div>
-                                  </div>
-                                  <span className="font-medium">{formatBranchCurrency(item.variations[0]?.price * item.variations[0]?.quantity, branchCurrency)}</span>
-                                </div>
-                                {/* Allergen Information */}
-                                {item.allergenItemContains && (
-                                  <div 
-                                    className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1 rounded"
-                                    data-testid={`text-allergen-budgetitem-${item.menuItemId}`}
-                                  >
-                                    <span className="font-medium">⚠️ Contains:</span> {item.allergenItemContains}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
 
-                        {/* Menu Packages */}
-                        {option.menuPackages.length > 0 && (
-                          <div className="space-y-2 mb-4">
-                            <h4 className="text-sm font-medium text-gray-700">Package Deals:</h4>
-                            {option.menuPackages.map((packageItem, packageIndex) => (
-                              <div key={packageIndex} className="bg-blue-50 p-2 rounded space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <div>
-                                    <span className="font-medium">1x {packageItem.name}</span>
-                                    <div className="text-xs text-gray-500">
-                                      {packageItem.description}
-                                    </div>
-                                    <div className="text-xs text-blue-600">
-                                      Deal includes multiple items
-                                    </div>
+                      {/* Menu Items */}
+                      {option.menuItems.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          <h4 className="text-xs font-bold uppercase tracking-wide configurable-text-muted">Menu Items</h4>
+                          {option.menuItems.map((item, itemIndex) => (
+                            <div key={itemIndex} className="bg-gray-50 p-2.5 rounded-xl space-y-1">
+                              <div className="flex justify-between gap-2 text-sm">
+                                <div>
+                                  <span className="font-semibold configurable-text-primary">{item.variations[0]?.quantity}x {item.name}</span>
+                                  <div className="text-xs configurable-text-muted">
+                                    {item.variations[0]?.name} • {item.categoryName}
                                   </div>
-                                  <span className="font-medium">{formatBranchCurrency(packageItem.price, branchCurrency)}</span>
                                 </div>
-                                {/* Package Allergen Information */}
-                                {packageItem.allergenItemContains && (
-                                  <div 
-                                    className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1 rounded"
-                                    data-testid={`text-allergen-package-${packageItem.dealId}`}
-                                  >
-                                    <span className="font-medium">⚠️ Package Contains:</span> {packageItem.allergenItemContains}
-                                  </div>
-                                )}
-                                {/* Individual Menu Items Allergen Information */}
-                                {packageItem.menuItems.map((menuItem, itemIndex) => (
-                                  menuItem.allergenItemContains && (
-                                    <div 
-                                      key={itemIndex} 
-                                      className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1 rounded"
-                                      data-testid={`text-allergen-packageitem-${menuItem.menuItemId}-${itemIndex}`}
-                                    >
-                                      <span className="font-medium">⚠️ {menuItem.name} Contains:</span> {menuItem.allergenItemContains}
-                                    </div>
-                                  )
-                                ))}
+                                <span className="font-bold configurable-text-primary whitespace-nowrap">{formatBranchCurrency(item.variations[0]?.price * item.variations[0]?.quantity, branchCurrency)}</span>
                               </div>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="flex justify-between items-center pt-2 border-t">
-                          <div className="text-sm">
-                            <span className={`font-medium ${option.isWithinBudget ? 'text-green-600' : 'text-red-600'}`}>
-                              {option.isWithinBudget ? '✓ Within Budget' : '✗ Over Budget'}
-                            </span>
-                          </div>
-                          {/* Add to Cart functionality removed as requested */}
+                              {/* Allergen Information */}
+                              {item.allergenItemContains && (
+                                <div
+                                  className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1.5 rounded-lg"
+                                  data-testid={`text-allergen-budgetitem-${item.menuItemId}`}
+                                >
+                                  <span className="font-medium">⚠️ Contains:</span> {item.allergenItemContains}
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      </CardContent>
-                    </Card>
+                      )}
+
+                      {/* Menu Packages */}
+                      {option.menuPackages.length > 0 && (
+                        <div className="space-y-2 mb-1">
+                          <h4 className="text-xs font-bold uppercase tracking-wide configurable-text-muted">Package Deals</h4>
+                          {option.menuPackages.map((packageItem, packageIndex) => (
+                            <div key={packageIndex} className="p-2.5 rounded-xl space-y-1" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' }}>
+                              <div className="flex justify-between gap-2 text-sm">
+                                <div>
+                                  <span className="font-semibold configurable-text-primary">1x {packageItem.name}</span>
+                                  <div className="text-xs configurable-text-muted">
+                                    {packageItem.description}
+                                  </div>
+                                  <div className="text-xs configurable-primary-text font-medium">
+                                    Deal includes multiple items
+                                  </div>
+                                </div>
+                                <span className="font-bold configurable-text-primary whitespace-nowrap">{formatBranchCurrency(packageItem.price, branchCurrency)}</span>
+                              </div>
+                              {/* Package Allergen Information */}
+                              {packageItem.allergenItemContains && (
+                                <div
+                                  className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1.5 rounded-lg"
+                                  data-testid={`text-allergen-package-${packageItem.dealId}`}
+                                >
+                                  <span className="font-medium">⚠️ Package Contains:</span> {packageItem.allergenItemContains}
+                                </div>
+                              )}
+                              {/* Individual Menu Items Allergen Information */}
+                              {packageItem.menuItems.map((menuItem, itemIndex) => (
+                                menuItem.allergenItemContains && (
+                                  <div
+                                    key={itemIndex}
+                                    className="text-xs text-orange-600 bg-orange-50 border border-orange-200 p-1.5 rounded-lg"
+                                    data-testid={`text-allergen-packageitem-${menuItem.menuItemId}-${itemIndex}`}
+                                  >
+                                    <span className="font-medium">⚠️ {menuItem.name} Contains:</span> {menuItem.allergenItemContains}
+                                  </div>
+                                )
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
 
               {/* Budget Summary */}
               {budgetOptions.length > 0 && (
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="font-medium text-blue-800">Your Budget</p>
-                        <p className="text-blue-600">{formatBranchCurrency(budget, branchCurrency)}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-blue-800">Best Option</p>
-                        <p className="text-blue-600">{formatBranchCurrency(Math.min(...budgetOptions.map(o => o.totalCost)), branchCurrency)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="rounded-2xl p-4 grid grid-cols-2 gap-4" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' }}>
+                  <div>
+                    <p className="text-xs font-semibold configurable-text-muted">Your Budget</p>
+                    <p className="text-lg font-extrabold configurable-text-primary">{formatBranchCurrency(budget, branchCurrency)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold configurable-text-muted">Best Option</p>
+                    <p className="text-lg font-extrabold configurable-primary-text">{formatBranchCurrency(Math.min(...budgetOptions.map(o => o.totalCost)), branchCurrency)}</p>
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
+            <div className="flex gap-3 pt-2">
+              <button
                 onClick={() => setStep('input')}
-                className="flex-1"
+                className="vibe-pill-soft flex-1 h-12"
                 data-testid="button-back-to-input"
               >
                 Back to Input
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => setAiEstimatorModalOpen(false)}
-                className="flex-1 configurable-primary hover:configurable-primary-hover text-white"
+                className="vibe-pill flex-1 h-12"
                 data-testid="button-close-estimator"
               >
                 Close
-              </Button>
+              </button>
             </div>
           </div>
         )}

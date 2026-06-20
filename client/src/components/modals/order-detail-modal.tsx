@@ -45,16 +45,16 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-[#15803d] text-white p-6 -mx-6 -mt-6 mb-6">
+        <div className="vibe-header text-white p-6 -mx-6 -mt-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h1 className="text-xl font-bold flex items-center gap-2">
-                <div className="bg-white/20 p-1.5 rounded-lg">
+                <div className="bg-white/20 p-1.5 rounded-xl">
                   <Receipt className="h-5 w-5" />
                 </div>
                 Order #{order.orderNumber}
               </h1>
-              <div className="flex items-center gap-4 mt-2 text-green-100 text-sm">
+              <div className="flex items-center gap-4 mt-2 text-white/80 text-sm">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
                   {formatToLocalTime(order.createdAt, 'MMM dd, yyyy')}
@@ -446,7 +446,7 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
                     <span className="font-semibold">{formatCurrency(order.tipAmount, order.currency)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center py-3 bg-[#15803d] text-white -mx-4 px-4 rounded-lg mt-4">
+                <div className="flex justify-between items-center py-3 vibe-header -mx-4 px-4 rounded-xl mt-4">
                   <span className="text-lg font-bold">Total Amount</span>
                   <span className="text-xl font-bold">{formatCurrency(order.totalAmount, order.currency)}</span>
                 </div>
@@ -460,69 +460,180 @@ export default function OrderDetailModal({ order, isOpen, onClose }: OrderDetail
 }
 
 function generatePrintContent(order: Order): string {
+  const primary = '#16a34a';
+  const primaryDark = '#15803d';
+
+  const infoRow = (label: string, value: string) => `
+    <div class="info-row">
+      <span class="info-label">${label}</span>
+      <span class="info-value">${value}</span>
+    </div>`;
+
+  const summaryRow = (label: string, value: string, opts: { negative?: boolean; total?: boolean } = {}) => `
+    <div class="sum-row${opts.total ? ' sum-total' : ''}">
+      <span>${label}</span>
+      <span${opts.negative ? ' class="neg"' : ''}>${value}</span>
+    </div>`;
+
   return `
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Order Receipt #${order.orderNumber}</title>
       <style>
-        body { font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }
-        .header { text-align: center; border-bottom: 2px solid #15803d; padding-bottom: 10px; margin-bottom: 15px; color: #15803d; }
-        .order-info { margin-bottom: 15px; }
-        .items-section { margin-bottom: 15px; }
-        .item { margin-bottom: 10px; padding: 5px; border: 1px solid #15803d; border-radius: 5px; }
-        .modifier { margin-left: 20px; font-size: 11px; color: #15803d; }
-        .summary { border-top: 2px solid #15803d; padding-top: 10px; }
-        .total { font-weight: bold; font-size: 14px; color: #15803d; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #f3f4f6; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+          color: #111827;
+          font-size: 13px;
+          line-height: 1.5;
+          padding: 24px 16px;
+        }
+        .receipt {
+          max-width: 420px;
+          margin: 0 auto;
+          background: #ffffff;
+          border-radius: 16px;
+          box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
+          overflow: hidden;
+        }
+        .header {
+          text-align: center;
+          padding: 28px 24px 22px;
+          background: ${primary};
+          color: #ffffff;
+        }
+        .header .brand { font-size: 16px; font-weight: 700; letter-spacing: .3px; margin: 0 0 4px; }
+        .header .title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; opacity: .85; margin: 0; }
+        .header .order-no { font-size: 22px; font-weight: 800; margin: 8px 0 2px; }
+        .header .datetime { font-size: 12px; opacity: .9; margin: 0; }
+        .status-chip {
+          display: inline-block;
+          margin-top: 12px;
+          padding: 4px 14px;
+          border-radius: 999px;
+          background: rgba(255,255,255,.2);
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: .6px;
+        }
+        .body { padding: 20px 24px 24px; }
+        .section + .section { margin-top: 18px; }
+        .section-title {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          color: ${primaryDark};
+          margin: 0 0 10px;
+        }
+        .info-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+        .info-label { color: #6b7280; }
+        .info-value { font-weight: 600; text-align: right; }
+        .item {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 10px 0;
+          border-bottom: 1px dashed #e5e7eb;
+        }
+        .item:last-child { border-bottom: none; }
+        .item-name { font-weight: 700; }
+        .item-qty { color: ${primaryDark}; font-weight: 700; }
+        .item-sub { color: #6b7280; font-size: 12px; margin-top: 2px; }
+        .item-price { font-weight: 700; white-space: nowrap; }
+        .summary {
+          margin-top: 18px;
+          padding-top: 14px;
+          border-top: 2px dashed #e5e7eb;
+        }
+        .sum-row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; color: #374151; }
+        .sum-row .neg { color: ${primaryDark}; }
+        .sum-total {
+          margin-top: 8px;
+          padding-top: 12px;
+          border-top: 1px solid #e5e7eb;
+          font-size: 17px;
+          font-weight: 800;
+          color: ${primaryDark};
+        }
+        .footer {
+          text-align: center;
+          padding: 18px 24px 24px;
+          color: #9ca3af;
+          font-size: 11px;
+          border-top: 1px solid #f3f4f6;
+        }
         @media print {
-          body { margin: 0; }
+          html, body { background: #ffffff; }
+          body { padding: 0; }
+          .receipt { box-shadow: none; border-radius: 0; max-width: 100%; }
+          .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       </style>
     </head>
     <body>
-      <div class="header">
-        <h1>ORDER RECEIPT</h1>
-        <h2>Order #${order.orderNumber}</h2>
-        <p>${formatToLocalTime(order.createdAt, 'MMM dd, yyyy • hh:mm a')}</p>
-      </div>
-      
-      <div class="order-info">
-        <p><strong>Order Type:</strong> ${getOrderTypeText(order.orderType)}</p>
-        <p><strong>Branch:</strong> ${order.branchName}</p>
-        ${order.locationName ? `<p><strong>Location:</strong> ${order.locationName}</p>` : ''}
-        <p><strong>Status:</strong> ${getOrderStatusText(order.orderStatus)}</p>
-      </div>
-      
-      ${order.orderDeliveryDetails ? `
-      <div class="delivery-info">
-        <h3>Delivery Details</h3>
-        <p><strong>Name:</strong> ${order.orderDeliveryDetails.fullName}</p>
-        <p><strong>Phone:</strong> ${order.orderDeliveryDetails.phoneNumber}</p>
-        <p><strong>Address:</strong> ${order.orderDeliveryDetails.deliveryAddress}</p>
-        ${order.orderDeliveryDetails.deliveryInstruction ? `<p><strong>Instructions:</strong> ${order.orderDeliveryDetails.deliveryInstruction}</p>` : ''}
-      </div>
-      ` : ''}
-      
-      <div class="items-section">
-        <h3>Order Items</h3>
-        ${order.orderItems.map(item => `
-          <div class="item">
-            <div><strong>${item.quantity}× ${item.itemName}</strong> - ${formatCurrency(item.totalPrice, order.currency)}</div>
-            ${item.variantName ? `<div class="modifier">Variant: ${item.variantName}</div>` : ''}
-            ${item.orderItemModifiers?.map(mod => `
-              <div class="modifier">${mod.quantity}× ${mod.modifierName} (+${formatCurrency(mod.price, order.currency)})</div>
-            `).join('') || ''}
+      <div class="receipt">
+        <div class="header">
+          <p class="brand">${order.branchName}</p>
+          <p class="title">Order Receipt</p>
+          <p class="order-no">#${order.orderNumber}</p>
+          <p class="datetime">${formatToLocalTime(order.createdAt, 'MMM dd, yyyy • hh:mm a')}</p>
+          <span class="status-chip">${getOrderStatusText(order.orderStatus)}</span>
+        </div>
+
+        <div class="body">
+          <div class="section">
+            ${infoRow('Order Type', getOrderTypeText(order.orderType))}
+            ${infoRow('Branch', order.branchName)}
+            ${order.locationName ? infoRow('Location', order.locationName) : ''}
+            ${infoRow('Status', getOrderStatusText(order.orderStatus))}
           </div>
-        `).join('')}
-      </div>
-      
-      <div class="summary">
-        <p>Order Amount: ${formatCurrency(order.orderAmount, order.currency)}</p>
-        ${order.discountedAmount > 0 ? `<p>Discount: -${formatCurrency(order.discountedAmount, order.currency)}</p>` : ''}
-        <p>Service Charges: ${formatCurrency(order.serviceCharges, order.currency)}</p>
-        ${order.deliveryCharges > 0 ? `<p>Delivery Charges: ${formatCurrency(order.deliveryCharges, order.currency)}</p>` : ''}
-        <p>Tax Amount: ${formatCurrency(order.taxAmount, order.currency)}</p>
-        <p class="total">Total: ${formatCurrency(order.totalAmount, order.currency)}</p>
+
+          ${order.orderDeliveryDetails ? `
+          <div class="section">
+            <p class="section-title">Delivery Details</p>
+            ${infoRow('Name', order.orderDeliveryDetails.fullName)}
+            ${infoRow('Phone', order.orderDeliveryDetails.phoneNumber)}
+            ${infoRow('Address', order.orderDeliveryDetails.deliveryAddress)}
+            ${order.orderDeliveryDetails.deliveryInstruction ? infoRow('Instructions', order.orderDeliveryDetails.deliveryInstruction) : ''}
+          </div>
+          ` : ''}
+
+          <div class="section">
+            <p class="section-title">Order Items</p>
+            ${order.orderItems.map(item => `
+              <div class="item">
+                <div>
+                  <div class="item-name"><span class="item-qty">${item.quantity}×</span> ${item.itemName}</div>
+                  ${item.variantName ? `<div class="item-sub">Variant: ${item.variantName}</div>` : ''}
+                  ${item.orderItemModifiers?.map(mod => `
+                    <div class="item-sub">${mod.quantity}× ${mod.modifierName} (+${formatCurrency(mod.price, order.currency)})</div>
+                  `).join('') || ''}
+                </div>
+                <div class="item-price">${formatCurrency(item.totalPrice, order.currency)}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="summary">
+            ${summaryRow('Order Amount', formatCurrency(order.orderAmount, order.currency))}
+            ${order.discountedAmount > 0 ? summaryRow('Discount', `-${formatCurrency(order.discountedAmount, order.currency)}`, { negative: true }) : ''}
+            ${summaryRow('Service Charges', formatCurrency(order.serviceCharges, order.currency))}
+            ${order.deliveryCharges > 0 ? summaryRow('Delivery Charges', formatCurrency(order.deliveryCharges, order.currency)) : ''}
+            ${summaryRow('Tax Amount', formatCurrency(order.taxAmount, order.currency))}
+            ${summaryRow('Total', formatCurrency(order.totalAmount, order.currency), { total: true })}
+          </div>
+        </div>
+
+        <div class="footer">
+          Thank you for your order!
+        </div>
       </div>
     </body>
     </html>

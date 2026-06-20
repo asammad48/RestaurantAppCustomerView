@@ -26,6 +26,7 @@ import OrderConfirmationModal from "@/components/modals/order-confirmation-modal
 import AiEstimatorModal from "@/components/modals/ai-estimator-modal";
 import ThemeSwitcher from "@/components/theme-switcher";
 import FoodCard from "@/components/food-card";
+import DealCard from "@/components/deal-card";
 import { getImageUrl } from "@/lib/config";
 import { applyBranchPrimaryColor } from "@/lib/colors";
 import { formatToLocalTime, formatBranchCurrency } from '@/lib/utils';
@@ -809,145 +810,114 @@ export default function RestaurantMenuPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      {/* Service Banner */}
-      <div className="relative">
-        <div className="h-32 md:h-40 relative overflow-hidden configurable-primary">
-          <div className="absolute inset-0 flex">
-            <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Pizza slice" className="w-1/6 h-full object-cover opacity-80" />
-            <img src="https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Pasta dish" className="w-1/6 h-full object-cover opacity-80" />
-            <img src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Salad bowl" className="w-1/6 h-full object-cover opacity-80" />
-            <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Pancakes" className="w-1/6 h-full object-cover opacity-80" />
-            <img src="https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Burger" className="w-1/6 h-full object-cover opacity-80" />
-            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Salad" className="w-1/6 h-full object-cover opacity-80" />
-          </div>
-          <div className="absolute inset-0 configurable-primary/70"></div>
-        </div>
-        
-        {/* Service Type Indicator - Hidden for delivery */}
+      {/* Vibrant header banner */}
+      <div className="relative vibe-header h-24 md:h-32 overflow-hidden">
+        <div className="absolute -top-10 -right-8 w-44 h-44 rounded-full bg-white/10" />
+        <div className="absolute -bottom-16 -left-6 w-48 h-48 rounded-full bg-black/10" />
         {methodType !== 'delivery' && (
-          <div className="absolute bottom-0 left-0 right-0 configurable-primary text-white py-3">
-            <div className="page-container flex items-center justify-center">
-              {methodType === 'takeaway' && (
-                <>
-                  <Clock className="mr-3" size={20} />
-                  <span className="text-lg font-medium">Takeaway Order - {selectedRestaurant?.name || branchData?.branchName}</span>
-                </>
-              )}
-              {methodType === 'qr' && (
-                <>
-                  <MapPin className="mr-3" size={20} />
-                  <span className="text-lg font-medium">Menu - {branchData?.branchName || 'Restaurant'}</span>
-                </>
-              )}
-              {methodType === 'dine-in' && (
-                <>
-                  <MapPin className="mr-3" size={20} />
-                  <span className="text-lg font-medium">
-                    {branchData?.locationName ? branchData.locationName : "Dine In Menu"}{(selectedRestaurant?.name || branchData?.branchName) ? ` - ${selectedRestaurant?.name || branchData?.branchName}` : ''}
-                  </span>
-                </>
-              )}
+          <div className="absolute bottom-0 left-0 right-0 bg-black/15 py-2.5">
+            <div className="page-container flex items-center justify-center text-white gap-2 text-sm font-semibold">
+              {methodType === 'takeaway' && (<><Clock size={16} /><span className="truncate">Takeaway · {selectedRestaurant?.name || branchData?.branchName}</span></>)}
+              {methodType === 'qr' && (<><MapPin size={16} /><span className="truncate">Menu · {branchData?.branchName || 'Restaurant'}</span></>)}
+              {methodType === 'dine-in' && (<><MapPin size={16} /><span className="truncate">{branchData?.locationName ? branchData.locationName : "Dine In"}{(selectedRestaurant?.name || branchData?.branchName) ? ` · ${selectedRestaurant?.name || branchData?.branchName}` : ''}</span></>)}
             </div>
           </div>
         )}
       </div>
-      
+
       <div className="page-container section-y">
         {/* Back Button */}
         {methodType !== 'qr' && (
-          <div className="mb-6">
-            <Button
-              variant="outline"
+          <div className="mb-4">
+            <button
               onClick={handleBack}
-              className="flex items-center"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold configurable-text-secondary hover:configurable-text-primary"
               data-testid="button-back-to-restaurants"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4" />
               Back to {methodType === 'delivery' ? 'Delivery' : methodType === 'takeaway' ? 'Takeaway' : 'Restaurants'}
-            </Button>
+            </button>
           </div>
         )}
 
         {/* Restaurant/Branch Header */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <img
-                src={branchData?.branchPicture ? getImageUrl(branchData.branchPicture) : selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
-                alt={branchData?.branchName || selectedRestaurant?.name || 'Restaurant'}
-                className="w-full md:w-48 h-32 object-cover rounded-lg flex-shrink-0"
-              />
-              
-              <div className="flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                      {branchData?.branchName || selectedRestaurant?.name || 'Restaurant Menu'}
-                    </h1>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
-                        <span className="font-medium">{branchData?.rating || selectedRestaurant?.rating || '4.5'}</span>
-                      </div>
-                      {getServiceBadge()}
-                    </div>
-                  </div>
-                </div>
-
-                {getServiceInfo()}
+        <div className="vibe-card mb-8 -mt-12 relative z-10">
+          <div className="flex gap-4 p-4">
+            <img
+              src={branchData?.branchPicture ? getImageUrl(branchData.branchPicture) : selectedRestaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300'}
+              alt={branchData?.branchName || selectedRestaurant?.name || 'Restaurant'}
+              className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-2xl flex-shrink-0 ring-4 ring-white shadow-md"
+            />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-extrabold configurable-text-primary leading-tight mb-1.5 truncate">
+                {branchData?.branchName || selectedRestaurant?.name || 'Restaurant Menu'}
+              </h1>
+              <div className="flex items-center flex-wrap gap-2 mb-2.5">
+                <span className="flex items-center gap-1 bg-yellow-50 text-yellow-700 rounded-full px-2 py-0.5 text-xs font-bold">
+                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  {branchData?.rating || selectedRestaurant?.rating || '4.5'}
+                </span>
+                {getServiceBadge()}
               </div>
+              {getServiceInfo()}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          {/* AR Menu entry — preview dishes in 3D / AR */}
+          <div className="px-4 pb-4 pt-1 border-t border-gray-100 mt-1">
+            <button
+              onClick={() => { console.debug('🥽 Opening AR Menu'); setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`); }}
+              className="vibe-pill w-full h-11 text-sm mt-3"
+              data-testid="button-ar-menu-card"
+            >
+              <Glasses className="w-4 h-4" /> View Menu in AR
+            </button>
+          </div>
+        </div>
 
         {/* Recommended Section */}
         {apiMenuData?.recommendedForYou && apiMenuData.recommendedForYou.length > 0 && (
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold configurable-text-primary mb-6">Recommended For You</h2>
-            <div className="responsive-menu-grid gap-6">
+          <section className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-1.5 h-6 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }} />
+              <h2 className="text-xl font-extrabold configurable-text-primary">Recommended For You</h2>
+            </div>
+            <div className="vibe-carousel -mx-4 px-4">
               {apiMenuData.recommendedForYou.map((item) => (
-                <FoodCard 
-                  key={item.menuItemId} 
-                  item={item} 
-                  variant="grid" 
-                  isRecommended={true}
-                />
+                <div key={item.menuItemId} className="w-[230px]">
+                  <FoodCard item={item} variant="grid" isRecommended={true} />
+                </div>
               ))}
             </div>
           </section>
         )}
 
-        {/* Menu Filters */}
-        <section className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {uniqueCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <Input
-                  type="text"
-                  placeholder="Search menu items..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  data-testid="input-search-menu-items"
-                />
-              </div>
-            </div>
+        {/* Menu Filters: search + sticky category chips */}
+        <section className="mb-6 sticky top-16 z-20 bg-gray-50/95 backdrop-blur-sm pt-2 pb-2 -mx-4 px-4">
+          <div className="relative mb-3">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Input
+              type="text"
+              placeholder="Search menu items..."
+              className="pl-10 h-12 rounded-2xl bg-white border-gray-200"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="input-search-menu-items"
+            />
+          </div>
+          <div className="vibe-carousel">
+            <button onClick={() => setSelectedCategory('all')} className={`vibe-chip h-9 px-4 ${selectedCategory === 'all' ? 'vibe-chip-active' : ''}`}>
+              All
+            </button>
+            {uniqueCategories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`vibe-chip h-9 px-4 ${selectedCategory === category ? 'vibe-chip-active' : ''}`}
+                data-testid={`chip-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </button>
+            ))}
           </div>
         </section>
 
@@ -962,74 +932,39 @@ export default function RestaurantMenuPage() {
                   <h2 className="text-xl sm:text-2xl font-bold configurable-text-primary">
                     {viewMode === 'menu' ? 'Menu Items' : 'AI Budget Suggestions'}
                   </h2>
-                  {/* View Toggle Buttons */}
-                  <div className="flex items-center bg-gray-100 rounded-lg p-1 w-fit">
-                    <Button
-                      variant={viewMode === 'menu' ? 'default' : 'ghost'}
-                      size="sm"
+                  {/* View Toggle */}
+                  <div className="flex items-center bg-gray-100 rounded-full p-1 w-fit">
+                    <button
                       onClick={handleSwitchToMenu}
-                      className={viewMode === 'menu' ? 'configurable-primary text-white' : ''}
+                      className={`h-9 px-4 rounded-full text-sm font-bold transition-all ${viewMode === 'menu' ? 'text-white shadow' : 'configurable-text-secondary'}`}
+                      style={viewMode === 'menu' ? { backgroundColor: 'var(--color-primary)' } : {}}
                       data-testid="button-switch-to-menu"
                     >
                       Menu
-                    </Button>
-                    <Button
-                      variant={viewMode === 'ai-budget' ? 'default' : 'ghost'}
-                      size="sm"
+                    </button>
+                    <button
                       onClick={handleSwitchToAI}
-                      className={viewMode === 'ai-budget' ? 'configurable-primary text-white' : ''}
+                      className={`h-9 px-4 rounded-full text-sm font-bold transition-all flex items-center gap-1.5 ${viewMode === 'ai-budget' ? 'text-white shadow' : 'configurable-text-secondary'}`}
+                      style={viewMode === 'ai-budget' ? { backgroundColor: 'var(--color-primary)' } : {}}
                       data-testid="button-switch-to-ai"
                     >
-                      <Bot className="w-4 h-4 mr-1" />
+                      <Bot className="w-4 h-4" />
                       <span className="hidden xs:inline">AI Budget</span>
                       <span className="xs:hidden">AI</span>
-                    </Button>
+                    </button>
                   </div>
                 </div>
-                {/* Mobile Action Buttons */}
+                {/* Mobile Action Button (AR Menu now lives on the restaurant info card) */}
                 <div className="flex gap-2 lg:hidden">
-                  <Button
-                    onClick={() => {
-                      console.debug('🥽 Opening AR Menu');
-                      setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`);
-                    }}
-                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2 w-fit"
-                    size="sm"
-                    data-testid="button-ar-menu-mobile"
-                  >
-                    <Glasses className="w-4 h-4" />
-                    <span className="hidden xs:inline">AR Menu</span>
-                    <span className="xs:hidden">AR</span>
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      console.debug('🤖 Opening AI Estimator Modal from restaurant menu');
-                      setAiEstimatorModalOpen(true);
-                    }}
-                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2 w-fit"
-                    size="sm"
+                  <button
+                    onClick={() => { console.debug('🤖 Opening AI Estimator Modal from restaurant menu'); setAiEstimatorModalOpen(true); }}
+                    className="vibe-pill-soft h-10 px-4 text-sm"
                     data-testid="button-open-ai-estimator-mobile"
                   >
                     <Bot className="w-4 h-4" />
                     <span className="hidden xs:inline">AI Estimator</span>
                     <span className="xs:hidden">AI</span>
-                  </Button>
-                </div>
-                
-                {/* Desktop AR Menu Button */}
-                <div className="hidden lg:block">
-                  <Button
-                    onClick={() => {
-                      console.debug('🥽 Opening AR Menu');
-                      setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`);
-                    }}
-                    className="configurable-primary hover:configurable-primary-hover text-white flex items-center gap-2 text-sm px-3 py-2"
-                    size="sm"
-                    data-testid="button-ar-menu-desktop"
-                  >
-                    <Glasses className="w-4 h-4" />
-                    AR Menu
-                  </Button>
+                  </button>
                 </div>
               </div>
               
@@ -1093,116 +1028,96 @@ export default function RestaurantMenuPage() {
                       const perPersonCost = option.totalPeopleServed > 0 ? Math.round(option.totalCost / option.totalPeopleServed) : 0;
                       
                       return (
-                        <Card key={index} className="relative border border-gray-200 hover:border-gray-300 transition-colors shadow-sm bg-white dark:bg-gray-800 h-full flex flex-col overflow-hidden">
-                          {/* Numbered Badge in Top Left Corner - Attached to corner */}
-                          <div className="absolute top-0 left-0 z-10">
-                            <div className="w-7 h-7 bg-primary text-white rounded-br-lg flex items-center justify-center text-sm font-bold" data-testid={`badge-option-number-${index}`}>
-                              {index + 1}
-                            </div>
-                          </div>
-                          
-                          <CardHeader className="pb-3 pt-8 px-4">
-                            {/* Status Badge and Price Section */}
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid={`price-total-${index}`}>
-                                {formatBranchCurrency(option.totalCost, branchCurrency)}
-                              </div>
-                              <Badge 
-                                className={`text-xs px-2 py-1 ${option.isWithinBudget 
-                                  ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300" 
-                                  : "bg-red-100 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300"
-                                }`}
+                        <div key={index} className="vibe-card vibe-card-press h-full flex flex-col">
+                          {/* Gradient header */}
+                          <div className="vibe-header p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[11px] font-bold uppercase tracking-widest text-white/80" data-testid={`badge-option-number-${index}`}>
+                                Option {index + 1}
+                              </span>
+                              <span
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${option.isWithinBudget ? 'bg-white/25 text-white' : 'bg-red-500 text-white'}`}
                                 data-testid={`badge-budget-status-${index}`}
                               >
-                                {option.isWithinBudget ? "Within Budget" : "Over Budget"}
-                              </Badge>
+                                {option.isWithinBudget ? 'Within Budget' : 'Over Budget'}
+                              </span>
                             </div>
-                            
-                            {/* Serves and Per Person Info */}
-                            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            <div className="text-2xl font-extrabold text-white" data-testid={`price-total-${index}`}>
+                              {formatBranchCurrency(option.totalCost, branchCurrency)}
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-white/85 mt-1.5">
                               <span className="flex items-center" data-testid={`serves-info-${index}`}>
-                                <Users className="w-4 h-4 mr-1 flex-shrink-0" />
-                                Serves {option.totalPeopleServed}
+                                <Users className="w-3.5 h-3.5 mr-1 flex-shrink-0" /> Serves {option.totalPeopleServed}
                               </span>
                               {perPersonCost > 0 && (
                                 <span className="flex items-center" data-testid={`per-person-cost-${index}`}>
-                                  <DollarSign className="w-4 h-4 mr-1 flex-shrink-0" />
-                                  {formatBranchCurrency(perPersonCost, branchCurrency)} / person
+                                  <DollarSign className="w-3.5 h-3.5 mr-1 flex-shrink-0" /> {formatBranchCurrency(perPersonCost, branchCurrency)}/person
                                 </span>
                               )}
                             </div>
-                          </CardHeader>
-                          
-                          <CardContent className="flex-1 px-4 py-3 space-y-3">
-                            {/* Deals & Packages - More Compact */}
+                          </div>
+
+                          {/* Body */}
+                          <div className="flex-1 px-4 py-3 space-y-3">
                             {option.menuPackages && option.menuPackages.length > 0 && (
                               <div>
-                                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm flex items-center">
-                                  <Tag className="w-4 h-4 mr-1" />
-                                  Deals & Packages
+                                <h4 className="font-bold configurable-text-primary mb-2 text-sm flex items-center gap-1.5">
+                                  <Tag className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> Deals & Packages
                                 </h4>
                                 <div className="space-y-1">
                                   {option.menuPackages.slice(0, 2).map((pkg, pkgIndex) => (
                                     <div key={pkgIndex} className="flex justify-between items-center text-sm py-1">
-                                      <span className="text-gray-700 dark:text-gray-300 text-xs truncate">{pkg.name}</span>
-                                      <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs">{formatBranchCurrency(Number(pkg.price) || 0, branchCurrency)}</span>
+                                      <span className="configurable-text-secondary text-xs truncate">{pkg.name}</span>
+                                      <span className="font-bold configurable-text-primary text-xs">{formatBranchCurrency(Number(pkg.price) || 0, branchCurrency)}</span>
                                     </div>
                                   ))}
                                   {option.menuPackages.length > 2 && (
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                      +{option.menuPackages.length - 2} more deals
-                                    </div>
+                                    <div className="text-xs configurable-text-muted">+{option.menuPackages.length - 2} more deals</div>
                                   )}
                                 </div>
                               </div>
                             )}
-                            
-                            {/* Menu Items - More Compact */}
+
                             {option.menuItems && option.menuItems.length > 0 && (
                               <div>
-                                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm flex items-center">
-                                  <ChefHat className="w-4 h-4 mr-1" />
-                                  Menu Items
+                                <h4 className="font-bold configurable-text-primary mb-2 text-sm flex items-center gap-1.5">
+                                  <ChefHat className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> Menu Items
                                 </h4>
                                 <div className="space-y-1">
                                   {option.menuItems.slice(0, 3).map((item, itemIndex) => (
                                     <div key={itemIndex} className="flex justify-between items-start text-sm py-1">
                                       <div className="flex-1 min-w-0">
-                                        <span className="text-gray-700 dark:text-gray-300 text-xs block truncate">
+                                        <span className="configurable-text-secondary text-xs block truncate">
                                           {item.name} {item.variations[0]?.name && (
-                                            <span className="text-gray-500 dark:text-gray-400">({item.variations[0].name})</span>
+                                            <span className="configurable-text-muted">({item.variations[0].name})</span>
                                           )}
                                         </span>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                                          Qty: {item.variations[0]?.quantity}
-                                        </div>
+                                        <div className="text-xs configurable-text-muted">Qty: {item.variations[0]?.quantity}</div>
                                       </div>
-                                      <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs ml-2">
+                                      <span className="font-bold configurable-text-primary text-xs ml-2">
                                         {formatBranchCurrency(item.variations[0]?.price || 0, branchCurrency)}
                                       </span>
                                     </div>
                                   ))}
                                   {option.menuItems.length > 3 && (
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                      +{option.menuItems.length - 3} more items
-                                    </div>
+                                    <div className="text-xs configurable-text-muted">+{option.menuItems.length - 3} more items</div>
                                   )}
                                 </div>
                               </div>
                             )}
-                          </CardContent>
-                          
-                          <CardFooter className="pt-3 px-4 pb-4">
-                            <Button
+                          </div>
+
+                          {/* Footer */}
+                          <div className="px-4 pb-4 pt-1">
+                            <button
                               onClick={() => handleAddBudgetOptionToCart(option)}
-                              className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2"
+                              className="vibe-pill w-full h-11 text-sm"
                               data-testid={`button-add-budget-option-${index}`}
                             >
-                              <Plus className="w-4 h-4 mr-2" />
-                              Add to Cart
-                            </Button>
-                          </CardFooter>
-                        </Card>
+                              <Plus className="w-4 h-4" /> Add to Cart
+                            </button>
+                          </div>
+                        </div>
                       );
                     })
                   ) : isLoading ? (
@@ -1285,16 +1200,14 @@ export default function RestaurantMenuPage() {
           {/* Right Side - AI Estimator Panel (Desktop Only) */}
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-4">
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-6 space-y-6">
+              <div className="vibe-card p-5 space-y-5">
                 {/* Header */}
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] rounded-2xl mb-4 shadow-lg">
-                    <Sparkles className="w-7 h-7 text-white" />
+                <div className="vibe-header rounded-2xl p-4 text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-2xl mb-2">
+                    <Sparkles className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-[var(--color-primary)]">
-                    AI Budget Estimator
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-1">Smart recommendations for your perfect meal</p>
+                  <h2 className="text-lg font-extrabold text-white">AI Budget Estimator</h2>
+                  <p className="text-xs text-white/80 mt-0.5">Smart picks for your perfect meal</p>
                 </div>
 
                 {/* Group Size */}
@@ -1470,7 +1383,7 @@ export default function RestaurantMenuPage() {
                 <Button
                   onClick={handleGenerateBudgetEstimate}
                   disabled={getGroupSizeNumber() <= 0 || getBudgetNumber() <= 0 || isBudgetLoading}
-                  className="w-full h-14 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="vibe-pill w-full h-14 text-base disabled:cursor-not-allowed"
                   data-testid="button-generate-estimate"
                 >
                   {isBudgetLoading ? (
@@ -1493,9 +1406,16 @@ export default function RestaurantMenuPage() {
         {/* Deals Section */}
         {apiMenuData?.deals && apiMenuData.deals.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-2xl font-bold configurable-text-primary mb-6">Special Deals</h2>
-            <div className="responsive-menu-grid gap-6">
-              {apiMenuData.deals.map((deal) => renderDeal(deal))}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-1.5 h-6 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }} />
+              <h2 className="text-xl font-extrabold configurable-text-primary">Special Deals</h2>
+            </div>
+            <div className="vibe-carousel -mx-4 px-4">
+              {apiMenuData.deals.map((deal) => (
+                <div key={deal.dealId} className="w-[250px]">
+                  <DealCard deal={deal} onAdd={handleAddDealToCart} />
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -1512,19 +1432,20 @@ export default function RestaurantMenuPage() {
       <Footer />
       <ThemeSwitcher />
 
-      {/* Floating Cart Button */}
+      {/* Floating Cart Bar */}
       {getCartCount() > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
+        <div className="fixed bottom-4 inset-x-4 z-50 flex justify-center pointer-events-none">
+          <button
             onClick={() => useCartStore.getState().setCartOpen(true)}
-            className="rounded-full w-16 h-16 shadow-lg configurable-primary hover:configurable-primary-hover text-white"
+            className="vibe-pill h-14 px-6 w-full max-w-md shadow-2xl pointer-events-auto flex items-center justify-between"
             data-testid="button-open-cart"
           >
-            <div className="text-center">
-              <div className="text-xs">Cart</div>
-              <div className="text-lg font-bold">{getCartCount()}</div>
-            </div>
-          </Button>
+            <span className="flex items-center gap-2 font-bold">
+              <span className="bg-white/25 rounded-full h-7 min-w-[28px] px-2 flex items-center justify-center text-sm">{getCartCount()}</span>
+              View Cart
+            </span>
+            <span className="font-extrabold">{formatBranchCurrency(useCartStore.getState().getCartTotal(), branchCurrency)}</span>
+          </button>
         </div>
       )}
 

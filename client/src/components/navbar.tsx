@@ -92,7 +92,7 @@ export default function Navbar() {
                   <Utensils className="text-white" size={20} />
                 </div>
               )}
-              <span className="text-lg sm:text-xl font-bold configurable-text-primary truncate max-w-[150px] sm:max-w-none">
+              <span className="text-lg sm:text-xl font-bold configurable-text-primary truncate max-w-[110px] sm:max-w-none">
                 {showBranchDetails ? selectedBranch?.branchName : "LA PIZZA POPOLARE"}
               </span>
             </div>
@@ -110,7 +110,7 @@ export default function Navbar() {
                     <Utensils className="text-white" size={20} />
                   </div>
                 )}
-                <span className="text-lg sm:text-xl font-bold configurable-text-primary truncate max-w-[150px] sm:max-w-none">
+                <span className="text-lg sm:text-xl font-bold configurable-text-primary truncate max-w-[110px] sm:max-w-none">
                   {showBranchDetails ? selectedBranch?.branchName : "LA PIZZA POPOLARE"}
                 </span>
               </div>
@@ -118,10 +118,10 @@ export default function Navbar() {
           )}
           
           {/* Right side - Cart, Notifications, and Authentication grouped together */}
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4">
             <Button 
               onClick={() => setCartOpen(true)}
-              className="flex items-center space-x-1 sm:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-2 sm:px-3 md:px-4"
+              className="flex items-center space-x-1 sm:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-2 sm:px-3 md:px-4 rounded-full"
               size="sm"
             >
               <ShoppingCart size={16} className="sm:w-5 sm:h-5" />
@@ -142,7 +142,7 @@ export default function Navbar() {
                 data-testid="button-order-history"
               >
                 <History size={16} className="sm:w-5 sm:h-5 text-gray-700" />
-                <span className="text-sm text-gray-700">Orders</span>
+                <span className="hidden sm:inline text-sm text-gray-700">Orders</span>
               </Button>
             </Link>
 
@@ -169,7 +169,7 @@ export default function Navbar() {
                       <User size={16} className="text-white" />
                     )}
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="hidden sm:inline text-sm font-medium text-gray-700">
                     {user?.name || user?.fullName}
                   </span>
                 </Button>
@@ -211,7 +211,7 @@ export default function Navbar() {
               className="flex items-center space-x-2 px-2 sm:px-3 md:px-4"
             >
               <User size={16} className="text-gray-700" />
-              <span className="text-sm text-gray-700">Login</span>
+              <span className="hidden sm:inline text-sm text-gray-700">Login</span>
             </Button>
             )}
           </div>
