@@ -68,19 +68,35 @@ function itemPrice(item: ApiMenuItem): number {
 }
 
 // --- Camera Feed Component ---
-function CameraFeed({ facingMode, onError }: { facingMode: "user" | "environment"; onError?: () => void }) {
+type CameraErrorReason = 'insecure' | 'denied' | 'notfound' | 'other';
+
+function CameraFeed({ facingMode, onError }: { facingMode: "user" | "environment"; onError?: (reason: CameraErrorReason) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     let activeStream: MediaStream | null = null;
     async function startCamera() {
       try {
+        // getUserMedia is only available in a secure context (HTTPS or localhost).
+        // Over plain HTTP (e.g. a LAN IP) navigator.mediaDevices is undefined and
+        // re-requesting permission can never succeed — surface that distinctly.
+        if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+          onError?.('insecure');
+          return;
+        }
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
         activeStream = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error accessing camera:", err);
-        onError?.();
+        const name = err?.name;
+        let reason: CameraErrorReason = 'other';
+        if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
+          reason = 'denied';
+        } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError' || name === 'OverconstrainedError') {
+          reason = 'notfound';
+        }
+        onError?.(reason);
       }
     }
     startCamera();
@@ -386,6 +402,8 @@ export default function ARRestaurantMenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [bgConfig, setBgConfig] = useState<{ type: 'camera' | 'color' | 'image'; value: string }>({ type: 'camera', value: 'environment' });
   const [cameraDenied, setCameraDenied] = useState(false);
+  const [cameraError, setCameraError] = useState<CameraErrorReason | null>(null);
+  const [cameraHintDismissed, setCameraHintDismissed] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [showCoach, setShowCoach] = useState(true);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -498,7 +516,7 @@ export default function ARRestaurantMenuPage() {
         ) : bgConfig.type === 'camera' && !cameraDenied ? (
           <CameraFeed
             facingMode={bgConfig.value as "user" | "environment"}
-            onError={() => setCameraDenied(true)}
+            onError={(reason) => { setCameraDenied(true); setCameraError(reason); setCameraHintDismissed(false); }}
           />
         ) : bgConfig.type === 'color' ? (
           <div className="absolute inset-0" style={{ backgroundColor: bgConfig.value }} />
@@ -640,10 +658,10 @@ export default function ARRestaurantMenuPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-zinc-900/95 backdrop-blur-xl border-white/10 text-white w-56 p-2 rounded-2xl shadow-2xl">
               <DropdownMenuLabel className="text-[10px] uppercase font-bold text-white/40 px-2 py-1.5">Camera</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => { setCameraDenied(false); setBgConfig({ type: 'camera', value: 'environment' }); }} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
+              <DropdownMenuItem onClick={() => { setCameraDenied(false); setCameraError(null); setCameraHintDismissed(false); setBgConfig({ type: 'camera', value: 'environment' }); }} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
                 <Camera className="h-4 w-4" /> Back Camera
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setCameraDenied(false); setBgConfig({ type: 'camera', value: 'user' }); }} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
+              <DropdownMenuItem onClick={() => { setCameraDenied(false); setCameraError(null); setCameraHintDismissed(false); setBgConfig({ type: 'camera', value: 'user' }); }} className="rounded-lg gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
                 <Camera className="h-4 w-4 rotate-180" /> Front Camera
               </DropdownMenuItem>
 
@@ -691,14 +709,67 @@ export default function ARRestaurantMenuPage() {
         )}
       </div>
 
-      {/* Camera-denied hint */}
-      {viewMode === 'ar' && cameraDenied && bgConfig.type === 'camera' && (
-        <div className="absolute top-[116px] left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 text-[11px] text-white/70">
-            Camera unavailable — showing studio backdrop
+      {/* Camera-unavailable card (actionable) */}
+      {viewMode === 'ar' && cameraDenied && bgConfig.type === 'camera' && !cameraHintDismissed && (() => {
+        const info = {
+          insecure: {
+            title: 'Camera needs a secure (HTTPS) connection',
+            message: "Browsers only allow the live camera on HTTPS or localhost. You're on an http:// address, so the camera can't start — we're showing a studio backdrop instead. Open this site over HTTPS to use AR with your camera.",
+          },
+          denied: {
+            title: 'Camera access is blocked',
+            message: "Allow camera access to place dishes in your space. If you blocked it before, enable the camera for this site in your browser settings, then tap Enable Camera.",
+          },
+          notfound: {
+            title: 'No camera found',
+            message: "We couldn't find a camera on this device. Showing a studio backdrop instead.",
+          },
+          other: {
+            title: 'Camera unavailable',
+            message: "We couldn't start the camera. You can retry, or keep the studio backdrop.",
+          },
+        }[cameraError ?? 'other'];
+
+        return (
+          <div className="absolute top-[108px] left-1/2 -translate-x-1/2 z-30 w-[calc(100%-32px)] max-w-sm pointer-events-auto">
+            <div className="bg-black/70 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 h-9 w-9 rounded-xl bg-white/10 flex items-center justify-center">
+                  <Camera className="h-[18px] w-[18px] text-white/80" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold leading-snug">{info.title}</p>
+                  <p className="text-xs text-white/60 mt-1 leading-relaxed">{info.message}</p>
+                </div>
+                <button
+                  onClick={() => setCameraHintDismissed(true)}
+                  className="shrink-0 -mt-1 -mr-1 h-7 w-7 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex gap-2 mt-3">
+                {cameraError !== 'insecure' && (
+                  <button
+                    onClick={() => { setCameraDenied(false); setCameraError(null); setCameraHintDismissed(false); }}
+                    className="flex-1 h-9 rounded-full bg-white text-black text-xs font-bold inline-flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                  >
+                    <RotateCw className="h-3.5 w-3.5" />
+                    {cameraError === 'denied' ? 'Enable Camera' : 'Retry'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setCameraHintDismissed(true)}
+                  className={`${cameraError === 'insecure' ? 'flex-1' : ''} h-9 px-4 rounded-full bg-white/10 text-white/80 text-xs font-semibold inline-flex items-center justify-center active:scale-95 transition-transform`}
+                >
+                  Use studio backdrop
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Idle hint when items exist but none selected */}
       {!activeObjectId && arItems.length > 0 && !showCoach && (

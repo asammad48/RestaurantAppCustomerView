@@ -1,10 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import path from "path";
+
+// Opt-in HTTPS for the dev server (needed for phone camera / AR, which the
+// browser only allows in a secure context). Enable with `npm run dev:https`.
+const useHttps = process.env.HTTPS === "true";
 
 export default defineConfig({
   plugins: [
     react(),
+    ...(useHttps ? [basicSsl()] : []),
   ],
   resolve: {
     alias: {

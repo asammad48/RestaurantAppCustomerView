@@ -862,6 +862,16 @@ export default function RestaurantMenuPage() {
               {getServiceInfo()}
             </div>
           </div>
+          {/* AR Menu entry — preview dishes in 3D / AR */}
+          <div className="px-4 pb-4 pt-1 border-t border-gray-100 mt-1">
+            <button
+              onClick={() => { console.debug('🥽 Opening AR Menu'); setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`); }}
+              className="vibe-pill w-full h-11 text-sm mt-3"
+              data-testid="button-ar-menu-card"
+            >
+              <Glasses className="w-4 h-4" /> View Menu in AR
+            </button>
+          </div>
         </div>
 
         {/* Recommended Section */}
@@ -944,17 +954,8 @@ export default function RestaurantMenuPage() {
                     </button>
                   </div>
                 </div>
-                {/* Mobile Action Buttons */}
+                {/* Mobile Action Button (AR Menu now lives on the restaurant info card) */}
                 <div className="flex gap-2 lg:hidden">
-                  <button
-                    onClick={() => { console.debug('🥽 Opening AR Menu'); setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`); }}
-                    className="vibe-pill h-10 px-4 text-sm"
-                    data-testid="button-ar-menu-mobile"
-                  >
-                    <Glasses className="w-4 h-4" />
-                    <span className="hidden xs:inline">AR Menu</span>
-                    <span className="xs:hidden">AR</span>
-                  </button>
                   <button
                     onClick={() => { console.debug('🤖 Opening AI Estimator Modal from restaurant menu'); setAiEstimatorModalOpen(true); }}
                     className="vibe-pill-soft h-10 px-4 text-sm"
@@ -963,17 +964,6 @@ export default function RestaurantMenuPage() {
                     <Bot className="w-4 h-4" />
                     <span className="hidden xs:inline">AI Estimator</span>
                     <span className="xs:hidden">AI</span>
-                  </button>
-                </div>
-
-                {/* Desktop AR Menu Button */}
-                <div className="hidden lg:block">
-                  <button
-                    onClick={() => { console.debug('🥽 Opening AR Menu'); setLocation(`/restaurant-menu/ar?branchId=${selectedBranch?.branchId}`); }}
-                    className="vibe-pill h-10 px-4 text-sm"
-                    data-testid="button-ar-menu-desktop"
-                  >
-                    <Glasses className="w-4 h-4" /> AR Menu
                   </button>
                 </div>
               </div>

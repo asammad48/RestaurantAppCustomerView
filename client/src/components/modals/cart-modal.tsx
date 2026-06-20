@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCartStore } from "@/lib/store";
 import { useCart } from "@/hooks/use-cart";
 import { useAuthStore } from "@/lib/auth-store";
@@ -539,7 +537,7 @@ export default function CartModal() {
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
+              <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)]" align="start">
                 {allergensLoading ? (
                   <div className="p-4 text-center text-sm text-gray-500">Loading allergens...</div>
                 ) : allergensError ? (
@@ -547,33 +545,32 @@ export default function CartModal() {
                 ) : allergens.length === 0 ? (
                   <div className="p-4 text-center text-sm text-gray-500">No allergens available</div>
                 ) : (
-                  <ScrollArea className="h-60">
-                    <div className="p-2">
-                      {allergens.map((allergen: Allergen) => (
-                        <div
+                  <div
+                    className="max-h-64 overflow-y-auto overscroll-contain p-1.5"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
+                  >
+                    {allergens.map((allergen: Allergen) => {
+                      const checked = selectedAllergens.includes(allergen.id);
+                      return (
+                        <button
+                          type="button"
                           key={allergen.id}
-                          className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={() => handleAllergenToggle(allergen.id)}
                           data-testid={`checkbox-allergen-${allergen.id}`}
+                          aria-pressed={checked}
+                          className={`w-full flex items-center gap-3 rounded-xl px-3 min-h-[44px] text-left text-sm transition-colors ${checked ? 'bg-accent' : 'hover:bg-accent active:bg-accent'}`}
                         >
-                          <Checkbox
-                            id={`allergen-${allergen.id}`}
-                            checked={selectedAllergens.includes(allergen.id)}
-                            onChange={() => handleAllergenToggle(allergen.id)}
-                          />
-                          <label 
-                            htmlFor={`allergen-${allergen.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? 'border-transparent text-white' : 'border-gray-300'}`}
+                            style={checked ? { backgroundColor: 'var(--color-primary)' } : {}}
                           >
-                            {allergen.name}
-                          </label>
-                          {selectedAllergens.includes(allergen.id) && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                            {checked && <Check className="h-3.5 w-3.5" />}
+                          </span>
+                          <span className="flex-1 font-medium configurable-text-primary">{allergen.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </PopoverContent>
             </Popover>

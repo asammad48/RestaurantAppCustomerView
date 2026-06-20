@@ -31,7 +31,8 @@ export default function AddToCartModal() {
   
   // Collapsible states
   const [modifiersOpen, setModifiersOpen] = useState(true);
-  const [customizationsOpen, setCustomizationsOpen] = useState(false);
+  // Accordion: only one customization group open at a time (null = all closed)
+  const [openCustomizationId, setOpenCustomizationId] = useState<number | null>(null);
 
   const updateModifierQuantity = (modifierId: number, change: number) => {
     setSelectedModifiers(prev => {
@@ -441,10 +442,14 @@ export default function AddToCartModal() {
         {menuItem.customizations && menuItem.customizations.length > 0 && (
           <div className="space-y-4">
             {menuItem.customizations.map((customization) => (
-              <Collapsible key={customization.id} open={customizationsOpen} onOpenChange={setCustomizationsOpen}>
+              <Collapsible
+                key={customization.id}
+                open={openCustomizationId === customization.id}
+                onOpenChange={(open) => setOpenCustomizationId(open ? customization.id : null)}
+              >
                 <CollapsibleTrigger className="w-full px-4 py-3 rounded-2xl flex items-center justify-between font-bold configurable-text-primary bg-gray-50 hover:bg-gray-100 transition-colors">
                   {customization.name}
-                  {customizationsOpen ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
+                  {openCustomizationId === customization.id ? <ChevronUp className="configurable-primary-text" size={20} /> : <ChevronDown className="configurable-primary-text" size={20} />}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2 space-y-1.5">
                   {customization.options.map((option) => {

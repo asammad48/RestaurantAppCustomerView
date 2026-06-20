@@ -41,10 +41,10 @@ export interface FeatureConfig {
 export const featureConfig: FeatureConfig = {
   services: {
     delivery: {
-      enabled: false,
+      enabled: true,
     },
     takeaway: {
-      enabled: false,
+      enabled: true,
     },
     dineIn: {
       enabled: true,
@@ -52,7 +52,7 @@ export const featureConfig: FeatureConfig = {
       defaultSelected: true,
     },
     reservation: {
-      enabled: false,
+      enabled: true,
     },
   },
   payment: {
