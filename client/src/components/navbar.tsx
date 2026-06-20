@@ -121,7 +121,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
             <Button 
               onClick={() => setCartOpen(true)}
-              className="flex items-center space-x-1 sm:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-2 sm:px-3 md:px-4"
+              className="flex items-center space-x-1 sm:space-x-2 configurable-primary text-white hover:configurable-primary-hover relative px-2 sm:px-3 md:px-4 rounded-full"
               size="sm"
             >
               <ShoppingCart size={16} className="sm:w-5 sm:h-5" />

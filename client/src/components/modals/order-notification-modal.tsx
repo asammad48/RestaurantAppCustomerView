@@ -341,14 +341,14 @@ export default function OrderNotificationModal({
             Close
           </Button>
           {hasRequiredFields && (
-            <Button 
+            <button
               onClick={handleSubmit}
               disabled={isSubmitting || !isFormValid()}
-              className="min-w-[120px]"
+              className="vibe-pill h-11 px-6 min-w-[120px] text-sm"
               data-testid="button-submit-order-response"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Response'}
-            </Button>
+            </button>
           )}
         </div>
       </DialogContent>

@@ -190,115 +190,62 @@ function OrderCard({ order }: { order: Order }) {
 
   return (
     <>
-    <Card className="transition-all duration-200 hover:shadow-md w-full border rounded-lg" data-testid={`card-order-${order.id}`}>
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg font-bold text-gray-900 mb-2" data-testid={`text-order-number-${order.id}`}>
-              {order.orderNumber}
+    <Card className="vibe-card vibe-card-press w-full border-0" data-testid={`card-order-${order.id}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-base font-extrabold configurable-text-primary truncate" data-testid={`text-order-number-${order.id}`}>
+              #{order.orderNumber}
             </CardTitle>
-            <p className="text-sm text-gray-500 mb-1">Order Number</p>
-            
-            {/* Branch and Location Info */}
-            <div className="mt-2 space-y-1">
-              <div className="flex items-center text-xs text-gray-600">
-                <Building2 className="h-3 w-3 mr-1.5" />
-                <span>{order.branchName}</span>
-                {shouldDisplay(order.branchId) && (
-                  <span className="text-gray-400 ml-1">(ID: {order.branchId})</span>
-                )}
-              </div>
-              
-              {shouldDisplay(order.locationName) && (
-                <div className="flex items-center text-xs text-gray-500">
-                  <MapPin className="h-3 w-3 mr-1.5" />
-                  <span>{order.locationName}</span>
-                  {shouldDisplay(order.locationId) && (
-                    <span className="text-gray-400 ml-1">(ID: {order.locationId})</span>
-                  )}
-                </div>
-              )}
+            <div className="flex items-center gap-1.5 text-xs configurable-text-muted mt-1.5 min-w-0">
+              <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--color-primary)' }} />
+              <span className="truncate" data-testid={`text-branch-${order.id}`}>
+                {order.branchName}{shouldDisplay(order.locationName) ? ` · ${order.locationName}` : ''}
+              </span>
             </div>
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs configurable-text-muted mt-1">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                <Calendar className="h-3.5 w-3.5 shrink-0" />
+                <span data-testid={`text-order-date-${order.id}`}>{getOrderDate()}</span>
+              </span>
+              <span className="text-gray-300">•</span>
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                <Clock className="h-3.5 w-3.5 shrink-0" />
+                <span data-testid={`text-order-time-${order.id}`}>{getOrderTime()}</span>
+              </span>
+            </div>
+            {shouldDisplay(getCustomerName()) && (
+              <div className="flex items-center gap-1.5 text-xs configurable-text-muted mt-1">
+                <User className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate" data-testid={`text-customer-${order.id}`}>{getCustomerName()}</span>
+              </div>
+            )}
           </div>
-          <Badge className={`${getStatusColor(order.orderStatus)} text-sm px-3 py-1 rounded-full`} data-testid={`status-${order.id}`}>
-            {getOrderStatusText(order.orderStatus)}
-          </Badge>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <Badge className={`${getStatusColor(order.orderStatus)} text-xs px-2.5 py-1 rounded-full font-bold`} data-testid={`status-${order.id}`}>
+              {getOrderStatusText(order.orderStatus)}
+            </Badge>
+            <span
+              className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))', color: 'var(--color-primary)' }}
+              data-testid={`text-order-type-${order.id}`}
+            >
+              {getOrderTypeDisplay()}
+            </span>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="pt-0 pb-4">
-        {/* Customer and Device Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="space-y-3">
-            {shouldDisplay(getCustomerName()) && (
-              <div className="flex items-center">
-                <User className="h-4 w-4 mr-2 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900" data-testid={`text-customer-${order.id}`}>
-                    {getCustomerName()}
-                  </p>
-                  <p className="text-xs text-gray-500">Customer</p>
-                </div>
-              </div>
-            )}
-            
-            {shouldDisplay(order.deviceInfo) && (
-              <div className="flex items-center">
-                <Smartphone className="h-4 w-4 mr-2 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {order.deviceInfo}
-                  </p>
-                  <p className="text-xs text-gray-500">Device</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900" data-testid={`text-order-date-${order.id}`}>
-                  {getOrderDate()}
-                </p>
-                <p className="text-xs text-gray-500">Order Date</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-2 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900" data-testid={`text-order-time-${order.id}`}>
-                  {getOrderTime()}
-                </p>
-                <p className="text-xs text-gray-500">Order Time</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Order Type */}
-        <div className="mb-4">
-          <div className="flex items-center">
-            <Package className="h-4 w-4 mr-2 text-gray-400" />
-            <div>
-              <p className="text-sm font-medium text-gray-900" data-testid={`text-order-type-${order.id}`}>
-                {getOrderTypeDisplay()}
-              </p>
-              <p className="text-xs text-gray-500">Order Type</p>
-            </div>
-          </div>
-        </div>
 
         {/* Financial Summary */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="mb-4 p-3 rounded-2xl" style={{ backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center">
-              <Receipt className="h-4 w-4 mr-2 text-gray-600" />
-              <span className="text-sm font-medium text-gray-900">Financial Summary</span>
+              <Receipt className="h-4 w-4 mr-2 configurable-primary-text" />
+              <span className="text-sm font-semibold configurable-text-primary">Financial Summary</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">{formatCurrency(order.totalAmount, order.currency)}</span>
+            <span className="text-lg font-extrabold configurable-primary-text">{formatCurrency(order.totalAmount, order.currency)}</span>
           </div>
           
           {showAllDetails && (
@@ -343,34 +290,30 @@ function OrderCard({ order }: { order: Order }) {
 
         {/* Order Items Summary */}
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center">
-              <Utensils className="h-4 w-4 mr-2 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex items-center shrink-0">
+              <Utensils className="h-4 w-4 mr-2 text-gray-600 shrink-0" />
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
                 {order.orderItems.length + (order.orderPackages?.length || 0)} items
               </span>
             </div>
-            <div className="flex gap-2">
-              <Button 
+            <div className="flex gap-2 shrink-0">
+              <button
                 onClick={() => setShowDetailModal(true)}
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs text-[#15803d] hover:text-[#15803d] hover:bg-[#15803d]/10"
+                className="vibe-pill-soft h-8 px-3 text-xs whitespace-nowrap"
                 data-testid={`button-view-details-${order.id}`}
               >
-                <Eye className="h-3 w-3 mr-1" />
+                <Eye className="h-3.5 w-3.5 shrink-0" />
                 Details
-              </Button>
-              <Button 
+              </button>
+              <button
                 onClick={() => setShowOrderTracker(true)}
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs text-blue-600 hover:text-blue-600 hover:bg-blue-50"
+                className="inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs font-bold rounded-full text-blue-600 bg-blue-50 hover:bg-blue-100 active:scale-95 transition-all whitespace-nowrap"
                 data-testid={`button-order-tracker-${order.id}`}
               >
-                <Truck className="h-3 w-3 mr-1" />
+                <Truck className="h-3.5 w-3.5 shrink-0" />
                 Track Order
-              </Button>
+              </button>
             </div>
           </div>
           
@@ -629,25 +572,23 @@ function OrderCard({ order }: { order: Order }) {
 
         {/* Toggle Details Button */}
         <div className="mt-4 flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={() => setShowAllDetails(!showAllDetails)}
-            className="text-[#15803d] hover:text-[#15803d] hover:bg-[#15803d]/10"
+            className="inline-flex items-center justify-center gap-1 h-9 px-4 text-sm font-bold rounded-full configurable-primary-text hover:bg-gray-50 active:scale-95 transition-all"
             data-testid={`button-toggle-details-${order.id}`}
           >
             {showAllDetails ? (
               <>
-                <ChevronUp className="h-4 w-4 mr-1" />
+                <ChevronUp className="h-4 w-4" />
                 Show Less
               </>
             ) : (
               <>
-                <ChevronDown className="h-4 w-4 mr-1" />
+                <ChevronDown className="h-4 w-4" />
                 Show All Details
               </>
             )}
-          </Button>
+          </button>
         </div>
       </CardContent>
     </Card>

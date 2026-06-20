@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { MenuItem, ApiMenuItem } from "@/lib/mock-data";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store";
 import { getImageUrl } from "@/lib/config";
 import { formatBranchCurrency } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import MenuItemDetailModal from "@/components/modals/menu-item-detail-modal";
 
 interface FoodCardProps {
@@ -16,22 +16,15 @@ interface FoodCardProps {
 
 export default function FoodCard({ item, variant = "grid", isRecommended = false, className = "" }: FoodCardProps) {
   const { addItem, setAddToCartModalOpen, setLastAddedItem, branchCurrency } = useCartStore();
-  
-  // Helper functions to work with both old and new API data
-  const isApiMenuItem = (item: any): item is ApiMenuItem => {
-    return 'menuItemId' in item;
-  };
+  const { toast } = useToast();
+
+  const isApiMenuItem = (item: any): item is ApiMenuItem => 'menuItemId' in item;
 
   const getVariations = () => {
     if (isApiMenuItem(item) && item.variations) {
-      return item.variations.map(v => ({
-        name: v.id.toString(),
-        label: v.name,
-        price: v.price
-      }));
+      return item.variations.map(v => ({ name: v.id.toString(), label: v.name, price: v.price }));
     }
-    // Default variations for old items
-    const basePrice = isApiMenuItem(item) 
+    const basePrice = isApiMenuItem(item)
       ? (item.variations && item.variations.length > 0 ? item.variations[0].price : 0)
       : parseFloat(item.price as string);
     return [
@@ -43,307 +36,202 @@ export default function FoodCard({ item, variant = "grid", isRecommended = false
 
   const sizes = getVariations();
   const defaultSize = sizes.length > 0 ? sizes[0].name : "medium";
-  
   const [selectedSize, setSelectedSize] = useState<string>(defaultSize);
-  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const getPrice = () => {
-    if (isApiMenuItem(item)) {
-      return item.variations && item.variations.length > 0 ? item.variations[0].price : 0;
-    }
+    if (isApiMenuItem(item)) return item.variations && item.variations.length > 0 ? item.variations[0].price : 0;
     return parseFloat(item.price as string);
   };
+  const getImage = () => (isApiMenuItem(item) ? getImageUrl(item.picture) : (item as MenuItem).image);
+  const getCategory = () => (isApiMenuItem(item) ? item.categoryName : (item as MenuItem).category);
+  const getDiscount = () => (isApiMenuItem(item) ? (item.discount?.value || 0) : ((item as MenuItem).discount || 0));
 
-  const getImage = () => {
-    if (isApiMenuItem(item)) {
-      return getImageUrl(item.picture);
-    }
-    return (item as MenuItem).image;
-  };
-
-  const getCategory = () => {
-    if (isApiMenuItem(item)) {
-      return item.categoryName;
-    }
-    return (item as MenuItem).category;
-  };
-
-  const getDiscount = () => {
-    if (isApiMenuItem(item)) {
-      return item.discount?.value || 0;
-    }
-    return (item as MenuItem).discount || 0;
-  };
-
-  const toppings = [
-    { name: "cheese", label: "Extra Cheese", price: 50 },
-    { name: "pepperoni", label: "Pepperoni", price: 75 },
-    { name: "mushrooms", label: "Mushrooms", price: 40 },
-  ];
-
-  const currentPrice = sizes.find(size => size.name === selectedSize)?.price || getPrice();
+  const currentPrice = sizes.find(s => s.name === selectedSize)?.price || getPrice();
   const totalPrice = currentPrice;
   const discountPercentage = getDiscount();
   const discountedPrice = discountPercentage > 0 ? totalPrice * (1 - discountPercentage / 100) : totalPrice;
   const originalPrice = totalPrice;
 
-  const toggleTopping = (toppingName: string) => {
-    setSelectedToppings(prev => 
-      prev.includes(toppingName) 
-        ? prev.filter(t => t !== toppingName)
-        : [...prev, toppingName]
+  // Minimum-clicks: only items with modifiers/customizations need the modal.
+  const needsModal =
+    isApiMenuItem(item) &&
+    (((item.modifiers?.length ?? 0) > 0) || ((item.customizations?.length ?? 0) > 0));
+
+  const itemId = isApiMenuItem(item) ? item.menuItemId : (item as MenuItem).id;
+
+  const handleAdd = () => {
+    const selectedVariant = sizes.find(s => s.name === selectedSize);
+
+    if (needsModal) {
+      setLastAddedItem(item);
+      setAddToCartModalOpen(true);
+      return;
+    }
+
+    // One-tap add of the selected variation.
+    let selectedVariantId: number | undefined;
+    if (isApiMenuItem(item) && selectedVariant) selectedVariantId = parseInt(selectedVariant.name);
+
+    const itemWithVariation = {
+      ...item,
+      price: (selectedVariant?.price ?? totalPrice).toFixed(2),
+      selectedVariantId,
+      variantName: selectedVariant?.label || "Regular",
+      variantPrice: selectedVariant?.price ?? totalPrice,
+    };
+
+    addItem(itemWithVariation as any, isApiMenuItem(item) && selectedVariant ? selectedVariant.name : "default");
+    toast({
+      title: "Added to cart",
+      description: `${item.name}${selectedVariant ? ` · ${selectedVariant.label}` : ""}`,
+    });
+  };
+
+  const PriceBlock = ({ size = "base" }: { size?: "base" | "sm" | "lg" }) => {
+    const cls = size === "lg" ? "text-lg" : size === "sm" ? "text-sm" : "text-base";
+    return discountPercentage > 0 ? (
+      <div className="flex items-baseline gap-1.5">
+        <span className={`${cls} font-extrabold`} style={{ color: "var(--color-primary)" }}>
+          {formatBranchCurrency(discountedPrice, branchCurrency)}
+        </span>
+        <span className="text-xs text-gray-400 line-through">{formatBranchCurrency(originalPrice, branchCurrency)}</span>
+      </div>
+    ) : (
+      <span className={`${cls} font-extrabold`} style={{ color: "var(--color-primary)" }}>
+        {formatBranchCurrency(totalPrice, branchCurrency)}
+      </span>
     );
   };
 
-  const handleAddToCart = () => {
-    const selectedVariant = sizes.find(size => size.name === selectedSize);
-    const variation = selectedVariant?.label || 'Medium';
-    
-    // For API menu items, the variant ID is stored in size.name, for others we use a fallback
-    let selectedVariantId: number | undefined = undefined;
-    if (isApiMenuItem(item) && selectedVariant) {
-      selectedVariantId = parseInt(selectedVariant.name);
-    }
-    
-    const itemWithVariation = {
-      ...item,
-      price: totalPrice.toFixed(2),
-      // Add variant information for proper cart handling
-      selectedVariantId,
-      variantName: variation,
-      variantPrice: selectedVariant?.price || totalPrice,
-    };
-    
-    
-    setLastAddedItem(itemWithVariation);
-    setAddToCartModalOpen(true);
-    // Clear selections after opening modal
-    setSelectedSize("medium");
-    setSelectedToppings([]);
-  };
+  const VariationChips = ({ small = false }: { small?: boolean }) =>
+    sizes.length > 1 ? (
+      <div className="flex flex-wrap gap-1.5">
+        {sizes.map(s => {
+          const active = selectedSize === s.name;
+          return (
+            <button
+              key={s.name}
+              onClick={() => setSelectedSize(s.name)}
+              className={`vibe-chip ${active ? "vibe-chip-active" : ""} ${small ? "h-7 px-2.5 text-[11px]" : "h-8 px-3 text-xs"}`}
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+    ) : null;
 
+  const Ribbons = ({ scale = 1 }: { scale?: number }) => (
+    <>
+      {isRecommended && (
+        <span className="ribbon-rec absolute top-2.5 right-2.5" style={scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "top right" } : {}}>
+          ★ Top Pick
+        </span>
+      )}
+      {discountPercentage > 0 && (
+        <span className="ribbon-deal absolute top-2.5 left-2.5" style={scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "top left" } : {}}>
+          {discountPercentage}% OFF
+        </span>
+      )}
+    </>
+  );
+
+  const AddButton = ({ compact = false }: { compact?: boolean }) =>
+    compact ? (
+      <button
+        onClick={handleAdd}
+        className="vibe-pill h-10 w-10 shrink-0"
+        data-testid={`button-add-to-cart-${itemId}`}
+        aria-label="Add to cart"
+      >
+        <Plus className="h-5 w-5" />
+      </button>
+    ) : (
+      <button onClick={handleAdd} className="vibe-pill h-10 px-4 text-sm shrink-0" data-testid={`button-add-to-cart-${itemId}`}>
+        <Plus className="h-4 w-4" /> Add
+      </button>
+    );
+
+  const detailModal = (
+    <MenuItemDetailModal item={item} isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} isRecommended={isRecommended} />
+  );
+
+  // ---------- LIST ----------
   if (variant === "list") {
     return (
       <>
-        <MenuItemDetailModal 
-          item={item}
-          isOpen={isDetailModalOpen}
-          onClose={() => setIsDetailModalOpen(false)}
-          isRecommended={isRecommended}
-        />
-        <div className="food-card bg-white rounded-xl shadow-sm p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <div 
-            className="relative w-full sm:w-32 h-32 flex-shrink-0 cursor-pointer"
-            onClick={() => setIsDetailModalOpen(true)}
-            data-testid={`image-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
-          >
-            <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity" />
-            {isRecommended && (
-              <Badge className="absolute top-2 right-2 configurable-recommended text-white text-xs">
-                Recommended
-              </Badge>
-            )}
-            {discountPercentage > 0 && (
-              <Badge className="absolute top-2 left-2 configurable-deal text-white">
-                {discountPercentage}% OFF
-              </Badge>
-            )}
+        {detailModal}
+        <div className={`vibe-card vibe-card-press p-2.5 flex gap-3 ${className}`}>
+          <div className="relative w-28 h-28 flex-shrink-0 cursor-pointer" onClick={() => setIsDetailModalOpen(true)} data-testid={`image-menuitem-${itemId}`}>
+            <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+            <Ribbons scale={0.85} />
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold configurable-text-primary text-base sm:text-lg mb-2 truncate">{item.name}</h3>
-            <p 
-              className="configurable-text-secondary text-xs sm:text-sm mb-3 line-clamp-2 cursor-pointer hover:underline"
-              onClick={() => setIsDetailModalOpen(true)}
-              data-testid={`description-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
-            >
+          <div className="flex-1 min-w-0 flex flex-col">
+            <h3 className="font-bold configurable-text-primary text-[15px] truncate">{item.name}</h3>
+            <p className="text-[11px] configurable-text-muted mb-1 line-clamp-2 cursor-pointer" onClick={() => setIsDetailModalOpen(true)} data-testid={`description-menuitem-${itemId}`}>
               {item.description}
             </p>
-          
-          {/* Size Selection */}
-          <div className="mb-3">
-            <p className="text-sm font-medium configurable-text-primary mb-2">Variation</p>
-            <div className="flex flex-wrap gap-1 sm:gap-2">
-              {sizes.map((size) => (
-                <button
-                  key={size.name}
-                  onClick={() => setSelectedSize(size.name)}
-                  className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border transition-colors ${
-                    selectedSize === size.name
-                      ? 'configurable-primary text-white configurable-border'
-                      : 'configurable-secondary configurable-text-secondary configurable-border hover:configurable-border'
-                  }`}
-                >
-                  {size.label}
-                </button>
-              ))}
+            <div className="mb-2"><VariationChips small /></div>
+            <div className="mt-auto flex items-center justify-between gap-2">
+              <PriceBlock />
+              <AddButton />
             </div>
-          </div>
-
-          
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              {discountPercentage > 0 ? (
-                <>
-                  <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(discountedPrice, branchCurrency)}</span>
-                  <span className="text-sm text-gray-400 line-through">{formatBranchCurrency(originalPrice, branchCurrency)}</span>
-                </>
-              ) : (
-                <span className="text-xl font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(totalPrice, branchCurrency)}</span>
-              )}
-            </div>
-            <Button onClick={handleAddToCart} className="configurable-primary text-white hover:configurable-primary-hover">
-              Add to cart
-            </Button>
           </div>
         </div>
-      </div>
       </>
     );
   }
 
+  // ---------- COMPACT ----------
   if (variant === "compact") {
     return (
       <>
-        <MenuItemDetailModal 
-          item={item}
-          isOpen={isDetailModalOpen}
-          onClose={() => setIsDetailModalOpen(false)}
-          isRecommended={isRecommended}
-        />
-        <div className={`food-card bg-white rounded-lg shadow-sm p-3 flex gap-3 h-full ${className}`}>
-          <div 
-            className="relative w-20 h-20 flex-shrink-0 cursor-pointer"
-            onClick={() => setIsDetailModalOpen(true)}
-            data-testid={`image-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
-          >
-            <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity" />
-            {isRecommended && (
-              <Badge className="absolute -top-1 -right-1 configurable-recommended text-white text-xs scale-75">
-                Rec
-              </Badge>
-            )}
+        {detailModal}
+        <div className={`vibe-card vibe-card-press p-2.5 flex gap-3 h-full ${className}`}>
+          <div className="relative w-20 h-20 flex-shrink-0 cursor-pointer" onClick={() => setIsDetailModalOpen(true)} data-testid={`image-menuitem-${itemId}`}>
+            <img src={getImage()} alt={item.name} className="w-full h-full object-cover rounded-xl" />
             {discountPercentage > 0 && (
-              <Badge className="absolute -top-1 -left-1 configurable-deal text-white text-xs scale-75">
-                {discountPercentage}%
-              </Badge>
+              <span className="ribbon-deal absolute -top-1.5 -left-1.5 scale-[0.7] origin-top-left">{discountPercentage}%</span>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold configurable-text-primary text-sm mb-1 truncate">{item.name}</h3>
-            <p 
-              className="configurable-text-secondary text-xs mb-2 line-clamp-2 cursor-pointer hover:underline"
-              onClick={() => setIsDetailModalOpen(true)}
-              data-testid={`description-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
-            >
+          <div className="flex-1 min-w-0 flex flex-col">
+            <h3 className="font-bold configurable-text-primary text-sm truncate">{item.name}</h3>
+            <p className="configurable-text-muted text-[11px] mb-1.5 line-clamp-2 cursor-pointer" onClick={() => setIsDetailModalOpen(true)} data-testid={`description-menuitem-${itemId}`}>
               {item.description}
             </p>
-          
-          {/* Price and Add Button */}
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              {discountPercentage > 0 ? (
-                <>
-                  <span className="text-sm font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(discountedPrice, branchCurrency)}</span>
-                  <span className="text-xs text-gray-400 line-through">{formatBranchCurrency(originalPrice, branchCurrency)}</span>
-                </>
-              ) : (
-                <span className="text-sm font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(totalPrice, branchCurrency)}</span>
-              )}
+            <div className="mt-auto flex items-center justify-between gap-2">
+              <PriceBlock size="sm" />
+              <AddButton compact />
             </div>
-            <Button 
-              onClick={handleAddToCart} 
-              size="sm"
-              className="configurable-primary text-white hover:configurable-primary-hover text-xs px-3 py-1"
-              data-testid={`button-add-to-cart-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
-            >
-              Add
-            </Button>
           </div>
         </div>
-      </div>
       </>
     );
   }
 
+  // ---------- GRID (default) ----------
   return (
     <>
-      <MenuItemDetailModal 
-        item={item}
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        isRecommended={isRecommended}
-      />
-      <div className={`food-card bg-white rounded-xl shadow-sm overflow-hidden h-full ${className}`}>
-        <div 
-          className="relative cursor-pointer"
-          onClick={() => setIsDetailModalOpen(true)}
-          data-testid={`image-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
-        >
-          <img src={getImage()} alt={item.name} className="w-full h-48 object-cover hover:opacity-90 transition-opacity" />
-          {isRecommended && (
-            <Badge className="absolute top-3 right-3 configurable-recommended text-white text-xs">
-              Recommended
-            </Badge>
-          )}
-          {discountPercentage > 0 && (
-            <Badge className="absolute top-3 left-3 configurable-deal text-white">
-              {discountPercentage}% OFF
-            </Badge>
-          )}
+      {detailModal}
+      <div className={`vibe-card vibe-card-press h-full flex flex-col ${className}`}>
+        <div className="relative cursor-pointer" onClick={() => setIsDetailModalOpen(true)} data-testid={`image-menuitem-${itemId}`}>
+          <img src={getImage()} alt={item.name} className="w-full h-44 sm:h-48 object-cover" />
+          <Ribbons />
         </div>
-        <div className="p-4">
-          <h3 className="font-semibold configurable-text-primary mb-2 text-sm sm:text-base truncate">{item.name}</h3>
-          <p 
-            className="text-xs sm:text-sm configurable-text-secondary mb-3 line-clamp-2 cursor-pointer hover:underline"
-            onClick={() => setIsDetailModalOpen(true)}
-            data-testid={`description-menuitem-${isApiMenuItem(item) ? item.menuItemId : item.id}`}
-          >
+        <div className="p-3.5 flex flex-col flex-1">
+          <h3 className="font-bold configurable-text-primary text-[15px] leading-tight truncate">{item.name}</h3>
+          <p className="text-[10px] uppercase tracking-wide configurable-text-muted font-semibold mb-1">{getCategory()}</p>
+          <p className="text-xs configurable-text-secondary mb-2.5 line-clamp-2 cursor-pointer" onClick={() => setIsDetailModalOpen(true)} data-testid={`description-menuitem-${itemId}`}>
             {item.description}
           </p>
-        
-        {/* Size Selection */}
-        <div className="mb-3">
-          <p className="text-sm font-medium configurable-text-primary mb-2">Variation</p>
-          <div className="flex flex-wrap gap-1 sm:gap-2">
-            {sizes.map((size) => (
-              <button
-                key={size.name}
-                onClick={() => setSelectedSize(size.name)}
-                className={`px-2 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  selectedSize === size.name
-                    ? 'configurable-primary text-white configurable-border'
-                    : 'configurable-secondary configurable-text-secondary configurable-border hover:configurable-border'
-                }`}
-              >
-                {size.label}
-              </button>
-            ))}
+          <div className="mb-3"><VariationChips /></div>
+          <div className="mt-auto flex items-center justify-between gap-2">
+            <PriceBlock size="lg" />
+            <AddButton />
           </div>
-        </div>
-
-        
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            {discountPercentage > 0 ? (
-              <>
-                <span className="text-lg font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(discountedPrice, branchCurrency)}</span>
-                <span className="text-xs text-gray-400 line-through">{formatBranchCurrency(originalPrice, branchCurrency)}</span>
-              </>
-            ) : (
-              <span className="text-lg font-bold" style={{ color: 'var(--configurable-primary)' }}>{formatBranchCurrency(totalPrice, branchCurrency)}</span>
-            )}
-          </div>
-          <Button 
-            onClick={handleAddToCart} 
-            size="sm"
-            className="configurable-primary text-white hover:configurable-primary-hover text-xs sm:text-sm px-3 sm:px-4"
-          >
-            Add to cart
-          </Button>
         </div>
       </div>
-    </div>
     </>
   );
 }

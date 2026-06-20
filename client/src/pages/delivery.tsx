@@ -353,30 +353,32 @@ export default function DeliveryPage() {
             ].map((service) => {
               const Icon = service.icon;
               const isLocked = !service.enabled;
+              const selected = selectedService === service.id && !isLocked;
               return (
-                <Card 
-                  key={service.id} 
-                  className={`transition-all duration-200 border ${
-                    isLocked 
-                      ? 'opacity-50 cursor-not-allowed bg-gray-50' 
-                      : `cursor-pointer ${service.color}`
-                  }`}
+                <button
+                  key={service.id}
+                  className={`vibe-card vibe-card-press text-left ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${selected ? 'text-white' : ''}`}
+                  style={selected ? { backgroundColor: 'var(--color-primary)' } : {}}
                   onClick={() => !isLocked && handleServiceSelect(service.id as 'delivery' | 'takeaway' | 'dine-in' | 'reservation')}
+                  disabled={isLocked}
                   data-testid={`service-option-${service.id}`}
                 >
-                  <CardContent className="flex flex-col items-center p-6 text-center relative">
-                    <div className={`p-3 rounded-full ${selectedService === service.id && !isLocked ? 'bg-white/20' : 'bg-gray-100'} mb-3`}>
-                      <Icon size={24} className={selectedService === service.id && !isLocked ? 'text-white' : 'configurable-primary-text'} />
+                  <div className="flex flex-col items-center p-5 text-center">
+                    <div
+                      className={`p-3 rounded-2xl mb-3 ${selected ? 'bg-white/20' : ''}`}
+                      style={!selected ? { backgroundColor: 'var(--configurable-primary-alpha-10, rgba(22,163,74,0.1))' } : {}}
+                    >
+                      <Icon size={24} className={selected ? 'text-white' : ''} style={!selected ? { color: 'var(--color-primary)' } : {}} />
                     </div>
-                    <h3 className="font-semibold text-lg mb-1">
+                    <h3 className="font-bold text-base mb-0.5">
                       {service.title}
-                      {isLocked && <span className="text-xs ml-2 text-gray-400">(Locked)</span>}
+                      {isLocked && <span className="text-xs ml-1 text-gray-400">(Locked)</span>}
                     </h3>
-                    <p className={`text-sm ${selectedService === service.id && !isLocked ? 'text-white/80' : 'text-gray-600'}`}>
+                    <p className={`text-xs ${selected ? 'text-white/80' : 'configurable-text-muted'}`}>
                       {service.description}
                     </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                </button>
               );
             })}
           </div>
@@ -550,7 +552,7 @@ export default function DeliveryPage() {
                   await searchBranchesForService(userCoords.lat, userCoords.lng);
                 }}
                 disabled={!userCoords || branchesLoading}
-                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
+                className="vibe-pill h-12 px-8"
                 data-testid="button-search-takeaway"
               >
                 <Search className="w-4 h-4" />
@@ -641,7 +643,7 @@ export default function DeliveryPage() {
                   await searchBranchesForService(userCoords.lat, userCoords.lng);
                 }}
                 disabled={!userCoords || branchesLoading}
-                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
+                className="vibe-pill h-12 px-8"
                 data-testid="button-search-dinein"
               >
                 <Search className="w-4 h-4" />
@@ -748,7 +750,7 @@ export default function DeliveryPage() {
                   await searchBranchesForService(userCoords.lat, userCoords.lng);
                 }}
                 disabled={!userCoords || branchesLoading}
-                className="flex items-center gap-2 configurable-primary hover:configurable-primary-hover text-white px-8 py-2"
+                className="vibe-pill h-12 px-8"
                 data-testid="button-search-reservations"
               >
                 <Search className="w-4 h-4" />
